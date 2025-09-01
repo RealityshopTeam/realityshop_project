@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <title>Product Details - Reality Shop</title>
-  <!-- Google Model Viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f6f6f6; color: #222; }
@@ -16,30 +15,51 @@
     .page-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: flex; gap: 24px; min-height: 600px; }
     .product-details { flex: 1 1 50%; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; min-width: 300px; }
     .related-products { flex: 1 1 50%; background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 600px; overflow-y: auto; min-width: 280px; }
-    model-viewer { width: 100%; height: 500px; border-radius: 8px; background-color: #fefefe; margin-bottom: 20px; }
+    model-viewer { width: 100%; height: 500px; border-radius: 8px; background-color: #fefefe; margin-bottom: 20px; position: relative; }
     .product-info { width: 100%; max-width: 700px; }
     .product-info h1 { margin-top: 0; font-size: 2rem; }
     .product-info p.price { font-weight: bold; font-size: 1.5rem; color: #ff9800; margin: 10px 0 20px; }
     .product-info button, .ar-button, .tryon-button {
-      background: #ff9800; color: #fff; padding: 12px 32px; border: none; border-radius: 30px;
-      font-weight: bold; font-size: 1.1rem; cursor: pointer; transition: background 0.3s ease;
-      margin-right: 12px; margin-bottom: 10px; display: inline-block;
+      background: #ff9800;
+      color: #fff;
+      padding: 12px 32px;
+      border: none;
+      border-radius: 30px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      margin-right: 12px;
+      margin-bottom: 10px;
+      display: inline-block;
     }
     .product-info button:hover, .ar-button:hover, .tryon-button:hover { background: #e67600; }
-    .wishlist-btn { background: #eee; color: #ff9800; border: 1px solid #ff9800; font-weight: bold; border-radius: 30px;
-      padding: 12px 32px; margin-right: 12px; margin-bottom: 10px; transition: background 0.3s; cursor: pointer;
+    .wishlist-btn {
+      background: #eee;
+      color: #ff9800;
+      border: 1px solid #ff9800;
+      font-weight: bold;
+      border-radius: 30px;
+      padding: 12px 32px;
+      margin-right: 12px;
+      margin-bottom: 10px;
+      transition: background 0.3s;
+      cursor: pointer;
+      display: inline-block;
     }
-    .wishlist-btn.active, .wishlist-btn:disabled { background: #ff9800; color: #fff; cursor: default; border: none; }
+    .wishlist-btn.active, .wishlist-btn:disabled {
+      background: #ff9800;
+      color: #fff;
+      cursor: default;
+      border: none;
+    }
     .buttons-row { margin: 10px 0 20px; }
-    .related-product { cursor: pointer; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 12px;
-      display: flex; flex-direction: column; align-items: center;
-    }
+    .related-product { cursor: pointer; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
     .related-product:last-child { border-bottom: none; }
     .related-product h4 { margin: 8px 0 6px; text-align: center; }
-    .related-product model-viewer, .related-product img { width: 100%; height: 150px; object-fit: contain; border-radius: 6px; margin-bottom: 6px; }
-    .products-list { display: flex; flex-wrap: wrap; gap: 18px;}
-    .products-list .related-product { width: 250px; min-width: 180px; border: 1px solid #eee; border-radius: 8px; background: #fafafa; transition: box-shadow 0.2s;}
-    .products-list .related-product:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.09); }
+    .related-product model-viewer, .related-product img {
+      width: 100%; height: 150px; object-fit: contain; border-radius: 6px; margin-bottom: 6px;
+    }
   </style>
 </head>
 <body>
@@ -57,13 +77,15 @@
   </nav>
 
   <div class="page-container">
-    <section class="product-details" id="product-details"></section>
+    <section class="product-details" id="product-details">
+      <!-- Product details injected here -->
+    </section>
+
     <aside class="related-products" id="related-products">
       <h3>Related Products</h3>
+      <!-- Related products injected here -->
     </aside>
   </div>
-
-  <div class="products-list" id="products-list"></div>
 
   <script>
     const products = [
@@ -122,113 +144,148 @@
       {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
     ];
 
-    // Storage utils
-    function getWishlist() { return JSON.parse(localStorage.getItem('wishlist') || '[]'); }
-    function setWishlist(w) { localStorage.setItem('wishlist', JSON.stringify(w)); }
-    function isWishlisted(name) { return getWishlist().some(item => item.name === name); }
-    function addToCart(product) {
-      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-      let existing = cart.find(item => item.name === product.name);
-      if(existing) existing.quantity += 1;
-      else cart.push({name: product.name, price: product.price, quantity: 1});
-      localStorage.setItem('cart', JSON.stringify(cart));
-      alert(product.name + " added to cart!");
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
     }
-    function addToWishlist(product, btn) {
-      if(isWishlisted(product.name)) return;
-      let wl = getWishlist();
-      wl.push(product);
-      setWishlist(wl);
-      btn.classList.add('active');
-      btn.textContent = "Wishlisted";
+    function getWishlist() {
+      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+    }
+    function setWishlist(wishlist) {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+    function isWishlisted(name) {
+      return getWishlist().some(item => item.name === name);
     }
 
-    // AR + Try-On navigation
+    function displayProduct(product) {
+      const container = document.getElementById('product-details');
+      if (!product) {
+        container.innerHTML = `<p>Product not found.</p>`;
+        return;
+      }
+
+      const canAR = ["Furniture", "Clothing", "Accessories"].includes(product.category);
+      let arButtonHtml = '';
+      if (canAR && product.glb) {
+        arButtonHtml = `<button class="ar-button" onclick="openARViewer('${encodeURIComponent(product.glb)}')">View in AR</button>`;
+      }
+
+      const canTryOnAvatar = ["Clothing", "Accessories"].includes(product.category);
+      let tryOnHtml = '';
+      if (canTryOnAvatar && (product.img || product.glb)) {
+        const imgParam = product.img ? encodeURIComponent(product.img) : '';
+        const glbParam = product.glb ? encodeURIComponent(product.glb) : '';
+        tryOnHtml = `<button class="tryon-button" onclick="openTryOn('${encodeURIComponent(product.name)}','${imgParam}','${glbParam}')">Try On Avatar</button>`;
+      }
+
+      container.innerHTML = `
+      ${product.glb ? `
+        <model-viewer 
+          src="${product.glb}" alt="${product.name} 3D model" 
+          camera-controls auto-rotate shadow-intensity="1" 
+          style="width:100%; height:500px; border-radius:8px;" 
+          id="main-model" 
+          interaction-prompt="auto">
+          <button slot="ar-button" id="fullscreen-btn" title="Toggle Fullscreen" style="
+            position: absolute; bottom: 12px; right: 12px; 
+            background: rgba(0,0,0,0.5); color: white; border: none; 
+            border-radius: 30px; padding: 10px 16px; cursor: pointer; z-index: 10;">
+            ⛶
+          </button>
+        </model-viewer>
+      ` : product.img ? `
+        <img src="${product.img}" alt="${product.name}" style="width:100%; height:500px; object-fit: contain; border-radius:8px;">
+      ` : ''}
+      <div class="product-info">
+        <h1>${product.name}</h1>
+        <div class="buttons-row">
+          <button class="btn-main" id="add-cart-btn">Add to Cart</button>
+          <button class="wishlist-btn ${isWishlisted(product.name) ? 'active' : ''}" id="wishlist-btn">
+            ${isWishlisted(product.name) ? "Wishlisted" : "Add to Wishlist"}
+          </button>
+          ${arButtonHtml}
+          ${tryOnHtml}
+        </div>
+        <p class="price">₹${product.price}.00</p>
+        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan.</p>
+      </div>
+      `;
+
+      // Cart Handler
+      document.getElementById('add-cart-btn').onclick = () => {
+        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        let existing = cart.find(item => item.name === product.name);
+        if(existing) existing.quantity += 1;
+        else cart.push({name: product.name, price: product.price, quantity: 1});
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert(product.name + " added to cart!");
+      };
+
+      // Wishlist Handler
+      document.getElementById('wishlist-btn').onclick = function() {
+        if(isWishlisted(product.name)) return;
+        let wishlist = getWishlist();
+        wishlist.push({
+          name: product.name, price: product.price, category: product.category,
+          img: product.img, glb: product.glb
+        });
+        setWishlist(wishlist);
+        this.classList.add('active');
+        this.textContent = "Wishlisted";
+      };
+
+      // Fullscreen toggle for model-viewer
+      if (product.glb) {
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const modelViewer = document.getElementById('main-model');
+        fullscreenBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!document.fullscreenElement) {
+            modelViewer.requestFullscreen();
+          } else {
+            document.exitFullscreen();
+          }
+        });
+      }
+    }
+
     function openARViewer(modelPath) {
-      window.open(`ar-view.html?model=${encodeURIComponent(modelPath)}`, '_blank');
+      window.open(`ar-view.html?model=${modelPath}`, '_blank');
     }
     function openTryOn(name, img, glb) {
-      let url = `avatar.html?name=${encodeURIComponent(name)}`;
-      if (img) url += `&img=${encodeURIComponent(img)}`;
-      if (glb) url += `&glb=${encodeURIComponent(glb)}`;
+      let url = `avatar.html?name=${name}`;
+      if (img) url += `&img=${img}`;
+      if (glb) url += `&glb=${glb}`;
       window.open(url, '_blank');
     }
 
-    // Product card template
-    function createProductCard(product) {
-      const canAR = product.category === "Furniture";
-      const canTryOn = ["Clothing", "Accessories"].includes(product.category);
-      const div = document.createElement('div');
-      div.className = 'related-product';
-      div.innerHTML = `
-        ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1"></model-viewer>` 
-                      : product.img ? `<img src="${product.img}" alt="${product.name}">`
-                      : `<div>No Image</div>`}
-        <h4>${product.name}</h4>
-        <p>₹${product.price}.00</p>
-        <div>
-          <button class="btn-main add-cart-btn">Add to Cart</button>
-          <button class="wishlist-btn${isWishlisted(product.name) ? ' active' : ''}">${isWishlisted(product.name) ? "Wishlisted" : "Add to Wishlist"}</button>
-          ${canAR && product.glb ? `<button class="ar-button">View in AR</button>` : ""}
-          ${canTryOn && (product.img || product.glb) ? `<button class="tryon-button">Try On Avatar</button>` : ""}
-        </div>
-      `;
-      div.querySelector('.add-cart-btn').onclick = (e) => { e.stopPropagation(); addToCart(product); };
-      const wlBtn = div.querySelector('.wishlist-btn');
-      wlBtn.onclick = (e) => { e.stopPropagation(); addToWishlist(product, wlBtn); };
-      if (canAR && product.glb) div.querySelector('.ar-button').onclick = (e) => { e.stopPropagation(); openARViewer(product.glb); };
-      if (canTryOn && (product.img || product.glb)) div.querySelector('.tryon-button').onclick = (e) => { e.stopPropagation(); openTryOn(product.name, product.img, product.glb); };
-      div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(product.name)}`;
-      return div;
-    }
-
-    // Product page rendering
-    function getQueryParam(param) { return new URLSearchParams(window.location.search).get(param); }
-    function displayProduct(product) {
-      const container = document.getElementById('product-details');
-      if (!product) { container.innerHTML = `<p>Product not found.</p>`; return; }
-      const canAR = product.category === "Furniture";
-      const canTryOn = ["Clothing", "Accessories"].includes(product.category);
-      container.innerHTML = `
-        ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1" id="main-model"></model-viewer>`
-                      : product.img ? `<img src="${product.img}" alt="${product.name}" style="width:100%;height:500px;object-fit:contain;">`
-                      : ""}
-        <div class="product-info">
-          <h1>${product.name}</h1>
-          <div class="buttons-row">
-            <button class="btn-main" id="add-cart-btn">Add to Cart</button>
-            <button class="wishlist-btn${isWishlisted(product.name) ? ' active' : ''}" id="wishlist-btn">${isWishlisted(product.name) ? "Wishlisted" : "Add to Wishlist"}</button>
-            ${canAR && product.glb ? `<button class="ar-button" onclick="openARViewer('${product.glb}')">View in AR</button>` : ""}
-            ${canTryOn && (product.img || product.glb) ? `<button class="tryon-button" onclick="openTryOn('${product.name}','${product.img || ""}','${product.glb || ""}')">Try On Avatar</button>` : ""}
-          </div>
-          <p class="price">₹${product.price}.00</p>
-          <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
-        </div>
-      `;
-      document.getElementById('add-cart-btn').onclick = () => addToCart(product);
-      const wlBtn = document.getElementById('wishlist-btn');
-      wlBtn.onclick = () => addToWishlist(product, wlBtn);
-    }
     function displayRelated(product) {
       const container = document.getElementById('related-products');
       container.innerHTML = `<h3>Related Products</h3>`;
       const related = products.filter(p => p.category === product.category && p.name !== product.name);
-      (related.length ? related : products.slice(0,4)).forEach(p => container.appendChild(createProductCard(p)));
-    }
-    function displayAllProducts(list) {
-      const container = document.getElementById('products-list');
-      container.innerHTML = '';
-      list.forEach(p => container.appendChild(createProductCard(p)));
+      (related.length ? related : products.filter(p => p.name !== product.name).slice(0, 4)).forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'related-product';
+        div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
+        div.innerHTML = `
+          ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name} 3D" camera-controls auto-rotate shadow-intensity="1"
+              style="width: 100%; height: 150px; border-radius: 6px;"></model-viewer>`
+          : p.img ? `<img src="${p.img}" alt="${p.name}">`
+          : `<div style="width:100%;height:150px;background:#eee;line-height:150px;">No Image</div>`
+          }
+          <h4>${p.name}</h4>
+          <p>₹${p.price}.00</p>
+        `;
+        container.appendChild(div);
+      });
     }
 
     window.onload = () => {
       const productName = getQueryParam('name');
-      if (productName) {
-        const product = products.find(p => p.name === productName);
-        displayProduct(product);
-        if (product) displayRelated(product);
-      }
-      displayAllProducts(products);
+      const product = products.find(p => p.name === productName);
+      displayProduct(product);
+      if (product) displayRelated(product);
     };
   </script>
 </body>
