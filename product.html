@@ -165,7 +165,7 @@
         return;
       }
 
-      const canAR = ["Furniture", "Clothing", "Accessories"].includes(product.category);
+      const canAR = ["Furniture"].includes(product.category);
       let arButtonHtml = '';
       if (canAR && product.glb) {
         arButtonHtml = `<button class="ar-button" onclick="openARViewer('${encodeURIComponent(product.glb)}')">View in AR</button>`;
@@ -290,3 +290,4 @@
   </script>
 </body>
 </html>
+
