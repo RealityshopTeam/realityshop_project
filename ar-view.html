@@ -4,10 +4,10 @@
   <meta charset="UTF-8">
   <title>Reality Shop - Universal AR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <!-- model-viewer (for ARCore/ARKit devices) -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  
+
   <!-- A-Frame + AR.js (for devices without ARCore) -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
@@ -21,8 +21,7 @@
 
 <!-- Model Viewer Container (ARCore/ARKit) -->
 <div id="mv-container">
-  <model-viewer id="mv" 
-    src=""
+  <model-viewer id="mv"
     alt="3D Product"
     ar
     ar-modes="webxr scene-viewer quick-look"
@@ -36,45 +35,53 @@
 <!-- AR.js Container (Markerless fallback) -->
 <div id="arjs-container">
   <a-scene 
-      embedded 
-      vr-mode-ui="enabled: false" 
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
-      
-    <!-- Markerless placement (world-tracking simulation) -->
-    <a-entity id="arjs-model"
-      gltf-model=""
-      scale="0.5 0.5 0.5" 
+      embedded
+      vr-mode-ui="enabled: false"
+      renderer="antialias: true; alpha: true; precision: mediump;"
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; cameraParametersUrl: data/camera_para.dat;">
+
+    <!-- Dynamic model placeholder -->
+    <a-entity id="product-model"
+      scale="0.5 0.5 0.5"
       position="0 0 -2">
     </a-entity>
-    
+
     <a-entity camera></a-entity>
   </a-scene>
 </div>
 
 <script>
+  // Load product dynamically from query string
+  const params = new URLSearchParams(window.location.search);
+  const modelUrl = params.get("model") || "products/chair.glb";
+
   const mv = document.getElementById("mv");
+  mv.setAttribute("src", modelUrl);
+
+  const productEntity = document.getElementById("product-model");
+  productEntity.setAttribute("gltf-model", "url(" + modelUrl + ")");
+
   const mvContainer = document.getElementById("mv-container");
   const arjsContainer = document.getElementById("arjs-container");
-  const arjsModel = document.getElementById("arjs-model");
-
-  // Get product path from URL (?model=imgs/chair.glb)
-  const urlParams = new URLSearchParams(window.location.search);
-  const modelPath = urlParams.get("model") || "imgs/chair.glb"; // default if none passed
-
-  // Apply model path
-  mv.setAttribute("src", modelPath);
-  arjsModel.setAttribute("gltf-model", `url(${modelPath})`);
 
   // Toggle based on ARCore/ARKit support
   mv.addEventListener("ar-status", (e) => {
     if (e.detail.status === "failed") {
-      console.log("⚠️ AR not supported → using AR.js markerless fallback");
+      console.log("⚠️ AR not supported → using AR.js fallback");
       mvContainer.style.display = "none";
       arjsContainer.style.display = "block";
     } else {
       console.log("✅ AR supported → using model-viewer AR");
       mvContainer.style.display = "block";
       arjsContainer.style.display = "none";
+    }
+  });
+
+  // Keep the AR.js camera alive longer
+  window.addEventListener("beforeunload", () => {
+    const video = document.querySelector("video");
+    if (video && video.srcObject) {
+      video.srcObject.getTracks().forEach(track => track.stop());
     }
   });
 </script>
