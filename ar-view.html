@@ -8,7 +8,7 @@
   <!-- model-viewer (for ARCore/ARKit devices) -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-  <!-- A-Frame + AR.js (for devices without ARCore) -->
+  <!-- A-Frame + AR.js (for non-ARCore devices) -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
@@ -33,13 +33,13 @@
   </model-viewer>
 </div>
 
-<!-- AR.js Container (Markerless fallback) -->
+<!-- AR.js Container (Fallback for non-ARCore devices) -->
 <div id="arjs-container">
   <a-scene 
       embedded 
       vr-mode-ui="enabled: false"
       renderer="logarithmicDepthBuffer: true;"
-      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
       
     <a-entity id="ar-model"
       scale="0.5 0.5 0.5"
@@ -55,9 +55,9 @@
 <div id="error">⚠️ No product selected. Please go back to Products page.</div>
 
 <script>
-  // Get product model from query string
+  // Get product model path from query string (?model=...)
   const params = new URLSearchParams(window.location.search);
-  const modelPath = params.get("model"); // no fallback!
+  const modelPath = params.get("model"); 
 
   const mv = document.getElementById("mv");
   const arModel = document.getElementById("ar-model");
@@ -69,22 +69,31 @@
     // No product selected → show error
     errorMsg.style.display = "block";
   } else {
-    // Apply model to both AR systems
+    // Set model in both viewers
     mv.setAttribute("src", modelPath);
     arModel.setAttribute("gltf-model", `url(${modelPath})`);
 
-    // Toggle based on ARCore/ARKit support
+    // First try model-viewer (ARCore/ARKit devices)
+    mvContainer.style.display = "block";
+
     mv.addEventListener("ar-status", (e) => {
       if (e.detail.status === "failed") {
         console.log("⚠️ AR not supported → using AR.js fallback");
         mvContainer.style.display = "none";
         arjsContainer.style.display = "block";
-      } else {
-        console.log("✅ AR supported → using model-viewer AR");
-        mvContainer.style.display = "block";
-        arjsContainer.style.display = "none";
+      } else if (e.detail.status === "session-started") {
+        console.log("✅ AR session started with model-viewer");
       }
     });
+
+    // If model-viewer never triggers AR (older browsers), fallback to AR.js after timeout
+    setTimeout(() => {
+      if (mvContainer.style.display === "block" && !mv.canActivateAR) {
+        console.log("⏳ model-viewer AR not available → switching to AR.js");
+        mvContainer.style.display = "none";
+        arjsContainer.style.display = "block";
+      }
+    }, 4000);
   }
 </script>
 
