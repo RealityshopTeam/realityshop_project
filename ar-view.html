@@ -5,24 +5,22 @@
   <title>Reality Shop - Universal AR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- model-viewer (for ARCore/ARKit devices) -->
+  <!-- model-viewer (ARCore / ARKit) -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
-  <!-- Three.js (for fallback) -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+  <!-- A-Frame (fallback for non-ARCore devices) -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: black; }
-    #mv-container, #fallback-ar { width: 100%; height: 100%; display: none; }
-    #error { display: none; color: white; text-align: center; padding-top: 30%; font-size: 1.2rem; }
-    canvas { position: absolute; top: 0; left: 0; }
-    video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+    body, html { margin: 0; padding: 0; height: 100%; background: #101010; }
+    #mv-container, #aframe-container, #error { width: 100%; height: 100%; display: none; }
+    #error { color: white; text-align: center; padding-top: 30%; font-size: 1.2rem; }
   </style>
 </head>
 <body>
 
-<!-- ARCore/ARKit Mode -->
+<!-- ✅ Model Viewer (real AR for supported devices) -->
 <div id="mv-container">
   <model-viewer id="mv"
     alt="3D Product"
@@ -31,97 +29,66 @@
     camera-controls
     environment-image="neutral"
     shadow-intensity="1"
-    style="width:100%; height:100%; background:#000;">
+    style="width: 100%; height: 100%; background:#101010;">
   </model-viewer>
 </div>
 
-<!-- Fallback AR -->
-<div id="fallback-ar">
-  <video id="camera" autoplay playsinline></video>
-  <canvas id="three-canvas"></canvas>
+<!-- ⚠️ Fallback AR.js (camera + tap to place product) -->
+<div id="aframe-container">
+  <a-scene embedded vr-mode-ui="enabled: false"
+           renderer="logarithmicDepthBuffer: true;"
+           arjs="sourceType: webcam; trackingMethod: best; debugUIEnabled: false;">
+    <!-- Tap placement -->
+    <a-entity id="fallback-model"
+      scale="0.5 0.5 0.5"
+      visible="false">
+    </a-entity>
+
+    <a-entity camera></a-entity>
+  </a-scene>
 </div>
 
-<!-- Error -->
+<!-- ❌ Error if no model -->
 <div id="error">⚠️ No product selected. Please go back to Products page.</div>
 
 <script>
-  // Get product model from query string
   const params = new URLSearchParams(window.location.search);
-  const modelPath = params.get("model"); // Must come from products page
+  const modelPath = params.get("model");
+
   const mv = document.getElementById("mv");
+  const fallbackModel = document.getElementById("fallback-model");
   const mvContainer = document.getElementById("mv-container");
-  const fallbackAR = document.getElementById("fallback-ar");
+  const aframeContainer = document.getElementById("aframe-container");
   const errorMsg = document.getElementById("error");
 
   if (!modelPath) {
     errorMsg.style.display = "block";
   } else {
     mv.setAttribute("src", modelPath);
+    fallbackModel.setAttribute("gltf-model", `url(${modelPath})`);
 
-    // Detect AR support in <model-viewer>
+    // Listen for AR status → if ARCore fails, use fallback
     mv.addEventListener("ar-status", (e) => {
       if (e.detail.status === "failed") {
-        console.log("⚠️ AR not supported → using fallback camera + Three.js");
+        console.log("⚠️ No ARCore → fallback mode");
         mvContainer.style.display = "none";
-        startFallbackAR(modelPath);
+        aframeContainer.style.display = "block";
       } else {
-        console.log("✅ AR supported → using model-viewer");
+        console.log("✅ ARCore available");
         mvContainer.style.display = "block";
+        aframeContainer.style.display = "none";
       }
     });
-  }
 
-  // --- Fallback AR function ---
-  function startFallbackAR(modelPath) {
-    fallbackAR.style.display = "block";
-
-    const video = document.getElementById("camera");
-    const canvas = document.getElementById("three-canvas");
-
-    // Start camera feed
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-      .then(stream => { video.srcObject = stream; });
-
-    // Setup Three.js
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 1000);
-    camera.position.z = 2;
-
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-    scene.add(light);
-
-    const loader = new THREE.GLTFLoader();
-    loader.load(modelPath, (gltf) => {
-      const model = gltf.scene;
-      model.scale.set(0.5, 0.5, 0.5);
-      scene.add(model);
-
-      // Make model draggable
-      let isDragging = false, lastX, lastY;
-      canvas.addEventListener("pointerdown", (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
-      canvas.addEventListener("pointerup", () => isDragging = false);
-      canvas.addEventListener("pointermove", (e) => {
-        if (isDragging) {
-          model.rotation.y += (e.clientX - lastX) * 0.01;
-          model.rotation.x += (e.clientY - lastY) * 0.01;
-          lastX = e.clientX; lastY = e.clientY;
-        }
-      });
-      canvas.addEventListener("wheel", (e) => {
-        const scale = model.scale.x + e.deltaY * -0.001;
-        model.scale.set(scale, scale, scale);
-      });
+    // Fallback tap-to-place
+    document.addEventListener("click", function (event) {
+      if (aframeContainer.style.display === "block") {
+        const x = (event.clientX / window.innerWidth) * 2 - 1;
+        const y = -(event.clientY / window.innerHeight) * 2 + 1;
+        fallbackModel.setAttribute("position", `${x} -0.5 -2`);
+        fallbackModel.setAttribute("visible", "true");
+      }
     });
-
-    // Render loop
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-    animate();
   }
 </script>
 
