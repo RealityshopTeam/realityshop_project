@@ -1,113 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Reality Shop - AR Room View</title>
+  <meta charset="UTF-8">
+  <title>Reality Shop - Universal AR</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- model-viewer (for ARCore/ARKit devices) -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <!-- Three.js (for fallback) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.153.0/examples/js/loaders/GLTFLoader.js"></script>
+
   <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
-      font-family: Arial, sans-serif; color: white; background: black;
-      display: flex; justify-content: center; align-items: center;
-    }
-    .ar-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      max-width: 700px;
-      max-height: 95vh;
-      background: #111;
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.9);
-      overflow: hidden;
-    }
-    model-viewer {
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      --poster-color: transparent; /* hide default poster */
-    }
-    .instructions {
-      position: absolute;
-      bottom: 12px;
-      width: 100%;
-      padding: 12px 10px;
-      font-weight: 600;
-      font-size: 1.2rem;
-      letter-spacing: 0.03em;
-      text-align: center;
-      background: rgba(0,0,0,0.5);
-      user-select: none;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      color: #eee;
-    }
-    .hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+    body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; background: black; }
+    #mv-container, #fallback-ar { width: 100%; height: 100%; display: none; }
+    #error { display: none; color: white; text-align: center; padding-top: 30%; font-size: 1.2rem; }
+    canvas { position: absolute; top: 0; left: 0; }
+    video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
   </style>
 </head>
 <body>
-  <div class="ar-container">
-    <model-viewer
-      id="arModelViewer"
-      src=""
-      alt="3D Furniture Model"
-      ar
-      ar-modes="scene-viewer quick-look webxr"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1"
-      environment-image="neutral"
-      ar-scale="auto"
-      interaction-prompt="tap-to-place"
-      xr-environment
-      xr-standard-shadows
-    >
-    </model-viewer>
-    <div class="instructions" id="instructions">
-      Point your device to scan your room, tap to place furniture. Move and scale with gestures.
-    </div>
-  </div>
 
-  <script>
-    const modelViewer = document.getElementById('arModelViewer');
-    const instructions = document.getElementById('instructions');
+<!-- ARCore/ARKit Mode -->
+<div id="mv-container">
+  <model-viewer id="mv"
+    alt="3D Product"
+    ar
+    ar-modes="webxr scene-viewer quick-look"
+    camera-controls
+    environment-image="neutral"
+    shadow-intensity="1"
+    style="width:100%; height:100%; background:#000;">
+  </model-viewer>
+</div>
 
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
+<!-- Fallback AR -->
+<div id="fallback-ar">
+  <video id="camera" autoplay playsinline></video>
+  <canvas id="three-canvas"></canvas>
+</div>
 
-    window.onload = () => {
-      const modelPath = getQueryParam('model');
-      if (modelPath) {
-        modelViewer.src = decodeURIComponent(modelPath);
+<!-- Error -->
+<div id="error">⚠️ No product selected. Please go back to Products page.</div>
+
+<script>
+  // Get product model from query string
+  const params = new URLSearchParams(window.location.search);
+  const modelPath = params.get("model"); // Must come from products page
+  const mv = document.getElementById("mv");
+  const mvContainer = document.getElementById("mv-container");
+  const fallbackAR = document.getElementById("fallback-ar");
+  const errorMsg = document.getElementById("error");
+
+  if (!modelPath) {
+    errorMsg.style.display = "block";
+  } else {
+    mv.setAttribute("src", modelPath);
+
+    // Detect AR support in <model-viewer>
+    mv.addEventListener("ar-status", (e) => {
+      if (e.detail.status === "failed") {
+        console.log("⚠️ AR not supported → using fallback camera + Three.js");
+        mvContainer.style.display = "none";
+        startFallbackAR(modelPath);
       } else {
-        instructions.textContent = 'No model specified. Please open from product page.';
-        modelViewer.style.display = 'none';
-        return;
-      }
-    };
-
-    modelViewer.addEventListener('ar-status', event => {
-      if (event.detail.status === 'session-started') {
-        instructions.textContent = 'Move your device to scan your room surfaces.';
-      } else if(event.detail.status === 'session-ended') {
-        instructions.textContent = 'Point your device to scan room and tap to place furniture.';
+        console.log("✅ AR supported → using model-viewer");
+        mvContainer.style.display = "block";
       }
     });
+  }
 
-    modelViewer.addEventListener('model-visibility', event => {
-      if(event.detail.visible) {
-        instructions.textContent = 'Tap and drag to move or pinch to scale furniture.';
-        setTimeout(() => {
-          instructions.classList.add('hidden');
-        }, 4000);
-      }
+  // --- Fallback AR function ---
+  function startFallbackAR(modelPath) {
+    fallbackAR.style.display = "block";
+
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("three-canvas");
+
+    // Start camera feed
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(stream => { video.srcObject = stream; });
+
+    // Setup Three.js
+    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.01, 1000);
+    camera.position.z = 2;
+
+    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    scene.add(light);
+
+    const loader = new THREE.GLTFLoader();
+    loader.load(modelPath, (gltf) => {
+      const model = gltf.scene;
+      model.scale.set(0.5, 0.5, 0.5);
+      scene.add(model);
+
+      // Make model draggable
+      let isDragging = false, lastX, lastY;
+      canvas.addEventListener("pointerdown", (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; });
+      canvas.addEventListener("pointerup", () => isDragging = false);
+      canvas.addEventListener("pointermove", (e) => {
+        if (isDragging) {
+          model.rotation.y += (e.clientX - lastX) * 0.01;
+          model.rotation.x += (e.clientY - lastY) * 0.01;
+          lastX = e.clientX; lastY = e.clientY;
+        }
+      });
+      canvas.addEventListener("wheel", (e) => {
+        const scale = model.scale.x + e.deltaY * -0.001;
+        model.scale.set(scale, scale, scale);
+      });
     });
-  </script>
+
+    // Render loop
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  }
+</script>
+
 </body>
 </html>
-
