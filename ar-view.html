@@ -10,7 +10,7 @@
   
   <!-- A-Frame + AR.js (for devices without ARCore) -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.rawgit.com/jeromeetienne/AR.js/3.3.2/aframe/build/aframe-ar.js"></script>
+  <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
   <style>
     body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #101010; }
@@ -22,27 +22,31 @@
 <!-- Model Viewer Container (ARCore/ARKit) -->
 <div id="mv-container">
   <model-viewer id="mv" 
-    src="products/chair.glb"
+    src=""
     alt="3D Product"
     ar
     ar-modes="webxr scene-viewer quick-look"
     camera-controls
     environment-image="neutral"
     shadow-intensity="1"
-    style="width: 100%; height: 100%;">
+    style="width: 100%; height: 100%; background:#101010;">
   </model-viewer>
 </div>
 
-<!-- AR.js Container (Marker-based fallback) -->
+<!-- AR.js Container (Markerless fallback) -->
 <div id="arjs-container">
-  <a-scene embedded arjs="sourceType: webcam;">
-    <!-- Marker (Hiro) -->
-    <a-marker preset="hiro">
-      <a-entity gltf-model="url(products/chair.glb)" 
-                scale="0.5 0.5 0.5" 
-                position="0 0 0">
-      </a-entity>
-    </a-marker>
+  <a-scene 
+      embedded 
+      vr-mode-ui="enabled: false" 
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+      
+    <!-- Markerless placement (world-tracking simulation) -->
+    <a-entity id="arjs-model"
+      gltf-model=""
+      scale="0.5 0.5 0.5" 
+      position="0 0 -2">
+    </a-entity>
+    
     <a-entity camera></a-entity>
   </a-scene>
 </div>
@@ -51,11 +55,20 @@
   const mv = document.getElementById("mv");
   const mvContainer = document.getElementById("mv-container");
   const arjsContainer = document.getElementById("arjs-container");
+  const arjsModel = document.getElementById("arjs-model");
 
-  // Check ARCore/ARKit support
+  // Get product path from URL (?model=imgs/chair.glb)
+  const urlParams = new URLSearchParams(window.location.search);
+  const modelPath = urlParams.get("model") || "imgs/chair.glb"; // default if none passed
+
+  // Apply model path
+  mv.setAttribute("src", modelPath);
+  arjsModel.setAttribute("gltf-model", `url(${modelPath})`);
+
+  // Toggle based on ARCore/ARKit support
   mv.addEventListener("ar-status", (e) => {
     if (e.detail.status === "failed") {
-      console.log("⚠️ AR not supported → using AR.js marker fallback");
+      console.log("⚠️ AR not supported → using AR.js markerless fallback");
       mvContainer.style.display = "none";
       arjsContainer.style.display = "block";
     } else {
