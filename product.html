@@ -5,7 +5,7 @@
   <title>Product Details - Reality Shop</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body {
+   body {
   margin: 0;
   font-family: 'Segoe UI', Arial, sans-serif;
   background: #f6f6f6;
@@ -50,7 +50,7 @@ ul.nav-links li a.active {
   color: #ff9800;
 }
 /* Page container */
-.container, .page-container {
+.container {
   max-width: 1200px;
   margin: 40px auto;
   padding: 0 20px;
@@ -72,7 +72,8 @@ h1 {
   gap: 12px;
   flex-wrap: wrap;
 }
-.search-box, .sort-box {
+.search-box,
+.sort-box {
   flex: 1 1 300px;
 }
 .search-box input,
@@ -92,13 +93,13 @@ h1 {
   outline: none;
 }
 /* Product Grid */
-.grid, .products-list {
+.grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 24px;
 }
 /* Product Card */
-.product, .related-product, .product-details {
+.product {
   background: #fff;
   border-radius: 12px;
   padding: 16px;
@@ -107,57 +108,43 @@ h1 {
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
   position: relative;
-  min-width: 180px;
 }
-.product:hover, .related-product:hover {
+.product:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 .product model-viewer,
-.product img,
-.related-product model-viewer,
-.related-product img,
-.product-details model-viewer,
-.product-details img {
+.product img {
   width: 100%;
   height: 200px;
   object-fit: contain;
   border-radius: 8px;
   margin-bottom: 12px;
 }
-.product h3, .related-product h4, .product-details h1 {
+.product h3 {
   margin: 10px 0 6px;
   font-size: 1.1rem;
   color: #333;
 }
-.product p,
-.related-product p,
-.product-details p.price {
+.product p {
   margin-bottom: 6px;
   font-weight: bold;
   color: #555;
 }
-.product .category,
-.related-product .category {
+.product .category {
   font-size: 0.85rem;
   color: #888;
   margin-bottom: 12px;
   font-style: italic;
 }
-.buttons-row, .button-row {
+/* Buttons */
+.button-row {
   display: flex;
   justify-content: center;
   gap: 10px;
   margin-top: 10px;
-  flex-wrap: wrap;
 }
-/* Buttons */
-.product button,
-.related-product button,
-.product-details button,
-.ar-button,
-.tryon-button,
-.wishlist-btn {
+.product button {
   background: #ff9800;
   color: #fff;
   border: none;
@@ -169,18 +156,11 @@ h1 {
   transition: background 0.3s, transform 0.2s;
   outline: none;
 }
-.product button:hover,
-.related-product button:hover,
-.product-details button:hover,
-.ar-button:hover,
-.tryon-button:hover,
-.wishlist-btn:hover {
+.product button:hover {
   background: #e67e00;
   transform: translateY(-2px) scale(1.04);
 }
-.wishlist-btn.added,
-.wishlist-btn.active,
-.wishlist-btn:disabled {
+.wishlist-btn.added {
   background: #fff;
   color: #ff9800;
   border: 1px solid #ff9800;
@@ -211,10 +191,11 @@ footer a:hover {
 @media (max-width: 768px) {
   ul.nav-links { gap: 15px; }
   h1 { font-size: 1.6rem; }
-  .container, .page-container { margin: 30px 15px; }
-  .grid, .products-list { gap: 14px; }
-  .product, .related-product, .product-details { padding: 10px; }
+  .container { margin: 30px 15px; }
+  .grid { gap: 14px; }
+  .product { padding: 10px; }
 }
+
 
   </style>
 </head>
@@ -448,6 +429,7 @@ footer a:hover {
   </script>
 </body>
 </html>
+
 
 
 
