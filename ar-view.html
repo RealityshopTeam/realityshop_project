@@ -1,86 +1,157 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Reality Shop - Universal AR</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <!-- model-viewer (for ARCore/ARKit devices) -->  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>  <!-- A-Frame (for devices without ARCore) -->  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>  <style>
-    body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #101010; }
-    #mv-container, #aframe-container { width: 100%; height: 100%; display: none; }
-    .draggable { touch-action: none; }
-  </style></head>
-<body><!-- Model Viewer Container (ARCore/ARKit) --><div id="mv-container">
-  <model-viewer id="mv" 
-    src=""
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- model-viewer (for ARCore/ARKit devices) -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
+  <!-- A-Frame + AR.js (for devices without ARCore) -->
+  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+
+  <!-- Gesture + interaction support -->
+  <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/super-hands@4.0.5/dist/super-hands.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-gesture-detector@3.0.0/dist/aframe-gesture-detector.min.js"></script>
+
+  <style>
+    body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
+    #mv-container, #arjs-container { width: 100%; height: 100%; display: none; }
+  </style>
+</head>
+<body>
+
+<!-- Model Viewer Container (ARCore/ARKit) -->
+<div id="mv-container">
+  <model-viewer id="mv"
     alt="3D Product"
     ar
     ar-modes="webxr scene-viewer quick-look"
     camera-controls
-    environment-image="neutral"
-    shadow-intensity="1"
-    style="width: 100%; height: 100%; background:#101010;">
+    auto-rotate
+    style="width:100%; height:100%; background:#000;">
   </model-viewer>
-</div><!-- A-Frame Fallback (for non-ARCore devices, simulated AR with camera feed) --><div id="aframe-container">
-  <a-scene embedded vr-mode-ui="enabled: false" renderer="logarithmicDepthBuffer: true;" 
-           device-orientation-permission-ui="enabled: true"><!-- Live camera feed -->
-<a-entity camera></a-entity>
+</div>
 
-<!-- Product model -->
-<a-entity id="fallback-model"
-  gltf-model=""
-  class="draggable"
-  scale="0.5 0.5 0.5"
-  position="0 0 -2"
-  rotation="0 0 0">
-</a-entity>
+<!-- AR.js Container (Fallback for non-ARCore) -->
+<div id="arjs-container">
+  <a-scene
+    vr-mode-ui="enabled: false"
+    embedded
+    gesture-detector
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+    
+    <!-- Product model with gesture + tap placement -->
+    <a-entity id="arjs-model"
+      scale="0.6 0.6 0.6"
+      position="0 0 -2"
+      rotation="0 30 0"
+      gltf-model=""
+      gesture-handler>
+    </a-entity>
 
+    <!-- Camera -->
+    <a-entity id="camera" camera></a-entity>
   </a-scene>
-</div><script>
+</div>
+
+<script>
+  // === Custom gesture handler component (rotate + scale) ===
+  AFRAME.registerComponent('gesture-handler', {
+    schema: {
+      rotationFactor: {default: 5},
+      minScale: {default: 0.3},
+      maxScale: {default: 3}
+    },
+    init: function () {
+      this.handleRotation = this.handleRotation.bind(this);
+      this.handleScale = this.handleScale.bind(this);
+      this.el.sceneEl.addEventListener('onefingerrotate', this.handleRotation);
+      this.el.sceneEl.addEventListener('pinchmoved', this.handleScale);
+    },
+    remove: function () {
+      this.el.sceneEl.removeEventListener('onefingerrotate', this.handleRotation);
+      this.el.sceneEl.removeEventListener('pinchmoved', this.handleScale);
+    },
+    handleRotation: function (event) {
+      this.el.object3D.rotation.y += event.detail.positionChange.x * this.data.rotationFactor * (Math.PI / 180);
+    },
+    handleScale: function (event) {
+      let scale = this.el.getAttribute('scale');
+      scale.x *= event.detail.scaleChange;
+      scale.y *= event.detail.scaleChange;
+      scale.z *= event.detail.scaleChange;
+      scale.x = Math.min(Math.max(scale.x, this.data.minScale), this.data.maxScale);
+      scale.y = Math.min(Math.max(scale.y, this.data.minScale), this.data.maxScale);
+      scale.z = Math.min(Math.max(scale.z, this.data.minScale), this.data.maxScale);
+      this.el.setAttribute('scale', scale);
+    }
+  });
+
+  // === Tap-to-place (move model on screen tap) ===
+  AFRAME.registerComponent('tap-to-place', {
+    init: function () {
+      const model = this.el;
+      const sceneEl = model.sceneEl;
+      const camera = sceneEl.querySelector('#camera');
+
+      sceneEl.addEventListener('click', function (event) {
+        if (event.detail.cursorEl) return; // skip if triggered by A-Frame cursor
+        const touch = event.detail.intersection || null;
+
+        // Simple placement: put model a fixed distance in front of camera
+        const cam = camera.object3D;
+        const newPosition = new THREE.Vector3(0, -0.5, -2);
+        newPosition.applyMatrix4(cam.matrixWorld);
+        model.object3D.position.copy(newPosition);
+      });
+    }
+  });
+
+  // === Product loader + AR switching ===
   const mv = document.getElementById("mv");
   const mvContainer = document.getElementById("mv-container");
-  const aframeContainer = document.getElementById("aframe-container");
-  const fallbackModel = document.getElementById("fallback-model");
+  const arjsContainer = document.getElementById("arjs-container");
+  const arjsModel = document.getElementById("arjs-model");
 
   // Get product path from URL (?model=imgs/chair.glb)
   const urlParams = new URLSearchParams(window.location.search);
   const modelPath = urlParams.get("model") || "imgs/chair.glb";
 
-  // Apply model path
+  // Apply product
   mv.setAttribute("src", modelPath);
-  fallbackModel.setAttribute("gltf-model", `url(${modelPath})`);
+  arjsModel.setAttribute("gltf-model", `url(${modelPath})`);
+  arjsModel.setAttribute("tap-to-place", "");
 
-  // Detect ARCore/ARKit support via model-viewer
+  // Detect ARCore / ARKit availability
+  let arStatusHandled = false;
   mv.addEventListener("ar-status", (e) => {
+    if (arStatusHandled) return;
+    arStatusHandled = true;
+
     if (e.detail.status === "failed") {
-      console.log("⚠️ AR not supported → using simulated AR with camera feed");
+      console.log("⚠️ AR not supported → using AR.js fallback");
       mvContainer.style.display = "none";
-      aframeContainer.style.display = "block";
+      arjsContainer.style.display = "block";
     } else {
-      console.log("✅ AR supported → using model-viewer AR");
+      console.log("✅ AR supported → using <model-viewer>");
       mvContainer.style.display = "block";
-      aframeContainer.style.display = "none";
+      arjsContainer.style.display = "none";
     }
   });
 
-  // Drag controls for fallback mode (touch/mouse)
-  let isDragging = false, startX, startY;
-  fallbackModel.addEventListener("mousedown", (e) => { isDragging = true; startX = e.clientX; startY = e.clientY; });
-  window.addEventListener("mouseup", () => isDragging = false);
-  window.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-    const dx = e.clientX - startX;
-    fallbackModel.object3D.rotation.y += dx * 0.01;
-    startX = e.clientX;
-  });
+  // Safety fallback (if no response from <model-viewer>)
+  setTimeout(() => {
+    if (!arStatusHandled) {
+      console.log("⚠️ Forcing fallback to AR.js (no ARCore detected).");
+      mvContainer.style.display = "none";
+      arjsContainer.style.display = "block";
+    }
+  }, 4000);
+</script>
 
-  // Touch support
-  fallbackModel.addEventListener("touchstart", (e) => {
-    isDragging = true; startX = e.touches[0].clientX; startY = e.touches[0].clientY;
-  });
-  window.addEventListener("touchend", () => isDragging = false);
-  window.addEventListener("touchmove", (e) => {
-    if (!isDragging) return;
-    const dx = e.touches[0].clientX - startX;
-    fallbackModel.object3D.rotation.y += dx * 0.01;
-    startX = e.touches[0].clientX;
-  });
-</script></body>
+</body>
 </html>
