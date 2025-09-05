@@ -4,43 +4,55 @@
   <meta charset="UTF-8">
   <title>Reality Shop - Universal AR</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <!-- model-viewer (for ARCore/ARKit devices) -->
+  <!-- model-viewer for immersive AR -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
-  <!-- A-Frame + AR.js (for devices without ARCore) -->
+  <!-- A-Frame + AR.js for marker AR fallback -->
   <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
-
   <style>
     body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
-    #mv-container, #arjs-container { width: 100%; height: 100%; display: none; }
+    #mv-container, #arjs-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; display: none; }
+    .instructions {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      width: 100vw;
+      text-align: center;
+      color: #fff;
+      font-size: 1.1em;
+      font-family: Arial, sans-serif;
+      padding: 8px 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 10;
+      pointer-events: none;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
   </style>
 </head>
 <body>
+<div class="instructions" id="instructions">Loading AR experience...</div>
 
-<!-- Model Viewer Container (ARCore/ARKit) -->
 <div id="mv-container">
   <model-viewer id="mv"
     alt="3D Product"
     camera-controls
     auto-rotate
-    style="width:100%; height:100%; background:#000;">
+    style="width:100vw; height:100vh; background:#000; border: none;">
   </model-viewer>
 </div>
 
-<!-- AR.js Container (Fallback for non-ARCore) -->
 <div id="arjs-container">
   <a-scene
     vr-mode-ui="enabled: false"
     embedded
     arjs="sourceType: webcam; debugUIEnabled: false;">
-    
-    <a-entity id="arjs-model"
-      scale="0.5 0.5 0.5"
-      position="0 0 -2">
-    </a-entity>
-
+    <a-marker preset="hiro">
+      <a-entity id="arjs-model"
+        scale="0.5 0.5 0.5"
+        position="0 0 0">
+      </a-entity>
+    </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 </div>
@@ -50,36 +62,48 @@
   const mvContainer = document.getElementById("mv-container");
   const arjsContainer = document.getElementById("arjs-container");
   const arjsModel = document.getElementById("arjs-model");
-
-  // Get product path from URL (?model=imgs/chair.glb)
+  const instructions = document.getElementById("instructions");
+  // Get product path from URL (?model=yourmodel.glb)
   const urlParams = new URLSearchParams(window.location.search);
-  const modelPath = urlParams.get("model") || "imgs/chair.glb";
+  const modelPath = urlParams.get("model") || "https://modelviewer.dev/shared-assets/models/Astronaut.glb"; // Demo fallback
 
-  // Apply product
+  // Set 3D model for both viewers
   mv.setAttribute("src", modelPath);
   arjsModel.setAttribute("gltf-model", `url(${modelPath})`);
 
-  // Check if immersive AR is supported
-  if ('xr' in navigator) {
+  // Universal mode check
+  instructions.textContent = "Checking device AR capabilities...";
+
+  function showModelViewerAR() {
+    mv.setAttribute("ar", "true");
+    mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
+    mvContainer.style.display = "block";
+    arjsContainer.style.display = "none";
+    instructions.textContent = "Tap AR button to place product in your room. Rotate and zoom in 3D mode if you prefer.";
+  }
+
+  function showARjsMarker() {
+    mvContainer.style.display = "none";
+    arjsContainer.style.display = "block";
+    instructions.innerHTML = `
+      Point your camera at the <a style="color:yellow;text-decoration:underline;" href="https://raw.githubusercontent.com/jeromeetienne/ar.js/master/three.js/data/images/HIRO.jpg" target="_blank">HIRO marker</a> to see the product.<br>
+      Rotate/zoom in 3D mode if preferred.`;
+  }
+
+  // Check for immersive AR support, fallback to marker AR if unavailable
+  if ('xr' in navigator && navigator.xr) {
     navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
       if (supported) {
-        console.log("✅ ARCore/ARKit available → using model-viewer immersive AR");
-        mv.setAttribute("ar", "true");
-        mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
-        mvContainer.style.display = "block";
+        showModelViewerAR();
       } else {
-        console.log("⚠️ No immersive AR support → using AR.js fallback");
-        arjsContainer.style.display = "block";
+        showARjsMarker();
       }
     }).catch(() => {
-      console.log("⚠️ Error detecting WebXR → using AR.js fallback");
-      arjsContainer.style.display = "block";
+      showARjsMarker();
     });
   } else {
-    console.log("⚠️ WebXR not available → using AR.js fallback");
-    arjsContainer.style.display = "block";
+    showARjsMarker();
   }
 </script>
-
 </body>
 </html>
