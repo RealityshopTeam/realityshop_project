@@ -5,22 +5,125 @@
   <title>Product Details - Reality Shop</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f6f6f6; color: #222; }
-    nav { background-color: #212121; padding: 0 32px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
-    .nav-container { display: flex; align-items: center; justify-content: space-between; height: 70px; }
-    .logo { color: #fff; font-size: 1.7rem; font-weight: bold; letter-spacing: 2px; text-decoration: none; }
-    ul.nav-links { display: flex; list-style: none; gap: 32px; }
-    ul.nav-links li a { color: #fff; text-decoration: none; font-size: 1rem; padding: 8px 0; transition: color 0.2s; }
-    ul.nav-links li a:hover, ul.nav-links li a.active { color: #ff9800; }
-    .page-container { max-width: 1200px; margin: 40px auto; padding: 0 20px; display: flex; gap: 24px; min-height: 600px; }
-    .product-details { flex: 1 1 50%; background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; flex-direction: column; align-items: center; min-width: 300px; }
-    .related-products { flex: 1 1 50%; background: #fff; padding: 16px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); max-height: 600px; overflow-y: auto; min-width: 280px; }
-    model-viewer { width: 100%; height: 500px; border-radius: 8px; background-color: #fefefe; margin-bottom: 20px; position: relative; }
-    .product-info { width: 100%; max-width: 700px; }
-    .product-info h1 { margin-top: 0; font-size: 2rem; }
-    .product-info p.price { font-weight: bold; font-size: 1.5rem; color: #ff9800; margin: 10px 0 20px; }
+    /* Combined and adapted CSS from Reality Shop with product details specific styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fdfdfd;
+      color: #333;
+      line-height: 1.6;
+    }
+    nav {
+      background: #212121;
+      padding: 0 32px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .nav-container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 70px;
+    }
+    .logo {
+      color: #fff;
+      font-size: 1.7rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-decoration: none;
+    }
+    ul.nav-links {
+      display: flex;
+      list-style: none;
+      gap: 32px;
+    }
+    ul.nav-links li a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 1rem;
+      padding: 8px 0;
+      transition: color 0.2s;
+    }
+    ul.nav-links li a:hover,
+    ul.nav-links li a.active {
+      color: #ff9800;
+    }
+    .page-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+      display: flex;
+      gap: 24px;
+      min-height: 600px;
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .product-details {
+      flex: 1 1 50%;
+      padding: 24px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 300px;
+      background: #fff;
+      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
+    }
+    .related-products {
+      flex: 1 1 50%;
+      padding: 16px;
+      border-radius: 12px;
+      max-height: 600px;
+      overflow-y: auto;
+      min-width: 280px;
+      background: #fff;
+      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
+    }
+    model-viewer {
+      width: 100%;
+      height: 500px;
+      border-radius: 8px;
+      background-color: #fefefe;
+      margin-bottom: 20px;
+      position: relative;
+      box-shadow: 0 4px 18px rgba(0,114,255,0.3);
+      transition: box-shadow 0.3s ease;
+    }
+    model-viewer:hover {
+      box-shadow: 0 6px 24px rgba(0,114,255,0.5);
+    }
+    .product-info {
+      width: 100%;
+      max-width: 700px;
+      text-align: center;
+    }
+    .product-info h1 {
+      margin-top: 0;
+      font-size: 2.2rem;
+      color: #00bcd4;
+      font-weight: bold;
+    }
+    .product-info p.price {
+      font-weight: bold;
+      font-size: 1.8rem;
+      color: #ff9800;
+      margin: 10px 0 20px;
+    }
+    .product-info p {
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
     .product-info button, .ar-button, .tryon-button {
-      background: #ff9800;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
       color: #fff;
       padding: 12px 32px;
       border: none;
@@ -32,8 +135,11 @@
       margin-right: 12px;
       margin-bottom: 10px;
       display: inline-block;
+      box-shadow: 0 6px 12px rgba(0, 114, 255, 0.4);
     }
-    .product-info button:hover, .ar-button:hover, .tryon-button:hover { background: #e67600; }
+    .product-info button:hover, .ar-button:hover, .tryon-button:hover {
+      background: linear-gradient(135deg, #0072ff, #004c99);
+    }
     .wishlist-btn {
       background: #eee;
       color: #ff9800;
@@ -46,19 +152,74 @@
       transition: background 0.3s;
       cursor: pointer;
       display: inline-block;
+      box-shadow: inset 0 0 0 0 #ff9800;
+      transition: box-shadow 0.3s ease;
     }
-    .wishlist-btn.active, .wishlist-btn:disabled {
+    .wishlist-btn.active {
       background: #ff9800;
       color: #fff;
       cursor: default;
       border: none;
+      box-shadow: inset 0 0 10px 2px #ff9800;
     }
-    .buttons-row { margin: 10px 0 20px; }
-    .related-product { cursor: pointer; margin-bottom: 16px; border-bottom: 1px solid #eee; padding-bottom: 12px; display: flex; flex-direction: column; align-items: center; }
-    .related-product:last-child { border-bottom: none; }
-    .related-product h4 { margin: 8px 0 6px; text-align: center; }
-    .related-product model-viewer, .related-product img {
-      width: 100%; height: 150px; object-fit: contain; border-radius: 6px; margin-bottom: 6px;
+    .buttons-row {
+      margin: 10px 0 20px;
+      text-align: center;
+    }
+    .related-product {
+      cursor: pointer;
+      margin-bottom: 16px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: background 0.2s ease;
+    }
+    .related-product:hover {
+      background: #f1f9ff;
+    }
+    .related-product:last-child {
+      border-bottom: none;
+    }
+    .related-product h4 {
+      margin: 8px 0 6px;
+      text-align: center;
+      color: #00bcd4;
+    }
+    .related-product model-viewer,
+    .related-product img {
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      border-radius: 6px;
+      margin-bottom: 6px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+      transition: box-shadow 0.3s ease;
+    }
+    .related-product model-viewer:hover,
+    .related-product img:hover {
+      box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
+    }
+
+    /* Responsive */
+    @media (max-width: 991px) {
+      .page-container {
+        flex-direction: column;
+        margin: 20px 15px;
+        min-height: auto;
+      }
+      .product-details, .related-products {
+        width: 100%;
+        max-width: 100%;
+        min-width: auto;
+        min-height: auto;
+      }
+      .related-products {
+        margin-top: 30px;
+        max-height: none;
+        overflow-y: visible;
+      }
     }
   </style>
 </head>
@@ -75,18 +236,15 @@
       </ul>
     </div>
   </nav>
-
   <div class="page-container">
     <section class="product-details" id="product-details">
       <!-- Product details injected here -->
     </section>
-
     <aside class="related-products" id="related-products">
       <h3>Related Products</h3>
       <!-- Related products injected here -->
     </aside>
   </div>
-
   <script>
     const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
@@ -103,8 +261,8 @@
       {name: "Sweat Shirt", price: 550, glb: "imgs/short.glb", category: "Clothing"},
       {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
       {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
-      {name: "nike shoes",        price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
-      {name: "puma shoes",        price:2905,glb: "imgs/free_shoe_model.glb",category:"Shoes"},
+      {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
+      {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
       {name: "white crop top",price:345,glb:"imgs/cc0_-_shirt_hanger.glb",category:"Clothings"},
       {name: "balenciaga t shirt", price:50000,glb:"imgs/balenciaga_t-shirt.glb",category:"Clothing"},
       {name: "men shirt",price:800,glb:"imgs/realstic_dress_shirt.glb",category:"Clothings"},
@@ -114,9 +272,9 @@
       {name:"fancy saree",price:2567,glb:"imgs/indian_woman_in_saree.glb",category:"Clothings"},
       {name: "wireless ear buds", price:1500,glb:"imgs/wireless_unbranded_in_ear_head_phone",category:"earphones"},
       {name:"white ear phones",price:350,glb:"imgs/ear_phones.glb",category:"earphones"},
-      {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", catrgory:"Accessories"},
-      {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", catrgory:"Accessories"},
-      {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", catrgory:"Accessories"},
+      {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
+      {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
+      {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
       {name: "jashin necklace", price:369, glb:"imgs/jashin_necklace.glb", category:"Accessories"},
       {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
       {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
@@ -135,7 +293,7 @@
       {name:"black chain watch",price:999,glb:"imgs/digital_watch.glb",category:"Electronics"},
       {name:"HP victus laptop",price:700000,glb:"imgs/hp_victus_gaming_laptop.glb",category:"Electronics"},
       {name:"lenovo laptop",price:55000,glb:"imgs/lenovo_thinkpad_laptop.glb",category:"Electronics"},
-      {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
+      {name:"smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
       {name:"washing machine",price:18250,glb:"imgs/washing_machine.glb",category:"Electronics"},
       {name:"lg washing machine",price:19490,glb:"imgs/washing_machine(1).glb",category:"Electronics"},
       {name:"Tube Light",price:1900,glb:"imgs/tube_light.glb",category:"Electronics"},
@@ -143,7 +301,6 @@
       {name:"gas stove",price:3000,glb:"imgs/gas_stove_kitchen.glb",category:"Electronics"},
       {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
     ];
-
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
@@ -157,20 +314,17 @@
     function isWishlisted(name) {
       return getWishlist().some(item => item.name === name);
     }
-
     function displayProduct(product) {
       const container = document.getElementById('product-details');
       if (!product) {
         container.innerHTML = `<p>Product not found.</p>`;
         return;
       }
-
       const canAR = ["Furniture", "Clothing", "Accessories"].includes(product.category);
       let arButtonHtml = '';
       if (canAR && product.glb) {
         arButtonHtml = `<button class="ar-button" onclick="openARViewer('${encodeURIComponent(product.glb)}')">View in AR</button>`;
       }
-
       const canTryOnAvatar = ["Clothing", "Accessories"].includes(product.category);
       let tryOnHtml = '';
       if (canTryOnAvatar && (product.img || product.glb)) {
@@ -178,7 +332,6 @@
         const glbParam = product.glb ? encodeURIComponent(product.glb) : '';
         tryOnHtml = `<button class="tryon-button" onclick="openTryOn('${encodeURIComponent(product.name)}','${imgParam}','${glbParam}')">Try On Avatar</button>`;
       }
-
       container.innerHTML = `
       ${product.glb ? `
         <model-viewer 
@@ -202,7 +355,7 @@
         <div class="buttons-row">
           <button class="btn-main" id="add-cart-btn">Add to Cart</button>
           <button class="wishlist-btn ${isWishlisted(product.name) ? 'active' : ''}" id="wishlist-btn">
-            ${isWishlisted(product.name) ? "Wishlisted" : "Add to Wishlist"}
+            ${isWishlisted(product.name) ? "Remove from Wishlist" : "Add to Wishlist"}
           </button>
           ${arButtonHtml}
           ${tryOnHtml}
@@ -211,8 +364,6 @@
         <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan.</p>
       </div>
       `;
-
-      // Cart Handler
       document.getElementById('add-cart-btn').onclick = () => {
         let cart = JSON.parse(localStorage.getItem('cart') || '[]');
         let existing = cart.find(item => item.name === product.name);
@@ -221,21 +372,26 @@
         localStorage.setItem('cart', JSON.stringify(cart));
         alert(product.name + " added to cart!");
       };
-
-      // Wishlist Handler
-      document.getElementById('wishlist-btn').onclick = function() {
-        if(isWishlisted(product.name)) return;
+      const wishlistBtn = document.getElementById('wishlist-btn');
+      wishlistBtn.onclick = function() {
         let wishlist = getWishlist();
-        wishlist.push({
-          name: product.name, price: product.price, category: product.category,
-          img: product.img, glb: product.glb
-        });
+        const index = wishlist.findIndex(item => item.name === product.name);
+        if (index > -1) {
+          // Remove from wishlist
+          wishlist.splice(index, 1);
+          wishlistBtn.classList.remove('active');
+          wishlistBtn.textContent = "Add to Wishlist";
+        } else {
+          // Add to wishlist
+          wishlist.push({
+            name: product.name, price: product.price, category: product.category,
+            img: product.img, glb: product.glb
+          });
+          wishlistBtn.classList.add('active');
+          wishlistBtn.textContent = "Remove from Wishlist";
+        }
         setWishlist(wishlist);
-        this.classList.add('active');
-        this.textContent = "Wishlisted";
       };
-
-      // Fullscreen toggle for model-viewer
       if (product.glb) {
         const fullscreenBtn = document.getElementById('fullscreen-btn');
         const modelViewer = document.getElementById('main-model');
@@ -249,7 +405,6 @@
         });
       }
     }
-
     function openARViewer(modelPath) {
       window.open(`ar-view.html?model=${modelPath}`, '_blank');
     }
@@ -259,7 +414,6 @@
       if (glb) url += `&glb=${glb}`;
       window.open(url, '_blank');
     }
-
     function displayRelated(product) {
       const container = document.getElementById('related-products');
       container.innerHTML = `<h3>Related Products</h3>`;
@@ -280,7 +434,6 @@
         container.appendChild(div);
       });
     }
-
     window.onload = () => {
       const productName = getQueryParam('name');
       const product = products.find(p => p.name === productName);
@@ -290,13 +443,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
