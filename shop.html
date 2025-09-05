@@ -7,7 +7,6 @@
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
     /* Combined CSS from your first code with adjustments for products page */
-
     /* Reset */
     * {
       margin: 0;
@@ -191,7 +190,6 @@
       box-shadow: 0 4px 12px rgba(0, 114, 255, 0.3);
       border: 1px solid #00bcd4;
       font-weight: bold;
-      cursor: default;
     }
     .wishlist-btn:before {
       content: "❤️ ";
@@ -391,7 +389,7 @@
           <div class="button-row">
             <button class="cart-btn" type="button">Add to Cart</button>
             <button class="wishlist-btn${isWishlisted(p.name) ? ' added' : ''}" type="button">
-              ${isWishlisted(p.name) ? "Wishlisted" : "Add to Wishlist"}
+              ${isWishlisted(p.name) ? "Remove from Wishlist" : "Add to Wishlist"}
             </button>
           </div>
         `;
@@ -405,16 +403,24 @@
           localStorage.setItem('cart', JSON.stringify(cart));
           alert(p.name + " added to cart!");
         };
-        // Wishlist button
+        // Wishlist button toggle
         const wishBtn = div.querySelector('.wishlist-btn');
         wishBtn.onclick = (event) => {
           event.stopPropagation();
           let wishlist = getWishlist();
-          if (isWishlisted(p.name)) return;
-          wishlist.push({ name: p.name, price: p.price, category: p.category, img: p.img, glb: p.glb });
+          const index = wishlist.findIndex(item => item.name === p.name);
+          if (index > -1) {
+            // Remove from wishlist
+            wishlist.splice(index, 1);
+            wishBtn.classList.remove('added');
+            wishBtn.textContent = "Add to Wishlist";
+          } else {
+            // Add to wishlist
+            wishlist.push({ name: p.name, price: p.price, category: p.category, img: p.img, glb: p.glb });
+            wishBtn.classList.add('added');
+            wishBtn.textContent = "Remove from Wishlist";
+          }
           setWishlist(wishlist);
-          wishBtn.classList.add('added');
-          wishBtn.textContent = "Wishlisted";
         };
         grid.appendChild(div);
       });
@@ -425,6 +431,3 @@
   </script>
 </body>
 </html>
-
-
-
