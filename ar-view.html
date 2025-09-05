@@ -1,78 +1,113 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Reality Shop - Universal AR Clean</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- model-viewer for immersive AR -->
+  <meta charset="UTF-8" />
+  <title>Reality Shop - AR Room View</title>
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <!-- A-Frame + AR.js for marker AR fallback -->
-  <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    body, html { margin: 0; padding: 0; height: 100%; background: #000; overflow: hidden; }
-    #mv-container, #arjs-container { width: 100vw; height: 100vh; position: absolute; top: 0; left: 0; display: none; }
-    .instructions { position: absolute; bottom: 20px; left: 0; width: 100vw; text-align: center; color: #fff; font-size: 1.1em; font-family: Arial, sans-serif; padding: 8px 0; background: rgba(0,0,0,0.4); z-index: 10; font-weight: 600; letter-spacing: 0.02em; }
-    a[marker-link] { color: yellow; text-decoration: underline; }
+    html, body {
+      margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
+      font-family: Arial, sans-serif; color: white; background: black;
+      display: flex; justify-content: center; align-items: center;
+    }
+    .ar-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      max-width: 700px;
+      max-height: 95vh;
+      background: #111;
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.9);
+      overflow: hidden;
+    }
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      --poster-color: transparent; /* hide default poster */
+    }
+    .instructions {
+      position: absolute;
+      bottom: 12px;
+      width: 100%;
+      padding: 12px 10px;
+      font-weight: 600;
+      font-size: 1.2rem;
+      letter-spacing: 0.03em;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+      user-select: none;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      color: #eee;
+    }
+    .hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
-<div class="instructions" id="instructions">Loading AR experience...</div>
-<div id="mv-container">
-  <model-viewer id="mv"
-    alt="3D Product"
-    camera-controls
-    auto-rotate
-    style="width:100vw; height:100vh; background:#000; border:none;">
-  </model-viewer>
-</div>
-<div id="arjs-container">
-  <a-scene vr-mode-ui="enabled: false" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-    <a-marker preset="hiro">
-      <a-entity id="arjs-model" scale="0.5 0.5 0.5" position="0 0 0"></a-entity>
-    </a-marker>
-    <a-entity camera></a-entity>
-  </a-scene>
-</div>
-<script>
-  const mv = document.getElementById("mv");
-  const mvContainer = document.getElementById("mv-container");
-  const arjsContainer = document.getElementById("arjs-container");
-  const arjsModel = document.getElementById("arjs-model");
-  const instructions = document.getElementById("instructions");
+  <div class="ar-container">
+    <model-viewer
+      id="arModelViewer"
+      src=""
+      alt="3D Furniture Model"
+      ar
+      ar-modes="scene-viewer quick-look webxr"
+      camera-controls
+      auto-rotate
+      shadow-intensity="1"
+      environment-image="neutral"
+      ar-scale="auto"
+      interaction-prompt="tap-to-place"
+      xr-environment
+      xr-standard-shadows
+    >
+    </model-viewer>
+    <div class="instructions" id="instructions">
+      Point your device to scan your room, tap to place furniture. Move and scale with gestures.
+    </div>
+  </div>
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const modelPath = urlParams.get("model") || "https://modelviewer.dev/shared-assets/models/Astronaut.glb";
+  <script>
+    const modelViewer = document.getElementById('arModelViewer');
+    const instructions = document.getElementById('instructions');
 
-  // Set product model for both AR solutions
-  mv.setAttribute("src", modelPath);
-  arjsModel.setAttribute("gltf-model", `url(${modelPath})`);
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
 
-  // Dynamic AR mode selection
-  instructions.textContent = "Checking device AR capabilities...";
-  function showModelViewerAR() {
-    mv.setAttribute("ar", "true");
-    mv.setAttribute("ar-modes", "webxr scene-viewer quick-look");
-    mvContainer.style.display = "block";
-    arjsContainer.style.display = "none";
-    instructions.textContent = "Tap AR button to place product in your room. Rotate and zoom in 3D mode if you prefer.";
-  }
-  function showARjsMarker() {
-    mvContainer.style.display = "none";
-    arjsContainer.style.display = "block";
-    instructions.innerHTML = `Point your camera at the <a marker-link href="https://raw.githubusercontent.com/jeromeetienne/ar.js/master/three.js/data/images/HIRO.jpg" target="_blank">HIRO marker</a> to see the product.<br>Rotate/zoom in 3D mode if preferred.`;
-  }
-  if ('xr' in navigator && navigator.xr) {
-    navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-      if (supported) {
-        showModelViewerAR();
+    window.onload = () => {
+      const modelPath = getQueryParam('model');
+      if (modelPath) {
+        modelViewer.src = decodeURIComponent(modelPath);
       } else {
-        showARjsMarker();
+        instructions.textContent = 'No model specified. Please open from product page.';
+        modelViewer.style.display = 'none';
+        return;
       }
-    }).catch(() => { showARjsMarker(); });
-  } else {
-    showARjsMarker();
-  }
-</script>
+    };
+
+    modelViewer.addEventListener('ar-status', event => {
+      if (event.detail.status === 'session-started') {
+        instructions.textContent = 'Move your device to scan your room surfaces.';
+      } else if(event.detail.status === 'session-ended') {
+        instructions.textContent = 'Point your device to scan room and tap to place furniture.';
+      }
+    });
+
+    modelViewer.addEventListener('model-visibility', event => {
+      if(event.detail.visible) {
+        instructions.textContent = 'Tap and drag to move or pinch to scale furniture.';
+        setTimeout(() => {
+          instructions.classList.add('hidden');
+        }, 4000);
+      }
+    });
+  </script>
 </body>
 </html>
+
