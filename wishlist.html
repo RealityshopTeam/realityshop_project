@@ -3,63 +3,100 @@
 <head>
   <meta charset="UTF-8" />
   <title>Wishlist - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f6f6f6;
-      color: #222;
+    * {
       margin: 0;
-      padding: 0 20px 40px;
+      padding: 0;
+      box-sizing: border-box;
     }
 
-    /* Header/Nav (same as Cart page) */
-    header {
-      background-color: #111827;
-      padding: 12px 24px;
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fdfdfd;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    /* Navbar same as shop page */
+    .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-    }
-    header .logo {
-      font-size: 20px;
-      font-weight: bold;
-      color: #06b6d4; /* cyan logo */
-      text-decoration: none;
-    }
-    header nav a {
-      color: #f3f4f6;
-      text-decoration: none;
-      margin: 0 12px;
-      font-weight: 500;
-      transition: color 0.3s ease, border-bottom 0.3s ease;
-      padding-bottom: 4px;
-    }
-    header nav a:hover,
-    header nav a.active {
-      color: #06b6d4;
-      border-bottom: 2px solid #06b6d4;
+      background: #111827;
+      padding: 15px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
 
-    h1 {
-      text-align: center;
-      margin: 40px 0 20px;
+    .navbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #06b6d4;
+      text-decoration: none;
     }
-    .wishlist-container {
+
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+    }
+
+    .navbar ul li a {
+      text-decoration: none;
+      color: #f3f4f6;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    .navbar ul li a:hover {
+      color: #06b6d4;
+    }
+
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      left: 0;
+      bottom: -4px;
+      background: #06b6d4;
+      transition: width 0.3s;
+    }
+
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
+    }
+
+    /* Wishlist container */
+    .container {
       max-width: 960px;
-      margin: 0 auto;
+      margin: 40px auto;
+      padding: 20px;
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-      padding: 30px 20px;
-      min-height: 180px;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
+
+    h1.section-title {
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 2rem;
+      color: #00bcd4;
+    }
+
     .wishlist-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 0;
+      padding: 18px;
       border-bottom: 1px solid #eee;
+      gap: 20px;
     }
     .wishlist-item:last-child {
       border-bottom: none;
@@ -68,50 +105,47 @@
       display: flex;
       align-items: center;
       gap: 20px;
+      flex: 1;
       min-width: 0;
-      flex: 1 1 0;
     }
     .thumb-box {
       width: 100px;
       height: 100px;
-      border-radius: 10px;
-      background: #ebebeb;
-      overflow: hidden;
+      border-radius: 12px;
+      background: #fafafa;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: 18px;
+      overflow: hidden;
       flex-shrink: 0;
     }
     .thumb-box img, .thumb-box model-viewer {
-      width: 100px;
-      height: 100px;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
-      border-radius: 10px;
-      background: #fafafa;
-      display: block;
+      border-radius: 12px;
     }
     .item-meta {
       display: flex;
       flex-direction: column;
-      gap: 5px;
-      min-width: 0;
-      flex: 1 1 0;
+      gap: 4px;
       overflow: hidden;
+      flex: 1;
     }
     .item-name {
       font-weight: bold;
       font-size: 1.1rem;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .item-category {
-      font-size: 0.95rem;
-      color: #666;
+      font-size: 0.9rem;
+      color: #888;
     }
     .item-price {
-      color: #06b6d4;
-      font-weight: 600;
-      font-size: 1rem;
+      font-weight: bold;
+      color: #00bcd4;
     }
     .actions {
       display: flex;
@@ -120,21 +154,20 @@
       align-items: flex-end;
     }
     .actions button {
-      background: #06b6d4;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
       border: none;
-      color: white;
+      color: #fff;
       padding: 8px 18px;
-      border-radius: 20px;
+      border-radius: 30px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 0.95rem;
-      margin: 0 0 0 8px;
-      transition: background 0.3s, transform 0.2s;
+      font-weight: 600;
+      transition: all 0.3s;
     }
     .actions button:hover {
-      background: #0891b2;
-      transform: translateY(-2px) scale(1.04);
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
     }
+
     .empty-msg {
       text-align: center;
       color: #666;
@@ -142,36 +175,39 @@
       margin: 60px 0;
     }
 
-    @media (max-width: 700px) {
-      header {
+    @media (max-width: 768px) {
+      .navbar ul {
+        gap: 15px;
+      }
+      .wishlist-item {
         flex-direction: column;
         align-items: flex-start;
       }
-      header nav {
-        margin-top: 8px;
-      }
-      header nav a {
-        display: inline-block;
-        margin: 6px 8px;
+      .actions {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-start;
       }
     }
   </style>
 </head>
 <body>
-  <!-- Updated header -->
-  <header>
+  <!-- Updated navbar like Shop page -->
+  <nav class="navbar">
     <a href="index.html" class="logo">Reality Shop</a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="cart.html">Cart</a>
-      <a href="wishlist.html" class="active">Wishlist</a>
-      <a href="login.html">Account</a>
-    </nav>
-  </header>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="wishlist.html" class="active">Wishlist</a></li>
+      <li><a href="login.html">Account</a></li>
+    </ul>
+  </nav>
 
-  <h1>Your Wishlist</h1>
-  <div class="wishlist-container" id="wishlistContainer"></div>
+  <div class="container">
+    <h1 class="section-title">Your Wishlist</h1>
+    <div id="wishlistContainer"></div>
+  </div>
 
   <script>
     function getWishlist() {
@@ -180,12 +216,13 @@
     function setWishlist(wishlist) {
       localStorage.setItem('wishlist', JSON.stringify(wishlist));
     }
+
     function renderWishlist() {
       const container = document.getElementById('wishlistContainer');
       const wishlist = getWishlist();
       container.innerHTML = '';
 
-      if(wishlist.length === 0) {
+      if (wishlist.length === 0) {
         container.innerHTML = '<div class="empty-msg">No items in your wishlist.</div>';
         return;
       }
@@ -194,12 +231,11 @@
         const div = document.createElement('div');
         div.className = 'wishlist-item';
 
-        // Thumbnail logic
         let thumbHTML = '';
         if(item.glb) {
           thumbHTML = `<model-viewer src="${item.glb}" alt="${item.name} 3D" auto-rotate camera-controls shadow-intensity="1"></model-viewer>`;
         } else if(item.img) {
-          thumbHTML = `<img src="${item.img}" alt="${item.name}" />`;
+          thumbHTML = `<img src="${item.img}" alt="${item.name}"/>`;
         } else {
           thumbHTML = `<div style="width:100px;height:100px;background:#eee;line-height:100px;text-align:center;">No Image</div>`;
         }
@@ -219,13 +255,12 @@
           </div>
         `;
 
-        // Remove button handler
         div.querySelector('.remove-btn').onclick = () => {
           wishlist.splice(idx, 1);
           setWishlist(wishlist);
           renderWishlist();
         };
-        // Add to cart handler
+
         div.querySelector('.add-cart-btn').onclick = () => {
           let cart = JSON.parse(localStorage.getItem('cart') || '[]');
           let existing = cart.find(p => p.name === item.name);
@@ -237,10 +272,12 @@
           renderWishlist();
           alert(item.name + " added to cart!");
         };
+
         container.appendChild(div);
       });
     }
-    renderWishlist();
+
+    window.onload = renderWishlist;
   </script>
 </body>
 </html>
