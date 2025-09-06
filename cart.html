@@ -5,129 +5,135 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Your Cart - Reality Shop</title>
   <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            background: #f6f6f6;
-            color: #222;
-        }
-        /* Navigation bar */
-        nav {
-            background-color: #212121;
-            padding: 0 32px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-        }
-        .nav-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            height: 70px;
-        }
-        .logo {
-            color: #fff;
-            font-size: 1.7rem;
-            font-weight: bold;
-            letter-spacing: 2px;
-            text-decoration: none;
-        }
-        ul.nav-links {
-            display: flex;
-            list-style: none;
-            gap: 32px;
-        }
-        ul.nav-links li {
-            position: relative;
-        }
-        ul.nav-links li a {
-            color: #fff;
-            text-decoration: none;
-            font-size: 1rem;
-            padding: 8px 0;
-            transition: color 0.2s;
-        }
-        ul.nav-links li a:hover, ul.nav-links li a.active {
-            color: #ff9800;
-        }
-        /* Classic button style */
-        .btn-main {
-            background: #ff9800;
-            color: #fff;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-size: 1rem;
-            cursor: pointer;
-            font-weight: 500;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: background 0.2s, transform 0.2s;
-        }
-        .btn-main:hover {
-            background: #e67600;
-            transform: translateY(-2px) scale(1.04);
-        }
-        /* Cart table */
-        h2 {
-          text-align: center;
-          color: #212121;
-          margin: 30px 0 20px;
-        }
-        table {
-          width: 90%;
-          margin: auto;
-          border-collapse: collapse;
-          background: white;
-          border-radius: 8px;
-          overflow: hidden;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        th, td {
-          border: 1px solid #ddd;
-          padding: 12px;
-          text-align: center;
-        }
-        th {
-          background: #212121;
-          color: white;
-        }
-        input[type="number"] {
-          width: 60px;
-          padding: 4px;
-          text-align: center;
-        }
-        .total {
-          text-align: right;
-          font-size: 20px;
-          font-weight: bold;
-          margin: 20px auto;
-          width: 90%;
-        }
-        .actions {
-          margin: 20px auto;
-          display: flex;
-          justify-content: space-between;
-          width: 90%;
-        }
-        @media (max-width: 700px) {
-            .nav-container { flex-direction: column; height: auto; }
-            ul.nav-links { flex-direction: column; gap: 12px; }
-        }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f6f6f6;
+      color: #222;
+    }
+
+    /* Header/Nav (same as Shop page) */
+    header {
+      background-color: #111827;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header .logo {
+      font-size: 20px;
+      font-weight: bold;
+      color: #06b6d4; /* cyan logo */
+      text-decoration: none;
+    }
+    header nav a {
+      color: #f3f4f6;
+      text-decoration: none;
+      margin: 0 12px;
+      font-weight: 500;
+      transition: color 0.3s ease, border-bottom 0.3s ease;
+      padding-bottom: 4px;
+    }
+    header nav a:hover,
+    header nav a.active {
+      color: #06b6d4;
+      border-bottom: 2px solid #06b6d4;
+    }
+
+    /* Buttons */
+    .btn-main {
+      background: #06b6d4;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: background 0.2s, transform 0.2s;
+    }
+    .btn-main:hover {
+      background: #0891b2;
+      transform: translateY(-2px) scale(1.04);
+    }
+
+    /* Cart table */
+    h2 {
+      text-align: center;
+      color: #111827;
+      margin: 30px 0 20px;
+    }
+    table {
+      width: 90%;
+      margin: auto;
+      border-collapse: collapse;
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: center;
+    }
+    th {
+      background: #111827;
+      color: white;
+    }
+    input[type="number"] {
+      width: 60px;
+      padding: 4px;
+      text-align: center;
+    }
+    .total {
+      text-align: right;
+      font-size: 20px;
+      font-weight: bold;
+      margin: 20px auto;
+      width: 90%;
+    }
+    .actions {
+      margin: 20px auto;
+      display: flex;
+      justify-content: space-between;
+      width: 90%;
+    }
+
+    @media (max-width: 700px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      header nav {
+        margin-top: 8px;
+      }
+      header nav a {
+        display: inline-block;
+        margin: 6px 8px;
+      }
+      .actions {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
+    }
   </style>
 </head>
 <body>
 
-  <!-- Navbar -->
-  <nav>
-    <div class="nav-container">
-      <a href="index.html" class="logo">Reality Shop</a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="shop.html">Shop</a></li>
-        <li><a href="cart.html" class="active">Cart</a></li>
-        <li><a href="wishlist.html">Wish list</a></li>
-        <li><a href="login.html">Account</a></li>
-      </ul>
-    </div>
-  </nav>
+  <!-- Header/Navbar -->
+  <header>
+    <a href="index.html" class="logo">Reality Shop</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="cart.html" class="active">Cart</a>
+      <a href="wishlist.html">Wishlist</a>
+      <a href="login.html">Account</a>
+    </nav>
+  </header>
 
   <h2>Your Shopping Cart</h2>
   <table id="cart-table">
@@ -154,60 +160,56 @@
     <button class="btn-main">Proceed to Checkout</button>
   </div>
 
-<script>
-  function loadCart() {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    const cartItems = document.getElementById("cart-items");
-    cartItems.innerHTML = "";
-    let total = 0;
+  <script>
+    function loadCart() {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const cartItems = document.getElementById("cart-items");
+      cartItems.innerHTML = "";
+      let total = 0;
 
-    cart.forEach((item, index) => {
-      let subtotal = item.price * item.quantity;
-      total += subtotal;
+      cart.forEach((item, index) => {
+        let subtotal = item.price * item.quantity;
+        total += subtotal;
 
-      cartItems.innerHTML += `
-        <tr>
-          <td>${item.name}</td>
-          <td>₹${item.price}</td>
-          <td>
-            <input type="number" min="1" value="${item.quantity}" 
-                   onchange="updateQuantity(${index}, this.value)">
-          </td>
-          <td>₹${subtotal}</td>
-          <td><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
-        </tr>
-      `;
-    });
+        cartItems.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>₹${item.price}</td>
+            <td>
+              <input type="number" min="1" value="${item.quantity}" 
+                     onchange="updateQuantity(${index}, this.value)">
+            </td>
+            <td>₹${subtotal}</td>
+            <td><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
+          </tr>
+        `;
+      });
 
-    document.getElementById("total-amount").innerText = total;
-  }
+      document.getElementById("total-amount").innerText = total;
+    }
 
-  function updateQuantity(index, qty) {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart[index].quantity = parseInt(qty);
-    localStorage.setItem("cart", JSON.stringify(cart));
+    function updateQuantity(index, qty) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart[index].quantity = parseInt(qty);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      loadCart();
+    }
+
+    function removeItem(index) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      loadCart();
+    }
+
+    function clearCart() {
+      localStorage.removeItem("cart");
+      loadCart();
+    }
+
+    // Load cart when page opens
     loadCart();
-  }
-
-  function removeItem(index) {
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    cart.splice(index, 1);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    loadCart();
-  }
-
-  function clearCart() {
-    localStorage.removeItem("cart");
-    loadCart();
-  }
-
-  // Load cart when page opens
-  loadCart();
-</script>
+  </script>
 
 </body>
 </html>
-
-
-
-
