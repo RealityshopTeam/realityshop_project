@@ -10,34 +10,63 @@
       font-family: 'Segoe UI', Arial, sans-serif;
       background: #f6f6f6;
       color: #222;
+      line-height: 1.5;
     }
 
-    /* Header/Nav (same as Shop page) */
-    header {
-      background-color: #111827;
-      padding: 12px 24px;
+    /* Header/Navbar (Shop page style) */
+    .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: #111827;
+      padding: 12px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
-    header .logo {
+
+    .navbar .logo {
       font-size: 20px;
       font-weight: bold;
-      color: #06b6d4; /* cyan logo */
+      color: #06b6d4;
       text-decoration: none;
     }
-    header nav a {
-      color: #f3f4f6;
+
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+    }
+
+    .navbar ul li a {
       text-decoration: none;
-      margin: 0 12px;
+      color: #f3f4f6;
       font-weight: 500;
-      transition: color 0.3s ease, border-bottom 0.3s ease;
+      position: relative;
+      transition: color 0.3s;
       padding-bottom: 4px;
     }
-    header nav a:hover,
-    header nav a.active {
+
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
       color: #06b6d4;
-      border-bottom: 2px solid #06b6d4;
+    }
+
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      left: 0;
+      bottom: 0;
+      background: #06b6d4;
+      transition: width 0.3s;
+    }
+
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
     }
 
     /* Buttons */
@@ -69,9 +98,9 @@
       margin: auto;
       border-collapse: collapse;
       background: white;
-      border-radius: 8px;
+      border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
     th, td {
       border: 1px solid #ddd;
@@ -84,8 +113,10 @@
     }
     input[type="number"] {
       width: 60px;
-      padding: 4px;
+      padding: 6px;
       text-align: center;
+      border-radius: 6px;
+      border: 1px solid #ccc;
     }
     .total {
       text-align: right;
@@ -102,16 +133,14 @@
     }
 
     @media (max-width: 700px) {
-      header {
+      .navbar {
         flex-direction: column;
         align-items: flex-start;
       }
-      header nav {
+      .navbar ul {
         margin-top: 8px;
-      }
-      header nav a {
-        display: inline-block;
-        margin: 6px 8px;
+        flex-wrap: wrap;
+        gap: 10px;
       }
       .actions {
         flex-direction: column;
@@ -123,17 +152,17 @@
 </head>
 <body>
 
-  <!-- Header/Navbar -->
-  <header>
+  <!-- Updated Header/Navbar -->
+  <nav class="navbar">
     <a href="index.html" class="logo">Reality Shop</a>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="cart.html" class="active">Cart</a>
-      <a href="wishlist.html">Wishlist</a>
-      <a href="login.html">Account</a>
-    </nav>
-  </header>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="cart.html" class="active">Cart</a></li>
+      <li><a href="wishlist.html">Wishlist</a></li>
+      <li><a href="login.html">Account</a></li>
+    </ul>
+  </nav>
 
   <h2>Your Shopping Cart</h2>
   <table id="cart-table">
@@ -176,8 +205,7 @@
             <td>${item.name}</td>
             <td>₹${item.price}</td>
             <td>
-              <input type="number" min="1" value="${item.quantity}" 
-                     onchange="updateQuantity(${index}, this.value)">
+              <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
             </td>
             <td>₹${subtotal}</td>
             <td><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
