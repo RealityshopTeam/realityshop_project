@@ -4,79 +4,108 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register - Reality Shop</title>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/12.2.1/firebase-analytics.js"></script>
+
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      margin: 0;
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: #f6f6f6;
+      background: linear-gradient(to right, #a8edea, #fed6e3);
       color: #222;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
-    /* Navigation bar */
-    nav {
-      background-color: #212121;
-      padding: 0 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .nav-container {
+    .navbar {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      height: 70px;
-    }
-    .logo {
-      color: #fff;
-      font-size: 1.7rem;
-      font-weight: bold;
-      letter-spacing: 2px;
-      text-decoration: none;
-    }
-    ul.nav-links {
-      display: flex;
-      list-style: none;
-      gap: 32px;
-      margin: 0;
-      padding: 0;
-    }
-    ul.nav-links li a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 1rem;
-      padding: 8px 0;
-      transition: color 0.2s;
-    }
-    ul.nav-links li a:hover,
-    ul.nav-links li a.active {
-      color: #ff9800;
+      align-items: center;
+      background: #111827;
+      padding: 15px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
     }
 
-    /* Form container */
-    .container {
-      max-width: 500px;
-      margin: 60px auto;
-      background: white;
-      padding: 40px;
-      border-radius: 10px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    .navbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #06b6d4;
+      text-decoration: none;
     }
+
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+    }
+
+    .navbar ul li a {
+      text-decoration: none;
+      color: #f3f4f6;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    .navbar ul li a:hover {
+      color: #06b6d4;
+    }
+
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      left: 0;
+      bottom: -4px;
+      background: #06b6d4;
+      transition: width 0.3s;
+    }
+
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
+    }
+
+    .hero-register {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 50px 20px;
+    }
+
+    .container {
+      max-width: 420px;
+      width: 100%;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
     h2 {
       text-align: center;
       margin-bottom: 25px;
-      color: #212121;
-      font-size: 1.8rem;
+      color: #111827;
     }
+
     form {
       display: flex;
       flex-direction: column;
-      gap: 18px;
+      gap: 16px;
     }
+
     label {
       font-weight: 600;
-      margin-bottom: 6px;
-      color: #333;
+      margin-bottom: 5px;
+      color: #444;
     }
+
     input[type="text"],
     input[type="email"],
     input[type="password"] {
@@ -84,168 +113,99 @@
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 1rem;
-      outline-color: #ff9800;
-      transition: border-color 0.3s;
+      outline-color: #06b6d4;
       width: 100%;
     }
-    input:focus {
-      border-color: #ff9800;
-    }
 
-    /* Classic button style */
     button[type="submit"] {
-      background: #ff9800;
-      color: #fff;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: white;
       border: none;
       padding: 12px;
-      font-size: 1.1rem;
-      border-radius: 24px;
+      font-size: 1rem;
+      border-radius: 30px;
       cursor: pointer;
-      font-weight: 500;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-      transition: background 0.2s, transform 0.2s;
-    }
-    button[type="submit"]:hover {
-      background: #e67600;
-      transform: translateY(-2px) scale(1.04);
+      font-weight: bold;
+      transition: 0.3s;
     }
 
-    /* Login link */
+    button[type="submit"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
+    }
+
     .login-container {
       margin-top: 20px;
       text-align: center;
       font-size: 0.95em;
     }
+
     .login-container a {
-      background: #212121;
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 20px;
+      color: #06b6d4;
       text-decoration: none;
       font-weight: 600;
-      transition: background 0.3s;
     }
+
     .login-container a:hover {
-      background: #ff9800;
-      color: #fff;
+      text-decoration: underline;
     }
 
     footer {
+      background: #f9f9f9;
+      color: #666;
       text-align: center;
-      padding: 15px;
-      margin-top: 50px;
-      background-color: #f0f0f0;
-      border-top: 1px solid #ccc;
-      font-size: 0.85em;
+      padding: 20px;
+      margin-top: auto;
+      border-top: 1px solid #eee;
     }
 
-    /* Responsive */
-    @media(max-width: 700px) {
-      .nav-container {
-        flex-direction: column;
-        height: auto;
-      }
-      ul.nav-links {
-        flex-direction: column;
-        gap: 12px;
-      }
-      .container {
-        margin: 20px;
-        padding: 25px;
-      }
+    @media (max-width: 768px) {
+      .navbar ul { gap: 15px; }
+      .container { margin: 20px 15px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav>
-    <div class="nav-container">
-      <a href="index.html" class="logo">Reality Shop</a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="shop.html">Shop</a></li>
-        <li><a href="cart.html">Cart</a></li>
-        <li><a href="wishlist.html">Wish list</a></li>
-        <li><a href="login.html">Account</a></li>
-      </ul>
-    </div>
+  <nav class="navbar">
+    <a href="index.html" class="logo">Reality Shop</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="wishlist.html">Wishlist</a></li>
+      <li><a href="login.html" class="active">Account</a></li>
+    </ul>
   </nav>
 
-  <!-- Register Form -->
-  <div class="container">
-    <h2>Create an Account</h2>
-    <form>
-      <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Your full name" required>
+  <div class="hero-register">
+    <div class="container">
+      <h2>Create an Account</h2>
+      <form id="registerForm">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" placeholder="Your full name" required>
 
-      <label for="email">Email Address</label>
-      <input type="email" id="email" name="email" placeholder="you@example.com" required>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" placeholder="you@example.com" required>
 
-      <label for="password">Password</label>
-      <input type="password" id="password" name="password" placeholder="Enter password" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Enter password" required>
 
-      <label for="confirm-password">Confirm Password</label>
-      <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" required>
+        <label for="confirm-password">Confirm Password</label>
+        <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password" required>
 
-      <button type="submit">Register</button>
-    </form>
+        <button type="submit">Register</button>
+      </form>
 
-    <div class="login-container">
-      <p>Already have an account?</p>
-      <a href="login.html">Login</a>
+      <div class="login-container">
+        <p>Already have an account? <a href="login.html">Login</a></p>
+      </div>
     </div>
   </div>
 
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
   </footer>
-  <script>
-    const firebaseConfig = {
-    apiKey: "AIzaSyApoRYH0BkYUWl7XLIC0r6_aH1Z9o41wUk",
-    authDomain: "realityshop-85a09.firebaseapp.com",
-    projectId: "realityshop-85a09",
-    storageBucket: "realityshop-85a09.firebasestorage.app",
-    messagingSenderId: "515865744889",
-    appId: "1:515865744889:web:3d6d93a63799b5764e9928",
-    measurementId: "G-J30DVH5L8L"
-  };
-        // Initialize Firebase
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    // Handle registration
-    document.getElementById("register-form").addEventListener("submit", function(e) {
-      e.preventDefault();
-
-      const name = document.getElementById("name").value;
-      const email = document.getElementById("email").value;
-      const password = document.getElementById("password").value;
-      const confirmPassword = document.getElementById("confirm-password").value;
-
-      if (password !== confirmPassword) {
-        alert("Passwords do not match!");
-        return;
-      }
-
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          // Update profile with name
-          return userCredential.user.updateProfile({
-            displayName: name
-          });
-        })
-        .then(() => {
-          alert("Registration successful! You can now log in.");
-          window.location.href = "login.html";
-        })
-        .catch((error) => {
-          alert("Error: " + error.message);
-        });
-    });
-  </script>
 
 </body>
 </html>
-
-
