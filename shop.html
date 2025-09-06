@@ -6,49 +6,24 @@
   <!-- Use model-viewer for 3D models -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    /* Combined CSS from your first code with adjustments for products page */
     /* Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    header {
-  background-color: #111827; /* dark navy */
-  padding: 12px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 
-header .logo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #06b6d4; /* cyan logo */
-}
-
-header nav a {
-  color: #f3f4f6; /* light gray links */
-  text-decoration: none;
-  margin: 0 12px;
-  font-weight: 500;
-  transition: color 0.3s ease;
-}
-
-header nav a:hover {
-  color: #06b6d4; /* cyan hover */
-}
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana;
       background: #fdfdfd;
       color: #333;
       line-height: 1.6;
     }
-    /* Navbar styles from first code */
+
+    /* Dark Navbar (same as homepage) */
     nav {
-      background: #ffffff;
+      background: #0a192f;
       padding: 15px 40px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       position: sticky;
       top: 0;
       z-index: 1000;
@@ -73,7 +48,7 @@ header nav a:hover {
     }
     ul.nav-links li a {
       text-decoration: none;
-      color: #555;
+      color: #fff;
       font-weight: 500;
       font-size: 1rem;
       position: relative;
@@ -97,6 +72,7 @@ header nav a:hover {
     ul.nav-links li a.active {
       color: #00bcd4;
     }
+
     /* Container */
     .container {
       max-width: 1000px;
@@ -112,6 +88,7 @@ header nav a:hover {
       font-size: 2rem;
       color: #00bcd4;
     }
+
     /* Search + Sort bar */
     .search-sort-bar {
       display: flex;
@@ -140,6 +117,7 @@ header nav a:hover {
       box-shadow: 0 0 6px rgba(0,188,212,0.3);
       outline: none;
     }
+
     /* Product Grid */
     .grid {
       display: grid;
@@ -160,6 +138,7 @@ header nav a:hover {
       transform: translateY(-4px);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
     }
+
     /* Model viewer & image */
     .product model-viewer,
     .product img {
@@ -169,6 +148,20 @@ header nav a:hover {
       border-radius: 8px;
       margin-bottom: 12px;
     }
+    .no-asset {
+      width: 100%;
+      height: 200px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      background: #eef2f7;
+      display: grid;
+      place-items: center;
+      color: #6b7280;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px dashed #cbd5e1;
+    }
+
     .product h3 {
       margin: 10px 0 6px;
       font-size: 1.1rem;
@@ -185,6 +178,7 @@ header nav a:hover {
       font-weight: bold;
       color: #555;
     }
+
     /* Buttons */
     .button-row {
       display: flex;
@@ -220,6 +214,7 @@ header nav a:hover {
       content: "❤️ ";
       color: #00bcd4;
     }
+
     /* Footer */
     footer {
       background: #f9f9f9;
@@ -236,6 +231,7 @@ header nav a:hover {
     footer a:hover {
       text-decoration: underline;
     }
+
     /* Responsive */
     @media (max-width: 768px) {
       ul.nav-links {
@@ -257,7 +253,7 @@ header nav a:hover {
   <!-- Navbar -->
   <nav>
     <div class="nav-container">
-      <a href="#" class="logo">Reality Shop</a>
+      <a href="index.html" class="logo">Reality Shop</a>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="shop.html" class="active">Shop</a></li>
@@ -267,10 +263,10 @@ header nav a:hover {
       </ul>
     </div>
   </nav>
+
   <!-- Page Content -->
   <div class="container">
     <h1>Our Products</h1>
-    <!-- Search + Sort -->
     <div class="search-sort-bar">
       <div class="search-box">
         <input type="text" id="searchInput" placeholder="Search products..." />
@@ -287,10 +283,11 @@ header nav a:hover {
         </select>
       </div>
     </div>
-    <!-- Product Grid -->
-    <div class="grid" id="product-grid"></div>
+    <div class="grid" id="product-grid">
+    </div>
   </div>
-  <!-- JS Logic -->
+
+  <!-- JS Logic with asset existence checks and graceful fallbacks -->
   <script>
     const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
@@ -348,24 +345,41 @@ header nav a:hover {
       {name:"gas stove",price:3000,glb:"imgs/gas_stove_kitchen.glb",category:"Electronics"},
       {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
     ];
+
     const grid = document.getElementById('product-grid');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
-    function getWishlist() {
-      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+
+    const assetOkCache = new Map();
+
+    async function assetExists(url) {
+      if (!url) return false;
+      if (assetOkCache.has(url)) return assetOkCache.get(url);
+      try {
+        const res = await fetch(url, { method: 'HEAD' });
+        const ok = res.ok;
+        assetOkCache.set(url, ok);
+        return ok;
+      } catch (e) {
+        assetOkCache.set(url, false);
+        return false;
+      }
     }
-    function setWishlist(wishlist) {
-      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+
+    function makeFallbackNode(text = 'Preview not available') {
+      const d = document.createElement('div');
+      d.className = 'no-asset';
+      d.textContent = text;
+      return d;
     }
-    function isWishlisted(name) {
-      return getWishlist().some(item => item.name === name);
-    }
-    function renderProducts() {
-      const searchTerm = searchInput.value.toLowerCase();
+
+    async function renderProducts() {
+      const searchTerm = (searchInput.value || '').toLowerCase();
       let filtered = products.filter(
         p => p.name.toLowerCase().includes(searchTerm) ||
              p.category.toLowerCase().includes(searchTerm)
       );
+
       const sortValue = sortSelect.value;
       if (sortValue) {
         const [key, order] = sortValue.split('-');
@@ -373,8 +387,8 @@ header nav a:hover {
           if (key === 'price') {
             return order === 'asc' ? a.price - b.price : b.price - a.price;
           } else if (key === 'name' || key === 'category') {
-            const aVal = a[key].toLowerCase();
-            const bVal = b[key].toLowerCase();
+            const aVal = String(a[key]).toLowerCase();
+            const bVal = String(b[key]).toLowerCase();
             if (aVal < bVal) return order === 'asc' ? -1 : 1;
             if (aVal > bVal) return order === 'asc' ? 1 : -1;
             return 0;
@@ -382,32 +396,53 @@ header nav a:hover {
           return 0;
         });
       }
+
       grid.innerHTML = '';
-      filtered.forEach((p, i) => {
+
+      for (let i = 0; i < filtered.length; i++) {
+        const p = filtered[i];
         const div = document.createElement('div');
         div.className = 'product';
         div.setAttribute('data-name', p.name);
         div.setAttribute('data-price', p.price);
         div.setAttribute('data-category', p.category);
-        // Navigate to product page
+
+        // Navigate to product page (ignore clicks on buttons)
         div.onclick = (e) => {
           if (e.target.tagName === 'BUTTON') return;
           window.location.href = 'product.html?name=' + encodeURIComponent(p.name);
         };
-        if (p.glb) {
-          div.innerHTML = `
-            <model-viewer src="${p.glb}" alt="${p.name} 3D view"
-              auto-rotate camera-controls ar shadow-intensity="1"
-              style="width: 100%; height: 200px; object-fit: contain; border-radius: 8px; margin-bottom: 12px;"
-              id="mv-${i}">
-            </model-viewer>
-          `;
+
+        // Choose the best available preview WITHOUT triggering 404s
+        let previewNode = null;
+        const hasGLB = await assetExists(p.glb);
+        if (hasGLB) {
+          const mv = document.createElement('model-viewer');
+          mv.setAttribute('src', p.glb);
+          mv.setAttribute('alt', `${p.name} 3D view`);
+          mv.setAttribute('auto-rotate', '');
+          mv.setAttribute('camera-controls', '');
+          mv.setAttribute('ar', '');
+          mv.setAttribute('shadow-intensity', '1');
+          mv.style.width = '100%';
+          mv.style.height = '200px';
+          mv.style.objectFit = 'contain';
+          mv.style.borderRadius = '8px';
+          mv.style.marginBottom = '12px';
+          // If something still goes wrong, gracefully fallback
+          mv.addEventListener('error', () => {
+            mv.replaceWith(p.img ? makeImageNode(p.img, p.name) : makeFallbackNode());
+          });
+          previewNode = mv;
         } else if (p.img) {
-          div.innerHTML = `<img src="${p.img}" alt="${p.name}">`;
+          previewNode = makeImageNode(p.img, p.name);
         } else {
-          div.innerHTML = `<div style="width:100%;height:200px;background:#eee;line-height:200px;">No Image</div>`;
+          previewNode = makeFallbackNode();
         }
-        div.innerHTML += `
+
+        div.appendChild(previewNode);
+
+        div.insertAdjacentHTML('beforeend', `
           <h3>${p.name}</h3>
           <p class="category">${p.category}</p>
           <p>₹${p.price}.00</p>
@@ -417,7 +452,8 @@ header nav a:hover {
               ${isWishlisted(p.name) ? "Remove from Wishlist" : "Add to Wishlist"}
             </button>
           </div>
-        `;
+        `);
+
         // Cart button
         div.querySelector('.cart-btn').onclick = (event) => {
           event.stopPropagation();
@@ -428,6 +464,7 @@ header nav a:hover {
           localStorage.setItem('cart', JSON.stringify(cart));
           alert(p.name + " added to cart!");
         };
+
         // Wishlist button toggle
         const wishBtn = div.querySelector('.wishlist-btn');
         wishBtn.onclick = (event) => {
@@ -435,26 +472,59 @@ header nav a:hover {
           let wishlist = getWishlist();
           const index = wishlist.findIndex(item => item.name === p.name);
           if (index > -1) {
-            // Remove from wishlist
             wishlist.splice(index, 1);
             wishBtn.classList.remove('added');
             wishBtn.textContent = "Add to Wishlist";
           } else {
-            // Add to wishlist
             wishlist.push({ name: p.name, price: p.price, category: p.category, img: p.img, glb: p.glb });
             wishBtn.classList.add('added');
             wishBtn.textContent = "Remove from Wishlist";
           }
           setWishlist(wishlist);
         };
+
         grid.appendChild(div);
-      });
+      }
     }
-    searchInput.addEventListener('input', renderProducts);
-    sortSelect.addEventListener('change', renderProducts);
-    window.onload = () => renderProducts();
+
+    function makeImageNode(src, alt) {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = alt;
+      img.addEventListener('error', () => {
+        img.replaceWith(makeFallbackNode());
+      });
+      return img;
+    }
+
+    function getWishlist() {
+      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+    }
+    function setWishlist(wishlist) {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+    function isWishlisted(name) {
+      return getWishlist().some(item => item.name === name);
+    }
+
+    // --- Lightweight self-tests (console only) ---
+    (function selfTests(){
+      console.log('[SelfTest] makeFallbackNode returns element:', makeFallbackNode() instanceof HTMLElement);
+      const dummy = document.createElement('model-viewer');
+      dummy.addEventListener('error', () => {
+        console.log('[SelfTest] model-viewer error event captured.');
+      });
+      dummy.dispatchEvent(new Event('error'));
+      // Asset existence negative test (expected false)
+      assetExists('imgs/__does_not_exist__.glb').then(ok => {
+        console.log('[SelfTest] nonexistent assetExists ->', ok === false ? 'PASS' : 'FAIL');
+      });
+    })();
+
+    // Events
+    searchInput.addEventListener('input', () => { renderProducts(); });
+    sortSelect.addEventListener('change', () => { renderProducts(); });
+    window.onload = () => { renderProducts(); };
   </script>
 </body>
 </html>
-
-
