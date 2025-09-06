@@ -12,41 +12,35 @@
       margin: 0;
       padding: 0 20px 40px;
     }
-    nav {
-      background-color: #212121;
-      padding: 0 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-    .nav-container {
+
+    /* Header/Nav (same as Cart page) */
+    header {
+      background-color: #111827;
+      padding: 12px 24px;
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      height: 70px;
+      align-items: center;
     }
-    .logo {
-      color: #fff;
-      font-size: 1.7rem;
+    header .logo {
+      font-size: 20px;
       font-weight: bold;
-      letter-spacing: 2px;
+      color: #06b6d4; /* cyan logo */
       text-decoration: none;
     }
-    ul.nav-links {
-      display: flex;
-      list-style: none;
-      gap: 32px;
-      margin: 0;
-      padding: 0;
-    }
-    ul.nav-links li a {
-      color: #fff;
+    header nav a {
+      color: #f3f4f6;
       text-decoration: none;
-      font-size: 1rem;
-      padding: 8px 0;
-      transition: color 0.2s;
+      margin: 0 12px;
+      font-weight: 500;
+      transition: color 0.3s ease, border-bottom 0.3s ease;
+      padding-bottom: 4px;
     }
-    ul.nav-links li a:hover, ul.nav-links li a.active {
-      color: #ff9800;
+    header nav a:hover,
+    header nav a.active {
+      color: #06b6d4;
+      border-bottom: 2px solid #06b6d4;
     }
+
     h1 {
       text-align: center;
       margin: 40px 0 20px;
@@ -115,7 +109,7 @@
       color: #666;
     }
     .item-price {
-      color: #ff9800;
+      color: #06b6d4;
       font-weight: 600;
       font-size: 1rem;
     }
@@ -126,7 +120,7 @@
       align-items: flex-end;
     }
     .actions button {
-      background: #ff9800;
+      background: #06b6d4;
       border: none;
       color: white;
       padding: 8px 18px;
@@ -135,10 +129,11 @@
       font-weight: bold;
       font-size: 0.95rem;
       margin: 0 0 0 8px;
-      transition: background 0.3s;
+      transition: background 0.3s, transform 0.2s;
     }
     .actions button:hover {
-      background: #e67600;
+      background: #0891b2;
+      transform: translateY(-2px) scale(1.04);
     }
     .empty-msg {
       text-align: center;
@@ -146,23 +141,38 @@
       font-size: 1.1rem;
       margin: 60px 0;
     }
+
+    @media (max-width: 700px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      header nav {
+        margin-top: 8px;
+      }
+      header nav a {
+        display: inline-block;
+        margin: 6px 8px;
+      }
+    }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-container">
-      <a href="index.html" class="logo">Reality Shop</a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="shop.html">Shop</a></li>
-        <li><a href="cart.html">Cart</a></li>
-        <li><a href="wishlist.html" class="active">Wishlist</a></li>
-        <li><a href="login.html">Account</a></li>
-      </ul>
-    </div>
-  </nav>
+  <!-- Updated header -->
+  <header>
+    <a href="index.html" class="logo">Reality Shop</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="shop.html">Shop</a>
+      <a href="cart.html">Cart</a>
+      <a href="wishlist.html" class="active">Wishlist</a>
+      <a href="login.html">Account</a>
+    </nav>
+  </header>
+
   <h1>Your Wishlist</h1>
   <div class="wishlist-container" id="wishlistContainer"></div>
+
   <script>
     function getWishlist() {
       return JSON.parse(localStorage.getItem('wishlist') || '[]');
