@@ -5,18 +5,12 @@
   <title>Reality Shop - Cart</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
+      margin: 0;
       font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(to right, #7792a0, #f7caca);
-      color: #333;
-      line-height: 1.6;
-      min-height: 100vh;
+      background: linear-gradient(to right, #a8edea, #fed6e3);
+      color: #222;
+      line-height: 1.5;
     }
 
     .navbar {
@@ -24,15 +18,15 @@
       justify-content: space-between;
       align-items: center;
       background: #111827;
-      padding: 15px 40px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      padding: 12px 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
 
     .navbar .logo {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: bold;
       color: #06b6d4;
       text-decoration: none;
@@ -41,7 +35,7 @@
     .navbar ul {
       list-style: none;
       display: flex;
-      gap: 25px;
+      gap: 20px;
     }
 
     .navbar ul li a {
@@ -50,9 +44,11 @@
       font-weight: 500;
       position: relative;
       transition: color 0.3s;
+      padding-bottom: 4px;
     }
 
-    .navbar ul li a:hover {
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
       color: #06b6d4;
     }
 
@@ -62,122 +58,99 @@
       width: 0;
       height: 2px;
       left: 0;
-      bottom: -4px;
+      bottom: 0;
       background: #06b6d4;
       transition: width 0.3s;
     }
 
-    .navbar ul li a:hover::after, .navbar ul li a.active::after {
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
       width: 100%;
     }
 
-    .container {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-
-    h1.section-title {
+    h2 {
       text-align: center;
-      margin-bottom: 24px;
-      font-size: 2rem;
-      color: #00bcd4;
+      color: #111827;
+      margin: 30px 0 20px;
     }
 
-    .cart-table {
-      width: 100%;
+    table {
+      width: 90%;
+      margin: auto;
       border-collapse: collapse;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     }
 
-    .cart-table th, .cart-table td {
-      padding: 12px 10px;
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
       text-align: center;
-      border-bottom: 1px solid #ddd;
     }
 
-    .cart-table th {
-      background: #00bcd4;
-      color: #fff;
-      border-radius: 6px;
+    th {
+      background: #111827;
+      color: white;
     }
 
-    .cart-table img {
-      width: 80px;
-      height: 80px;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-
-    .qty-input {
-      width: 50px;
+    input[type="number"] {
+      width: 60px;
       padding: 6px;
       text-align: center;
       border-radius: 6px;
-      border: 1px solid #ddd;
-    }
-
-    .remove-btn, .clear-btn, .checkout-btn {
-      border: none;
-      padding: 10px 24px;
-      border-radius: 30px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .remove-btn {
-      background: linear-gradient(135deg, #ff4e50, #f9d423);
-      color: #fff;
-    }
-
-    .remove-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255,78,80,0.4);
-    }
-
-    .clear-btn {
-      background: #f87171;
-      color: #fff;
-    }
-
-    .clear-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(248,113,113,0.4);
-    }
-
-    .checkout-btn {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: #fff;
-    }
-
-    .checkout-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
-    }
-
-    .actions {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
+      border: 1px solid #ccc;
     }
 
     .total {
       text-align: right;
-      margin-top: 20px;
-      font-size: 1.2rem;
+      font-size: 20px;
       font-weight: bold;
-      color: #00bcd4;
+      margin: 20px auto;
+      width: 90%;
     }
 
-    @media (max-width: 768px) {
-      .navbar ul { gap: 15px; }
-      .container { margin: 30px 15px; }
-      .cart-table img { width: 60px; height: 60px; }
-      .qty-input { width: 40px; }
-      .actions { flex-direction: column; gap: 12px; }
+    .actions {
+      margin: 20px auto;
+      display: flex;
+      justify-content: space-between;
+      width: 90%;
+    }
+
+    .btn-main {
+      background: #06b6d4;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-weight: 500;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: background 0.2s, transform 0.2s;
+    }
+
+    .btn-main:hover {
+      background: #0891b2;
+      transform: translateY(-2px) scale(1.04);
+    }
+
+    @media (max-width: 700px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .navbar ul {
+        margin-top: 8px;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .actions {
+        flex-direction: column;
+        gap: 12px;
+        align-items: center;
+      }
     }
   </style>
 </head>
@@ -194,106 +167,78 @@
     </ul>
   </nav>
 
-  <div class="container">
-    <h1 class="section-title">Your Cart</h1>
-    <table class="cart-table" id="cartTable">
-      <thead>
-        <tr>
-          <th>Product</th>
-          <th>Price</th>
-          <th>Quantity</th>
-          <th>Subtotal</th>
-          <th>Action</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <div class="total" id="totalPrice">Total: ₹0.00</div>
-    <div class="actions">
-      <button class="clear-btn" onclick="clearCart()">Clear Cart</button>
-      <button class="checkout-btn" onclick="checkout()">Proceed to Checkout</button>
-    </div>
+  <h2>Your Shopping Cart</h2>
+  <table id="cart-table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Price (₹)</th>
+        <th>Quantity</th>
+        <th>Subtotal (₹)</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="cart-items">
+      <!-- Items will load here -->
+    </tbody>
+  </table>
+
+  <div class="total">
+    Total Amount: ₹<span id="total-amount">0</span>
+  </div>
+
+  <div class="actions">
+    <button class="btn-main" onclick="clearCart()">Clear Cart</button>
+    <button class="btn-main">Proceed to Checkout</button>
   </div>
 
   <script>
-    const cartTableBody = document.querySelector('#cartTable tbody');
-    const totalPriceEl = document.getElementById('totalPrice');
-
-    function getCart() {
-      return JSON.parse(localStorage.getItem('cart') || '[]');
-    }
-
-    function setCart(cart) {
-      localStorage.setItem('cart', JSON.stringify(cart));
-      renderCart();
-    }
-
-    function renderCart() {
-      const cart = getCart();
-      cartTableBody.innerHTML = '';
+    function loadCart() {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      const cartItems = document.getElementById("cart-items");
+      cartItems.innerHTML = "";
       let total = 0;
 
-      if (cart.length === 0) {
-        cartTableBody.innerHTML = '<tr><td colspan="5">Your cart is empty.</td></tr>';
-        totalPriceEl.textContent = 'Total: ₹0.00';
-        return;
-      }
-
       cart.forEach((item, index) => {
-        const subtotal = item.price * item.quantity;
+        let subtotal = item.price * item.quantity;
         total += subtotal;
 
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${item.img ? '<img src="'+item.img+'" alt="'+item.name+'">' : item.name}</td>
-          <td>₹${item.price}.00</td>
-          <td><input type="number" class="qty-input" min="1" value="${item.quantity}" data-index="${index}"></td>
-          <td>₹${subtotal}.00</td>
-          <td><button class="remove-btn" data-index="${index}">Remove</button></td>
+        cartItems.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>₹${item.price}</td>
+            <td>
+              <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
+            </td>
+            <td>₹${subtotal}</td>
+            <td><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
+          </tr>
         `;
-        cartTableBody.appendChild(tr);
       });
 
-      totalPriceEl.textContent = `Total: ₹${total}.00`;
-
-      document.querySelectorAll('.qty-input').forEach(input => {
-        input.addEventListener('change', (e) => {
-          const idx = e.target.dataset.index;
-          let val = parseInt(e.target.value);
-          if (isNaN(val) || val < 1) val = 1;
-          const cart = getCart();
-          cart[idx].quantity = val;
-          setCart(cart);
-        });
-      });
-
-      document.querySelectorAll('.remove-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-          const idx = e.target.dataset.index;
-          const cart = getCart();
-          cart.splice(idx, 1);
-          setCart(cart);
-        });
-      });
+      document.getElementById("total-amount").innerText = total;
     }
 
-    function checkout() {
-      const cart = getCart();
-      if (cart.length === 0) {
-        alert('Your cart is empty!');
-        return;
-      }
-      alert('Checkout successful! Total: ₹' + cart.reduce((sum, item) => sum + item.price * item.quantity, 0) + '.00');
-      localStorage.removeItem('cart');
-      renderCart();
+    function updateQuantity(index, qty) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart[index].quantity = parseInt(qty);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      loadCart();
+    }
+
+    function removeItem(index) {
+      let cart = JSON.parse(localStorage.getItem("cart")) || [];
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      loadCart();
     }
 
     function clearCart() {
-      localStorage.removeItem('cart');
-      renderCart();
+      localStorage.removeItem("cart");
+      loadCart();
     }
 
-    window.onload = renderCart;
+    loadCart();
   </script>
 
 </body>
