@@ -3,249 +3,156 @@
 <head>
   <meta charset="UTF-8" />
   <title>Product Details - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    /* Combined and adapted CSS from Reality Shop with product details specific styles */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #fdfdfd;
+      background: linear-gradient(to right, #a8edea, #fed6e3);
       color: #333;
       line-height: 1.6;
     }
-    nav {
-      background: #212121;
-      padding: 0 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111827;
+      padding: 15px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-    .nav-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 70px;
-    }
-    .logo {
-      color: #fff;
-      font-size: 1.7rem;
+
+    .navbar .logo {
+      font-size: 22px;
       font-weight: bold;
-      letter-spacing: 2px;
+      color: #06b6d4;
       text-decoration: none;
     }
-    ul.nav-links {
-      display: flex;
+
+    .navbar ul {
       list-style: none;
-      gap: 32px;
-    }
-    ul.nav-links li a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 1rem;
-      padding: 8px 0;
-      transition: color 0.2s;
-    }
-    ul.nav-links li a:hover,
-    ul.nav-links li a.active {
-      color: #ff9800;
-    }
-    .page-container {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
       display: flex;
-      gap: 24px;
-      min-height: 600px;
+      gap: 25px;
+    }
+
+    .navbar ul li a {
+      text-decoration: none;
+      color: #f3f4f6;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    .navbar ul li a:hover {
+      color: #06b6d4;
+    }
+
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2px;
+      left: 0;
+      bottom: -4px;
+      background: #06b6d4;
+      transition: width 0.3s;
+    }
+
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
+    }
+
+    .page-container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 20px;
       background: #fff;
       border-radius: 16px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .product-details {
-      flex: 1 1 50%;
-      padding: 24px;
-      border-radius: 12px;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      min-width: 300px;
-      background: #fff;
-      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
-    }
-    .related-products {
-      flex: 1 1 50%;
-      padding: 16px;
-      border-radius: 12px;
-      max-height: 600px;
-      overflow-y: auto;
-      min-width: 280px;
-      background: #fff;
-      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
-    }
-    model-viewer {
-      width: 100%;
-      height: 500px;
-      border-radius: 8px;
-      background-color: #fefefe;
-      margin-bottom: 20px;
-      position: relative;
-      box-shadow: 0 4px 18px rgba(0,114,255,0.3);
-      transition: box-shadow 0.3s ease;
-    }
-    model-viewer:hover {
-      box-shadow: 0 6px 24px rgba(0,114,255,0.5);
-    }
-    .product-info {
-      width: 100%;
-      max-width: 700px;
-      text-align: center;
-    }
-    .product-info h1 {
-      margin-top: 0;
-      font-size: 2.2rem;
-      color: #00bcd4;
-      font-weight: bold;
-    }
-    .product-info p.price {
-      font-weight: bold;
-      font-size: 1.8rem;
-      color: #ff9800;
-      margin: 10px 0 20px;
-    }
-    .product-info p {
-      font-size: 1rem;
-      color: #444;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .product-info button, .ar-button, .tryon-button {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: #fff;
-      padding: 12px 32px;
-      border: none;
-      border-radius: 30px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      margin-right: 12px;
-      margin-bottom: 10px;
-      display: inline-block;
-      box-shadow: 0 6px 12px rgba(0, 114, 255, 0.4);
-    }
-    .product-info button:hover, .ar-button:hover, .tryon-button:hover {
-      background: linear-gradient(135deg, #0072ff, #004c99);
-    }
-    .wishlist-btn {
-      background: #eee;
-      color: #ff9800;
-      border: 1px solid #ff9800;
-      font-weight: bold;
-      border-radius: 30px;
-      padding: 12px 32px;
-      margin-right: 12px;
-      margin-bottom: 10px;
-      transition: background 0.3s;
-      cursor: pointer;
-      display: inline-block;
-      box-shadow: inset 0 0 0 0 #ff9800;
-      transition: box-shadow 0.3s ease;
-    }
-    .wishlist-btn.active {
-      background: #ff9800;
-      color: #fff;
-      cursor: default;
-      border: none;
-      box-shadow: inset 0 0 10px 2px #ff9800;
-    }
-    .buttons-row {
-      margin: 10px 0 20px;
-      text-align: center;
-    }
-    .related-product {
-      cursor: pointer;
-      margin-bottom: 16px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: background 0.2s ease;
-    }
-    .related-product:hover {
-      background: #f1f9ff;
-    }
-    .related-product:last-child {
-      border-bottom: none;
-    }
-    .related-product h4 {
-      margin: 8px 0 6px;
-      text-align: center;
-      color: #00bcd4;
-    }
-    .related-product model-viewer,
-    .related-product img {
-      width: 100%;
-      height: 150px;
-      object-fit: contain;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-      transition: box-shadow 0.3s ease;
-    }
-    .related-product model-viewer:hover,
-    .related-product img:hover {
-      box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
+      gap: 20px;
     }
 
-    /* Responsive */
-    @media (max-width: 991px) {
+    model-viewer, img {
+      width: 100%;
+      height: 400px;
+      object-fit: contain;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .product-info {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      text-align: center;
+    }
+
+    .product-info h1 {
+      font-size: 2rem;
+      color: #00bcd4;
+      font-weight: bold;
+    }
+
+    .product-info p.price {
+      font-weight: bold;
+      font-size: 1.5rem;
+      color: #00bcd4;
+    }
+
+    .buttons-row button {
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: #fff;
+      padding: 10px 24px;
+      border: none;
+      border-radius: 30px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin: 5px;
+    }
+
+    .buttons-row button:hover {
+      transform: translateY(-2px) scale(1.05);
+      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
+    }
+
+    @media (max-width: 768px) {
       .page-container {
-        flex-direction: column;
-        margin: 20px 15px;
-        min-height: auto;
-      }
-      .product-details, .related-products {
-        width: 100%;
-        max-width: 100%;
-        min-width: auto;
-        min-height: auto;
-      }
-      .related-products {
-        margin-top: 30px;
-        max-height: none;
-        overflow-y: visible;
+        padding: 10px;
       }
     }
   </style>
 </head>
 <body>
-  <nav>
-    <div class="nav-container">
-      <a href="index.html" class="logo">Reality Shop</a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="shop.html" class="active">Shop</a></li>
-        <li><a href="cart.html">Cart</a></li>
-        <li><a href="wishlist.html">Wish list</a></li>
-        <li><a href="login.html">Account</a></li>
-      </ul>
-    </div>
+  <nav class="navbar">
+    <a href="index.html" class="logo">Reality Shop</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="wishlist.html">Wishlist</a></li>
+      <li><a href="login.html">Account</a></li>
+    </ul>
   </nav>
-  <div class="page-container">
-    <section class="product-details" id="product-details">
-      <!-- Product details injected here -->
-    </section>
-    <aside class="related-products" id="related-products">
-      <h3>Related Products</h3>
-      <!-- Related products injected here -->
-    </aside>
+
+  <div class="page-container" id="product-details">
+    <!-- Product details injected by JS -->
   </div>
-  <script>
+
+<script>
     const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
       {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
