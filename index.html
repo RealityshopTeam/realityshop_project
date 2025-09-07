@@ -5,6 +5,7 @@
   <title>Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
+    /* Reset */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -18,7 +19,7 @@
       justify-content: space-between;
       align-items: center;
       background: #111827;
-      padding: 15px 5vw;
+      padding: 15px 40px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       position: sticky;
       top: 0;
@@ -29,13 +30,13 @@
       font-weight: bold;
       color: #06b6d4;
       text-decoration: none;
-      flex-shrink: 0;
+      white-space: nowrap;
     }
     .navbar ul {
       list-style: none;
       display: flex;
       gap: 25px;
-      align-items: center;
+      margin-left: 24px;
     }
     .navbar ul li a {
       text-decoration: none;
@@ -43,64 +44,53 @@
       font-weight: 500;
       position: relative;
       transition: color 0.3s;
-      font-size: 16px;
+      font-size: 1rem;
+      padding: 7px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      white-space: nowrap;
     }
     .navbar ul li a:hover,
     .navbar ul li a.active {
       color: #06b6d4;
+      background: rgba(6,182,212,0.08);
     }
     .navbar ul li a::after {
       content: '';
       position: absolute;
       width: 0;
-      height: 2px;
+      height: 2.5px;
       left: 0;
-      bottom: -4px;
+      bottom: 0;
       background: #06b6d4;
       transition: width 0.3s;
+      border-radius: 8px;
     }
     .navbar ul li a:hover::after,
     .navbar ul li a.active::after {
       width: 100%;
     }
-    /* Hamburger */
-    .navbar .hamburger {
-      display: none;
-      flex-direction: column;
-      justify-content: center;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-    }
-    .navbar .hamburger span {
-      height: 4px;
-      background: #f3f4f6;
-      margin: 5px 0;
-      border-radius: 2px;
-      width: 100%;
-      transition: all 0.3s;
-    }
     /* Hero Section */
     .hero {
       background: linear-gradient(to right, #a8edea, #fed6e3);
       color: #333;
-      padding: 75px 5vw;
+      padding: 100px 20px;
       text-align: center;
-      min-height: 60vh;
+      min-height: 80vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
     }
     .hero h1 {
-      font-size: 38px;
-      margin-bottom: 18px;
+      font-size: 50px;
+      margin-bottom: 20px;
       color: #222;
     }
     .hero p {
       font-size: 18px;
-      max-width: 98vw;
-      margin: 0 auto 24px auto;
+      max-width: 600px;
+      margin: 0 auto 30px auto;
       line-height: 1.5;
     }
     .hero .btn {
@@ -123,44 +113,36 @@
     }
     /* Section Styling */
     section.container {
-      max-width: 98vw;
-      margin: 40px auto;
-      padding: 18px 4vw;
+      max-width: 1000px;
+      margin: 60px auto;
+      padding: 30px;
       background: #fff;
       border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
     section h2 {
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 20px;
       color: #00bcd4;
-      font-size: 24px;
     }
     /* Form Styling */
     form {
       display: flex;
       flex-direction: column;
-      gap: 13px;
-      margin-top: 10px;
-      max-width: 480px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
+      gap: 15px;
+      margin-top: 20px;
     }
-    form label { font-size: 15px; }
     form input, form textarea {
-      padding: 11px;
+      padding: 12px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 15px;
       transition: border 0.3s, box-shadow 0.3s;
-      width: 100%;
-      background: #fafcff;
     }
     form input:focus, form textarea:focus {
       border-color: #00bcd4;
       outline: none;
-      box-shadow: 0 0 6px rgba(0,188,212,0.2);
+      box-shadow: 0 0 6px rgba(0,188,212,0.3);
     }
     form button {
       align-self: flex-start;
@@ -175,96 +157,52 @@
     }
     form button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 154, 158, 0.25);
+      box-shadow: 0 4px 12px rgba(255, 154, 158, 0.4);
     }
-    /* Contact Info */
-    .contact-info {
-      text-align: center;
-      margin-top: 25px;
-    }
-    .contact-info h3 {
-      color: #111827;
-      margin-bottom: 12px;
-      font-size: 18px;
-    }
-    .contact-info p { font-size: 16px; margin-bottom: 7px; }
+    .contact-info h3 { margin-top: 25px; margin-bottom: 10px; color: #06b6d4;}
     /* Footer */
     footer {
       background: #f9f9f9;
       color: #666;
       text-align: center;
-      padding: 18px;
-      margin-top: 35px;
+      padding: 20px;
+      margin-top: 40px;
       border-top: 1px solid #eee;
-      font-size: 15px;
     }
-    footer a { color: #00bcd4; text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    footer a {
+      color: #00bcd4;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
+    }
     /* Responsive */
-    @media (max-width: 700px) {
-      .navbar {
-        padding: 12px 4vw;
-      }
-      .hero {
-        padding: 54px 3vw;
-      }
-      .hero h1 {
-        font-size: 26px;
-      }
+    @media (max-width: 999px) {
       section.container {
-        margin: 18px 0 24px 0;
-        padding: 14px 1vw;
-        border-radius: 9px;
+        margin: 30px 10px;
+        padding: 18px;
       }
-      .contact-info p,
-      section h2,
-      form input,
-      form textarea,
-      .hero p { font-size: 15px; }
-      .navbar ul { gap: 12px; }
+      .hero h1 { font-size: 38px; }
+      .navbar { padding: 10px 8px; }
     }
-    @media (max-width: 600px) {
-      .navbar {
-        flex-wrap: wrap;
-      }
-      .navbar .hamburger {
-        display: flex;
-      }
-      .navbar ul {
-        flex-direction: column;
-        gap: 0;
-        background: #151932;
-        position: absolute;
-        top: 58px;
-        right: 0;
-        width: 100vw;
-        left: 0;
-        display: none;
-        z-index: 999;
-      }
-      .navbar ul.mobile-open {
-        display: flex;
-      }
-      .navbar ul li {
-        width: 100%;
-        text-align: center;
-        margin: 12px 0;
-      }
+    @media (max-width: 700px) {
+      .navbar { flex-direction: column; align-items: flex-start; padding: 10px 5px; }
+      .navbar .logo { font-size: 20px; margin-bottom: 8px; }
+      .navbar ul { gap: 12px; margin-left: 0; }
+      .navbar ul li a { font-size: 0.97rem; padding: 9px 7px; }
+      .hero { padding: 60px 7vw; }
+      section.container { padding: 10px 3vw; }
+    }
+    @media (max-width: 480px) {
+      .navbar { padding: 7px 2px; }
+      .hero { padding: 40px 2vw; min-height: auto; }
+      .hero h1 { font-size: 27px;}
+      section.container { margin: 18px 1vw; padding: 6px 1vw;}
+      .navbar ul { flex-wrap: wrap; gap: 5px; }
       .navbar ul li a {
-        padding: 12px 0;
-        width: 100%;
-        display: block;
-        border-bottom: 1px solid #232943;
+        font-size: 0.92rem;
+        padding: 7px 3px;
       }
-      .hero {
-        padding: 36px 2vw;
-        min-height: unset;
-      }
-      form {
-        padding: 0 5px;
-        max-width: unset;
-      }
-      .contact-info { font-size: 14px; }
     }
   </style>
 </head>
@@ -272,9 +210,6 @@
   <!-- Navigation -->
   <nav class="navbar">
     <a href="#" class="logo">Reality Shop</a>
-    <div class="hamburger" onclick="toggleMobileMenu()">
-      <span></span><span></span><span></span>
-    </div>
     <ul>
       <li><a href="index.html" class="active">Home</a></li>
       <li><a href="shop.html">Shop</a></li>
@@ -323,20 +258,5 @@
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
   </footer>
-  <script>
-    function toggleMobileMenu() {
-      const navList = document.querySelector('.navbar ul');
-      navList.classList.toggle('mobile-open');
-    }
-    // Close menu on link click (mobile)
-    document.querySelectorAll('.navbar ul li a').forEach(link => {
-      link.addEventListener('click', () => {
-        const navList = document.querySelector('.navbar ul');
-        if(navList.classList.contains('mobile-open')) {
-          navList.classList.remove('mobile-open');
-        }
-      });
-    });
-  </script>
 </body>
 </html>
