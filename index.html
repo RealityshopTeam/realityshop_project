@@ -4,7 +4,160 @@
   <meta charset="UTF-8" />
   <title>Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #fdfdfd;
+      color: #333;
+      line-height: 1.6;
+    }
+    /* Standard top navbar for desktop/tablet */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111827;
+      padding: 15px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #06b6d4;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+      margin-left: 24px;
+    }
+    .navbar ul li a {
+      text-decoration: none;
+      color: #f3f4f6;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+      font-size: 1rem;
+      padding: 7px 10px;
+      border-radius: 6px;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
+      color: #06b6d4;
+      background: rgba(6,182,212,0.08);
+    }
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      width: 0;
+      height: 2.5px;
+      left: 0;
+      bottom: 0;
+      background: #06b6d4;
+      transition: width 0.3s;
+      border-radius: 8px;
+    }
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
+    }
+    /* Bottom navbar for mobile */
+    .mobile-bottom-nav {
+      display: none;
+    }
+    /* Hero Section and other existing styling omitted for brevity, unchanged */
+    /* Responsive for menu switching */
+    @media (max-width: 700px) {
+      .navbar { display: none; }
+      .mobile-bottom-nav {
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        height: 64px;
+        background: #111827;
+        border-top: 1px solid #222c38;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 2000;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+      }
+      .mobile-bottom-nav a {
+        color: #f3f4f6;
+        text-decoration: none;
+        font-size: 13px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1 0 auto;
+        transition: color 0.25s;
+        padding: 0 3px;
+      }
+      .mobile-bottom-nav a.active,
+      .mobile-bottom-nav a:active,
+      .mobile-bottom-nav a:hover {
+        color: #06b6d4;
+      }
+      .mobile-bottom-nav svg {
+        width: 25px; height: 25px;
+        margin-bottom: 2px;
+        display: block;
+      }
+    }
+    /* Add the rest of your existing responsive and section styling here */
+    .hero {
+      background: linear-gradient(to right, #a8edea, #fed6e3);
+      color: #333;
+      padding: 100px 20px;
+      text-align: center;
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .hero h1 { font-size: 50px; margin-bottom: 20px; color: #222;}
+    .hero p { font-size: 18px; max-width: 600px; margin: 0 auto 30px auto; line-height: 1.5;}
+    .hero .btn {
+      display: inline-block; padding: 12px 28px; margin: 5px;
+      border-radius: 30px; border: none; font-size: 16px; cursor: pointer;
+      font-weight: bold; transition: all 0.3s;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      color: #fff; box-shadow: 0 4px 12px rgba(0, 114, 255, 0.3);
+    }
+    .hero .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 18px rgba(0, 114, 255, 0.4);}
+    /* ... your existing section/container/footer styles ... */
+    section.container {
+      max-width: 1000px; margin: 60px auto; padding: 30px;
+      background: #fff; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    section h2 { text-align: center; margin-bottom: 20px; color: #00bcd4;}
+    form { display: flex; flex-direction: column; gap: 15px; margin-top: 20px;}
+    form input, form textarea {
+      padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px;
+      transition: border 0.3s, box-shadow 0.3s;
+    }
+    form input:focus, form textarea:focus { border-color: #00bcd4; outline: none; box-shadow: 0 0 6px rgba(0,188,212,0.3);}
+    form button { align-self: flex-start; background: linear-gradient(135deg, #ff9a9e, #fad0c4); color: #333; border: none; padding: 12px 25px; border-radius: 30px; font-weight: bold; cursor: pointer; transition: all 0.3s;}
+    form button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(255, 154, 158, 0.4);}
+    .contact-info h3 { margin-top: 25px; margin-bottom: 10px; color: #06b6d4;}
+    footer { background: #f9f9f9; color: #666; text-align: center; padding: 20px; margin-top: 40px; border-top: 1px solid #eee; }
+    footer a { color: #00bcd4; text-decoration: none;}
+    footer a:hover { text-decoration: underline;}
+    @media (max-width: 999px) { section.container {margin: 30px 10px; padding: 18px;} .hero h1 { font-size: 38px; } }
+    @media (max-width: 480px) {
+      .hero { padding: 40px 2vw; min-height: auto; }
+      .hero h1 { font-size: 27px;}
+      section.container { margin: 18px 1vw; padding: 6px 1vw;}
+    }
+  </style>
 </head>
 <body>
   <!-- Top Navigation (desktop/tablet) -->
@@ -82,5 +235,3 @@
   </footer>
 </body>
 </html>
-
-
