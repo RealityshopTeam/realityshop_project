@@ -5,58 +5,50 @@
   <title>Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: #fdfdfd;
       color: #333;
       line-height: 1.6;
     }
-
     /* Navbar */
     .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #111827; /* Dark navy/charcoal */
-      padding: 15px 40px;
+      background: #111827;
+      padding: 15px 5vw;
       box-shadow: 0 2px 8px rgba(0,0,0,0.3);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-
     .navbar .logo {
       font-size: 22px;
       font-weight: bold;
-      color: #06b6d4; /* Cyan accent */
+      color: #06b6d4;
       text-decoration: none;
+      flex-shrink: 0;
     }
-
     .navbar ul {
       list-style: none;
       display: flex;
       gap: 25px;
+      align-items: center;
     }
-
     .navbar ul li a {
       text-decoration: none;
-      color: #f3f4f6; /* Light text */
+      color: #f3f4f6;
       font-weight: 500;
       position: relative;
       transition: color 0.3s;
+      font-size: 16px;
     }
-
-    .navbar ul li a:hover {
-      color: #06b6d4; /* Cyan hover */
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
+      color: #06b6d4;
     }
-
     .navbar ul li a::after {
       content: '';
       position: absolute;
@@ -67,37 +59,50 @@
       background: #06b6d4;
       transition: width 0.3s;
     }
-
-    .navbar ul li a:hover::after {
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
       width: 100%;
     }
-
+    /* Hamburger */
+    .navbar .hamburger {
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+    }
+    .navbar .hamburger span {
+      height: 4px;
+      background: #f3f4f6;
+      margin: 5px 0;
+      border-radius: 2px;
+      width: 100%;
+      transition: all 0.3s;
+    }
     /* Hero Section */
     .hero {
       background: linear-gradient(to right, #a8edea, #fed6e3);
       color: #333;
-      padding: 100px 20px;
+      padding: 75px 5vw;
       text-align: center;
-      min-height: 80vh;
+      min-height: 60vh;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
     }
-
     .hero h1 {
-      font-size: 50px;
-      margin-bottom: 20px;
+      font-size: 38px;
+      margin-bottom: 18px;
       color: #222;
     }
-
     .hero p {
       font-size: 18px;
-      max-width: 600px;
-      margin: 0 auto 30px auto;
+      max-width: 98vw;
+      margin: 0 auto 24px auto;
       line-height: 1.5;
     }
-
     .hero .btn {
       display: inline-block;
       padding: 12px 28px;
@@ -112,50 +117,51 @@
       color: #fff;
       box-shadow: 0 4px 12px rgba(0, 114, 255, 0.3);
     }
-
     .hero .btn:hover {
       transform: translateY(-3px);
       box-shadow: 0 6px 18px rgba(0, 114, 255, 0.4);
     }
-
     /* Section Styling */
     section.container {
-      max-width: 1000px;
-      margin: 60px auto;
-      padding: 30px;
+      max-width: 98vw;
+      margin: 40px auto;
+      padding: 18px 4vw;
       background: #fff;
       border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
-
     section h2 {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 15px;
       color: #00bcd4;
+      font-size: 24px;
     }
-
     /* Form Styling */
     form {
       display: flex;
       flex-direction: column;
-      gap: 15px;
-      margin-top: 20px;
+      gap: 13px;
+      margin-top: 10px;
+      max-width: 480px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
-
+    form label { font-size: 15px; }
     form input, form textarea {
-      padding: 12px;
+      padding: 11px;
       border: 1px solid #ddd;
       border-radius: 8px;
       font-size: 15px;
       transition: border 0.3s, box-shadow 0.3s;
+      width: 100%;
+      background: #fafcff;
     }
-
     form input:focus, form textarea:focus {
       border-color: #00bcd4;
       outline: none;
-      box-shadow: 0 0 6px rgba(0,188,212,0.3);
+      box-shadow: 0 0 6px rgba(0,188,212,0.2);
     }
-
     form button {
       align-self: flex-start;
       background: linear-gradient(135deg, #ff9a9e, #fad0c4);
@@ -167,50 +173,108 @@
       cursor: pointer;
       transition: all 0.3s;
     }
-
     form button:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 154, 158, 0.4);
+      box-shadow: 0 4px 12px rgba(255, 154, 158, 0.25);
     }
-
+    /* Contact Info */
+    .contact-info {
+      text-align: center;
+      margin-top: 25px;
+    }
+    .contact-info h3 {
+      color: #111827;
+      margin-bottom: 12px;
+      font-size: 18px;
+    }
+    .contact-info p { font-size: 16px; margin-bottom: 7px; }
     /* Footer */
     footer {
       background: #f9f9f9;
       color: #666;
       text-align: center;
-      padding: 20px;
-      margin-top: 40px;
+      padding: 18px;
+      margin-top: 35px;
       border-top: 1px solid #eee;
+      font-size: 15px;
     }
-
-    footer a {
-      color: #00bcd4;
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
+    footer a { color: #00bcd4; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
     /* Responsive */
-    @media (max-width: 768px) {
-      .navbar ul {
-        gap: 15px;
+    @media (max-width: 700px) {
+      .navbar {
+        padding: 12px 4vw;
+      }
+      .hero {
+        padding: 54px 3vw;
       }
       .hero h1 {
-        font-size: 36px;
+        font-size: 26px;
       }
       section.container {
-        margin: 30px 15px;
+        margin: 18px 0 24px 0;
+        padding: 14px 1vw;
+        border-radius: 9px;
       }
+      .contact-info p,
+      section h2,
+      form input,
+      form textarea,
+      .hero p { font-size: 15px; }
+      .navbar ul { gap: 12px; }
+    }
+    @media (max-width: 600px) {
+      .navbar {
+        flex-wrap: wrap;
+      }
+      .navbar .hamburger {
+        display: flex;
+      }
+      .navbar ul {
+        flex-direction: column;
+        gap: 0;
+        background: #151932;
+        position: absolute;
+        top: 58px;
+        right: 0;
+        width: 100vw;
+        left: 0;
+        display: none;
+        z-index: 999;
+      }
+      .navbar ul.mobile-open {
+        display: flex;
+      }
+      .navbar ul li {
+        width: 100%;
+        text-align: center;
+        margin: 12px 0;
+      }
+      .navbar ul li a {
+        padding: 12px 0;
+        width: 100%;
+        display: block;
+        border-bottom: 1px solid #232943;
+      }
+      .hero {
+        padding: 36px 2vw;
+        min-height: unset;
+      }
+      form {
+        padding: 0 5px;
+        max-width: unset;
+      }
+      .contact-info { font-size: 14px; }
     }
   </style>
 </head>
 <body>
-
   <!-- Navigation -->
   <nav class="navbar">
     <a href="#" class="logo">Reality Shop</a>
+    <div class="hamburger" onclick="toggleMobileMenu()">
+      <span></span><span></span><span></span>
+    </div>
     <ul>
       <li><a href="index.html" class="active">Home</a></li>
       <li><a href="shop.html">Shop</a></li>
@@ -219,14 +283,12 @@
       <li><a href="login.html">Account</a></li>
     </ul>
   </nav>
-
   <!-- Hero Section -->
   <section class="hero">
     <h1>Welcome to Reality Shop</h1>
     <p>Experience the Try-on before you buy.</p>
     <a href="shop.html"><button class="btn">Shop Now</button></a>
   </section>
-
   <!-- About Section -->
   <section class="container" id="about">
     <h2>Who We Are</h2>
@@ -235,28 +297,21 @@
     <p>At Reality Shop, you’ll find a wide variety of products at affordable prices, all backed by our commitment to quality and customer satisfaction. We believe that shopping should be <strong>fun, immersive, and stress-free</strong>.</p>
     <p>Thank you for choosing Reality Shop. We look forward to making your shopping experience smarter and more exciting!</p>
   </section>
-
   <!-- Contact Section -->
   <section class="container" id="contact">
     <h2>Get in Touch</h2>
     <p>We’d love to hear from you. Fill out the form below or reach us directly via email or phone.</p>
-
     <form>
       <label for="name">Full Name</label>
       <input type="text" id="name" name="name" placeholder="Enter your name" required>
-
       <label for="email">Email Address</label>
       <input type="email" id="email" name="email" placeholder="Enter your email" required>
-
       <label for="subject">Subject</label>
       <input type="text" id="subject" name="subject" placeholder="Enter subject" required>
-
       <label for="message">Your Message</label>
       <textarea id="message" name="message" placeholder="Write your message..." required></textarea>
-
       <button type="submit">Send Message</button>
     </form>
-
     <div class="contact-info">
       <h3>Our Contact Details</h3>
       <p>Email: penkejayesh@gmail.com</p>
@@ -264,11 +319,24 @@
       <p>Address: Reality Shop HQ, kkd, India</p>
     </div>
   </section>
-
   <!-- Footer -->
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
   </footer>
-
+  <script>
+    function toggleMobileMenu() {
+      const navList = document.querySelector('.navbar ul');
+      navList.classList.toggle('mobile-open');
+    }
+    // Close menu on link click (mobile)
+    document.querySelectorAll('.navbar ul li a').forEach(link => {
+      link.addEventListener('click', () => {
+        const navList = document.querySelector('.navbar ul');
+        if(navList.classList.contains('mobile-open')) {
+          navList.classList.remove('mobile-open');
+        }
+      });
+    });
+  </script>
 </body>
 </html>
