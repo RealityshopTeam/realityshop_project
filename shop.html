@@ -5,221 +5,10 @@
   <title>Reality Shop - Products</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: linear-gradient(to right, #a8edea, #fed6e3);
-      color: #333;
-      line-height: 1.6;
-      min-height: 100vh;
-    }
-    .navbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #111827;
-      padding: 15px 40px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .navbar .logo {
-      font-size: 22px;
-      font-weight: bold;
-      color: #06b6d4;
-      text-decoration: none;
-    }
-    .navbar ul {
-      list-style: none;
-      display: flex;
-      gap: 25px;
-    }
-    .navbar ul li a {
-      text-decoration: none;
-      color: #f3f4f6;
-      font-weight: 500;
-      position: relative;
-      transition: color 0.3s;
-    }
-    .navbar ul li a:hover {
-      color: #06b6d4;
-    }
-    .navbar ul li a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      left: 0;
-      bottom: -4px;
-      background: #06b6d4;
-      transition: width 0.3s;
-    }
-    .navbar ul li a:hover::after,
-    .navbar ul li a.active::after {
-      width: 100%;
-    }
-    .container {
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 20px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    h1.section-title {
-      text-align: center;
-      margin-bottom: 24px;
-      font-size: 2rem;
-      color: #00bcd4;
-    }
-    .search-sort-bar {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 30px;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .search-box, .sort-box {
-      flex: 1 1 300px;
-    }
-    .search-box input, .sort-box select {
-      width: 100%;
-      padding: 12px 14px;
-      font-size: 1rem;
-      border-radius: 8px;
-      border: 1px solid #ddd;
-      background: #fff;
-      transition: border 0.2s, box-shadow 0.2s;
-    }
-    .search-box input:focus, .sort-box select:focus {
-      border-color: #00bcd4;
-      box-shadow: 0 0 6px rgba(0,188,212,0.3);
-      outline: none;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-      gap: 24px;
-    }
-    .product {
-      background: #fff;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      transition: transform 0.2s, box-shadow 0.2s;
-      cursor: pointer;
-      position: relative;
-    }
-    .product:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
-    }
-    .product model-viewer, .product img {
-      width: 100%;
-      height: 200px;
-      object-fit: contain;
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-    .no-asset {
-      width: 100%;
-      height: 200px;
-      border-radius: 8px;
-      margin-bottom: 12px;
-      background: #eef2f7;
-      display: grid;
-      place-items: center;
-      color: #6b7280;
-      font-weight: 600;
-      font-size: 0.95rem;
-      border: 1px dashed #cbd5e1;
-    }
-    .product h3 {
-      margin: 10px 0 6px;
-      font-size: 1.1rem;
-      color: #333;
-    }
-    .product p.category {
-      font-size: 0.85rem;
-      color: #888;
-      margin-bottom: 12px;
-      font-style: italic;
-    }
-    .product p {
-      margin-bottom: 6px;
-      font-weight: bold;
-      color: #555;
-    }
-    .button-row {
-      display: flex;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    .product button {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      box-shadow: 0 4px 12px rgba(0,114,255,0.3);
-      color: #fff;
-      border: none;
-      padding: 10px 24px;
-      border-radius: 30px;
-      font-size: 0.95rem;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background 0.3s, transform 0.2s;
-      outline: none;
-    }
-    .product button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
-    }
-    .wishlist-btn.added {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(0,114,255,0.3);
-      border: 1px solid #00bcd4;
-      font-weight: bold;
-    }
-    .wishlist-btn:before {
-      content: "❤️ ";
-      color: #00bcd4;
-    }
-    footer {
-      background: #f9f9f9;
-      color: #666;
-      text-align: center;
-      padding: 20px;
-      margin-top: 40px;
-      border-top: 1px solid #eee;
-    }
-    footer a {
-      color: #00bcd4;
-      text-decoration: none;
-    }
-    footer a:hover {
-      text-decoration: underline;
-    }
-    @media (max-width: 768px) {
-      .navbar ul {
-        gap: 15px;
-      }
-      .container {
-        margin: 30px 15px;
-      }
-      .search-sort-bar {
-        flex-direction: column;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- Top Navigation (desktop/tablet) -->
   <nav class="navbar">
     <a href="index.html" class="logo">Reality Shop</a>
     <ul>
@@ -230,14 +19,41 @@
       <li><a href="login.html">Account</a></li>
     </ul>
   </nav>
+
+  <!-- Mobile Bottom Navigation (mobile only, with icons) -->
+  <nav class="mobile-bottom-nav">
+    <a href="index.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3a1 1 0 001-1v-5a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 001 1h3a1 1 0 001-1V10"/></svg>
+      Home
+    </a>
+    <a href="shop.html" class="active">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8M12 8v8"/></svg>
+      Shop
+    </a>
+    <a href="cart.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2.01 2.01 0 002 1.61h9.72a2 2 0 002-1.75l1.38-8.25H6.5"/></svg>
+      Cart
+    </a>
+    <a href="wishlist.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0l1.318 1.318 1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682l-7.682-7.682a4.5 4.5 0 010-6.364z"/></svg>
+      Wishlist
+    </a>
+    <a href="login.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-8 0v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Account
+    </a>
+  </nav>
+
+  <!-- Main Container -->
   <div class="container">
     <h1 class="section-title">Our Products</h1>
+
     <div class="search-sort-bar">
       <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search products..." />
+        <input type="text" id="searchInput" placeholder="Search products..." aria-label="Search products" />
       </div>
       <div class="sort-box">
-        <select id="sortSelect">
+        <select id="sortSelect" aria-label="Sort products">
           <option value="">Sort By</option>
           <option value="price-asc">Price: Low to High</option>
           <option value="price-desc">Price: High to Low</option>
@@ -248,11 +64,13 @@
         </select>
       </div>
     </div>
-    <div class="grid" id="product-grid"></div>
+
+    <div class="grid" id="product-grid" role="list" aria-live="polite" aria-label="Product list"></div>
   </div>
- <!-- JS Logic with asset existence checks and graceful fallbacks -->
-  <script>
+
+  <script type="module">
     const products = [
+      /* Same products array as before */
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
       {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
       {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
@@ -269,14 +87,14 @@
       {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
       {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
       {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
-      {name: "white crop top",price:345,glb:"imgs/cc0_-_shirt_on_hanger.glb",category:"Clothings"},
-      {name: "men shirt",price:800,glb:"imgs/realistic_dress_shirt.glb",category:"Clothings"},
-      {name:"clear sunglass",price:250,glb:"imgs/sunglasses_free.glb",category:"sunglass"},
-      {name:"pink sunglass",price:389,glb:"imgs/pink_round_sunglasses.glb",category:"sunglass"},
-      {name:"balenciaga sunglass",price:20000,glb:"imgs/balenciaga_sunglasses.glb",category:"sunglass"},
-      {name: "wireless ear buds", price:1500,glb:"imgs/wireless_unbranded_in_ear_head_phones.glb",category:"Electronics"},
-      {name:"white ear phones",price:350,glb:"imgs/ear_phones.glb",category:"Electronics"},
-      {name:"head phones",price:2000,glb:"imgs/ear_phone.glb",category:"Electronics"},
+      {name: "white crop top",price:345, glb:"imgs/cc0_-_shirt_on_hanger.glb", category:"Clothing"},
+      {name: "men shirt",price:800, glb:"imgs/realistic_dress_shirt.glb", category:"Clothing"},
+      {name:"clear sunglass",price:250, glb:"imgs/sunglasses_free.glb", category:"Accessories"},
+      {name:"pink sunglass",price:389, glb:"imgs/pink_round_sunglasses.glb", category:"Accessories"},
+      {name:"balenciaga sunglass",price:20000, glb:"imgs/balenciaga_sunglasses.glb", category:"Accessories"},
+      {name: "wireless ear buds", price:1500, glb:"imgs/wireless_unbranded_in_ear_head_phones.glb", category:"Electronics"},
+      {name:"white ear phones",price:350, glb:"imgs/ear_phones.glb", category:"Electronics"},
+      {name:"head phones",price:2000, glb:"imgs/ear_phone.glb", category:"Electronics"},
       {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
       {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
       {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
@@ -288,30 +106,32 @@
       {name: "louboutin", price:88, glb:"imgs/louboutin_earring.glb", category:"Accessories"},
       {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
       {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
-      {name:"men checks shirt",price:567,glb:"imgs/mens_casual_shirt.glb",category:"Clothing"},
-      {name:"canon retro camera",price:70000,glb:"imgs/canon_at-1_retro_camera.glb",category:"Electronics"},
-      {name:"Samsung led tv",price:52000,glb:"imgs/samsung_55_curved_tv_and_remote.glb",category:"Electronics"},
-      {name:"LG led tv",price:39000,glb:"imgs/tv_led_large.glb",category:"Electronics"},
-      {name:"refrigerator",price:23149,glb:"imgs/refrigerator.glb",category:"Electronics"},
-      {name:"fridge",price:20000,glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb",category:"Electronics"},
+      {name:"men checks shirt",price:567, glb:"imgs/mens_casual_shirt.glb", category:"Clothing"},
+      {name:"canon retro camera",price:70000, glb:"imgs/canon_at-1_retro_camera.glb", category:"Electronics"},
+      {name:"Samsung led tv",price:52000, glb:"imgs/samsung_55_curved_tv_and_remote.glb", category:"Electronics"},
+      {name:"LG led tv",price:39000, glb:"imgs/tv_led_large.glb", category:"Electronics"},
+      {name:"refrigerator",price:23149, glb:"imgs/refrigerator.glb", category:"Electronics"},
+      {name:"fridge",price:20000, glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb", category:"Electronics"},
       {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
       {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
-      {name:"apple watch",price:45000,glb:"imgs/apple_watch.glb",category:"Electronics"},
-      {name:"silver chain watch",price:1200,glb:"imgs/invicta_watch.glb",category:"Electronics"},
-      {name:"black chain watch",price:999,glb:"imgs/digital_watch.glb",category:"Electronics"},
-      {name:"HP victus laptop",price:700000,glb:"imgs/hp_victus_gaming_laptop.glb",category:"Electronics"},
-      {name:"lenovo laptop",price:55000,glb:"imgs/lenovo_thinkpad_laptop.glb",category:"Electronics"},
-      {name:"washing machine",price:18250,glb:"imgs/washing_machine.glb",category:"Electronics"},
-      {name:"lg washing machine",price:19490,glb:"imgs/washing_machine(1).glb",category:"Electronics"},
-      {name:"Tube Light",price:1900,glb:"imgs/tube_light.glb",category:"Electronics"},
-      {name:"fry pan",price:1500,glb:"imgs/frying_pan_36cm.glb",category:"Electronics"},
-      {name:"gas stove",price:3000,glb:"imgs/gas_stove_kitchen.glb",category:"Electronics"},
-      {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
+      {name:"apple watch",price:45000, glb:"imgs/apple_watch.glb", category:"Electronics"},
+      {name:"silver chain watch",price:1200, glb:"imgs/invicta_watch.glb", category:"Electronics"},
+      {name:"black chain watch",price:999, glb:"imgs/digital_watch.glb", category:"Electronics"},
+      {name:"HP victus laptop",price:700000, glb:"imgs/hp_victus_gaming_laptop.glb", category:"Electronics"},
+      {name:"lenovo laptop",price:55000, glb:"imgs/lenovo_thinkpad_laptop.glb", category:"Electronics"},
+      {name:"washing machine",price:18250, glb:"imgs/washing_machine.glb", category:"Electronics"},
+      {name:"lg washing machine",price:19490, glb:"imgs/washing_machine(1).glb", category:"Electronics"},
+      {name:"Tube Light",price:1900, glb:"imgs/tube_light.glb", category:"Electronics"},
+      {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
+      {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
+      {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
     ];
+
     const grid = document.getElementById('product-grid');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
     const assetOkCache = new Map();
+
     async function assetExists(url) {
       if (!url) return false;
       if (assetOkCache.has(url)) return assetOkCache.get(url);
@@ -320,17 +140,41 @@
         const ok = res.ok;
         assetOkCache.set(url, ok);
         return ok;
-      } catch (e) {
+      } catch {
         assetOkCache.set(url, false);
         return false;
       }
     }
+
     function makeFallbackNode(text = 'Preview not available') {
       const d = document.createElement('div');
       d.className = 'no-asset';
       d.textContent = text;
       return d;
     }
+
+    function makeImageNode(src, alt) {
+      const img = document.createElement('img');
+      img.src = src;
+      img.alt = alt;
+      img.addEventListener('error', () => {
+        img.replaceWith(makeFallbackNode());
+      });
+      return img;
+    }
+
+    function getWishlist() {
+      return JSON.parse(localStorage.getItem('wishlist') || '[]');
+    }
+
+    function setWishlist(wishlist) {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+
+    function isWishlisted(name) {
+      return getWishlist().some(item => item.name === name);
+    }
+
     async function renderProducts() {
       const searchTerm = (searchInput.value || '').toLowerCase();
       let filtered = products.filter(
@@ -354,35 +198,26 @@
         });
       }
       grid.innerHTML = '';
-      for (let i = 0; i < filtered.length; i++) {
-        const p = filtered[i];
+      for (const p of filtered) {
         const div = document.createElement('div');
         div.className = 'product';
         div.setAttribute('data-name', p.name);
         div.setAttribute('data-price', p.price);
         div.setAttribute('data-category', p.category);
-        // Navigate to product page (ignore clicks on buttons)
         div.onclick = (e) => {
           if (e.target.tagName === 'BUTTON') return;
           window.location.href = 'product.html?name=' + encodeURIComponent(p.name);
         };
-        // Choose the best available preview WITHOUT triggering 404s
         let previewNode = null;
         const hasGLB = await assetExists(p.glb);
         if (hasGLB) {
           const mv = document.createElement('model-viewer');
           mv.setAttribute('src', p.glb);
-          mv.setAttribute('alt', `${p.name} 3D view`);
+          mv.setAttribute('alt', p.name + ' 3D view');
           mv.setAttribute('auto-rotate', '');
           mv.setAttribute('camera-controls', '');
           mv.setAttribute('ar', '');
           mv.setAttribute('shadow-intensity', '1');
-          mv.style.width = '100%';
-          mv.style.height = '200px';
-          mv.style.objectFit = 'contain';
-          mv.style.borderRadius = '8px';
-          mv.style.marginBottom = '12px';
-          // If something still goes wrong, gracefully fallback
           mv.addEventListener('error', () => {
             mv.replaceWith(p.img ? makeImageNode(p.img, p.name) : makeFallbackNode());
           });
@@ -404,17 +239,15 @@
             </button>
           </div>
         `);
-        // Cart button
         div.querySelector('.cart-btn').onclick = (event) => {
           event.stopPropagation();
           let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-          let existing = cart.find(item => item.name === p.name);
+          const existing = cart.find(item => item.name === p.name);
           if (existing) existing.quantity += 1;
           else cart.push({ name: p.name, price: p.price, quantity: 1 });
           localStorage.setItem('cart', JSON.stringify(cart));
           alert(p.name + " added to cart!");
         };
-        // Wishlist button toggle
         const wishBtn = div.querySelector('.wishlist-btn');
         wishBtn.onclick = (event) => {
           event.stopPropagation();
@@ -434,42 +267,12 @@
         grid.appendChild(div);
       }
     }
-    function makeImageNode(src, alt) {
-      const img = document.createElement('img');
-      img.src = src;
-      img.alt = alt;
-      img.addEventListener('error', () => {
-        img.replaceWith(makeFallbackNode());
-      });
-      return img;
-    }
-    function getWishlist() {
-      return JSON.parse(localStorage.getItem('wishlist') || '[]');
-    }
-    function setWishlist(wishlist) {
-      localStorage.setItem('wishlist', JSON.stringify(wishlist));
-    }
-    function isWishlisted(name) {
-      return getWishlist().some(item => item.name === name);
-    }
-    // --- Lightweight self-tests (console only) ---
-    (function selfTests(){
-      console.log('[SelfTest] makeFallbackNode returns element:', makeFallbackNode() instanceof HTMLElement);
-      const dummy = document.createElement('model-viewer');
-      dummy.addEventListener('error', () => {
-        console.log('[SelfTest] model-viewer error event captured.');
-      });
-      dummy.dispatchEvent(new Event('error'));
-      // Asset existence negative test (expected false)
-      assetExists('imgs/__does_not_exist__.glb').then(ok => {
-        console.log('[SelfTest] nonexistent assetExists ->', ok === false ? 'PASS' : 'FAIL');
-      });
-    })();
-    // Events
+
     searchInput.addEventListener('input', () => { renderProducts(); });
     sortSelect.addEventListener('change', () => { renderProducts(); });
     window.onload = () => { renderProducts(); };
   </script>
+
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
   </footer>
