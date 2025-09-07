@@ -367,63 +367,7 @@
     </div>
     <div class="grid" id="product-grid" role="list" aria-live="polite" aria-label="Product list"></div>
   </div>
-  <script type="module">
-    const products = [
-      {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
-      {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
-      {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
-      {name: "Single Royal Chair", price: 950, glb: "imgs/chair.glb", category: "Furniture"},
-      {name: "Single Cot", price: 999, glb: "imgs/singlecot.glb", category: "Furniture"},
-      {name: "Blue T-shirt", price: 499, img: "imgs/Ts.jpg", category: "Clothing"},
-      {name: "Plain Shirt", price: 450, img: "imgs/short.jpg", category: "Clothing"},
-      {name: "Table", price: 850, glb: "imgs/table.glb", category: "Furniture"},
-      {name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories"},
-      {name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture"},
-      {name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture"},
-      {name: "Sweat Shirt", price: 550, img: "imgs/Tshort.jpg", category: "Clothing"},
-      {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
-      {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
-      {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
-      {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
-      {name: "white crop top",price:345, glb:"imgs/cc0_-_shirt_on_hanger.glb", category:"Clothing"},
-      {name: "men shirt",price:800, glb:"imgs/realistic_dress_shirt.glb", category:"Clothing"},
-      {name:"clear sunglass",price:250, glb:"imgs/sunglasses_free.glb", category:"Accessories"},
-      {name:"pink sunglass",price:389, glb:"imgs/pink_round_sunglasses.glb", category:"Accessories"},
-      {name:"balenciaga sunglass",price:20000, glb:"imgs/balenciaga_sunglasses.glb", category:"Accessories"},
-      {name: "wireless ear buds", price:1500, glb:"imgs/wireless_unbranded_in_ear_head_phones.glb", category:"Electronics"},
-      {name:"white ear phones",price:350, glb:"imgs/ear_phones.glb", category:"Electronics"},
-      {name:"head phones",price:2000, glb:"imgs/ear_phone.glb", category:"Electronics"},
-      {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
-      {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
-      {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
-      {name: "jashin necklace", price:369, glb:"imgs/jashin_necklace.glb", category:"Accessories"},
-      {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
-      {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
-      {name: "braclet", price:148, glb:"imgs/elegant_hand_chain_bangle__3d_model.glb", category:"Accessories"},
-      {name: "star earrings", price:79, glb:"imgs/stars_earrings.glb", category:"Accessories"},
-      {name: "louboutin", price:88, glb:"imgs/louboutin_earring.glb", category:"Accessories"},
-      {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
-      {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
-      {name:"men checks shirt",price:567, glb:"imgs/mens_casual_shirt.glb", category:"Clothing"},
-      {name:"canon retro camera",price:70000, glb:"imgs/canon_at-1_retro_camera.glb", category:"Electronics"},
-      {name:"Samsung led tv",price:52000, glb:"imgs/samsung_55_curved_tv_and_remote.glb", category:"Electronics"},
-      {name:"LG led tv",price:39000, glb:"imgs/tv_led_large.glb", category:"Electronics"},
-      {name:"refrigerator",price:23149, glb:"imgs/refrigerator.glb", category:"Electronics"},
-      {name:"fridge",price:20000, glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb", category:"Electronics"},
-      {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
-      {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
-      {name:"apple watch",price:45000, glb:"imgs/apple_watch.glb", category:"Electronics"},
-      {name:"silver chain watch",price:1200, glb:"imgs/invicta_watch.glb", category:"Electronics"},
-      {name:"black chain watch",price:999, glb:"imgs/digital_watch.glb", category:"Electronics"},
-      {name:"HP victus laptop",price:700000, glb:"imgs/hp_victus_gaming_laptop.glb", category:"Electronics"},
-      {name:"lenovo laptop",price:55000, glb:"imgs/lenovo_thinkpad_laptop.glb", category:"Electronics"},
-      {name:"washing machine",price:18250, glb:"imgs/washing_machine.glb", category:"Electronics"},
-      {name:"lg washing machine",price:19490, glb:"imgs/washing_machine(1).glb", category:"Electronics"},
-      {name:"Tube Light",price:1900, glb:"imgs/tube_light.glb", category:"Electronics"},
-      {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
-      {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
-      {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
-    ];
+  <script type="module" src="products.js">
     const grid = document.getElementById('product-grid');
     const searchInput = document.getElementById('searchInput');
     const sortSelect = document.getElementById('sortSelect');
@@ -566,3 +510,4 @@
   </footer>
 </body>
 </html>
+
