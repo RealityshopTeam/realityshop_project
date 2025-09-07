@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <!-- Navigation -->
+  <!-- Top Navigation (desktop/tablet) -->
   <nav class="navbar">
     <a href="#" class="logo">Reality Shop</a>
     <ul>
@@ -18,37 +18,57 @@
       <li><a href="login.html">Account</a></li>
     </ul>
   </nav>
-  
+  <!-- Bottom Navigation (mobile only, with icons) -->
+  <nav class="mobile-bottom-nav">
+    <a href="index.html" class="active">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3a1 1 0 001-1v-5a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 001 1h3a1 1 0 001-1V10"/></svg>
+      Home
+    </a>
+    <a href="shop.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8M12 8v8"/></svg>
+      Shop
+    </a>
+    <a href="cart.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2.01 2.01 0 002 1.61h9.72a2 2 0 002-1.75l1.38-8.25H6.5"/></svg>
+      Cart
+    </a>
+    <a href="wishlist.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0l1.318 1.318 1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682l-7.682-7.682a4.5 4.5 0 010-6.364z"/></svg>
+      Wishlist
+    </a>
+    <a href="login.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-8 0v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Account
+    </a>
+  </nav>
   <!-- Hero Section -->
   <section class="hero">
     <h1>Welcome to Reality Shop</h1>
     <p>Experience the Try-on before you buy.</p>
     <a href="shop.html"><button class="btn">Shop Now</button></a>
   </section>
-  
   <!-- About Section -->
   <section class="container" id="about">
     <h2>Who We Are</h2>
     <p>Welcome to <strong>Reality Shop</strong> – your one-stop destination for a seamless and innovative shopping experience. We combine modern e-commerce convenience with advanced features like AR-based product visualization, 3D viewing, and interactive tools to help you make the right purchase decisions.</p>
     <p>Founded in 2025, our mission is to <strong>bridge the gap between online and offline shopping</strong> by offering tools that let you explore products virtually before making a purchase.</p>
     <p>At Reality Shop, you’ll find a wide variety of products at affordable prices, all backed by our commitment to quality and customer satisfaction. We believe that shopping should be <strong>fun, immersive, and stress-free</strong>.</p>
-    <p>Thank you for choosing Reality Shop. We look forward to making your shopping experience smarter and more exciting.</p>
+    <p>Thank you for choosing Reality Shop. We look forward to making your shopping experience smarter and more exciting!</p>
   </section>
-  
   <!-- Contact Section -->
   <section class="container" id="contact">
     <h2>Get in Touch</h2>
     <p>We’d love to hear from you. Fill out the form below or reach us directly via email or phone.</p>
     <form>
       <label for="name">Full Name</label>
-      <input type="text" id="name" name="name" placeholder="Enter your name" required />
+      <input type="text" id="name" name="name" placeholder="Enter your name" required>
       <label for="email">Email Address</label>
-      <input type="email" id="email" name="email" placeholder="Enter your email" required />
+      <input type="email" id="email" name="email" placeholder="Enter your email" required>
       <label for="subject">Subject</label>
-      <input type="text" id="subject" name="subject" placeholder="Enter subject" required />
+      <input type="text" id="subject" name="subject" placeholder="Enter subject" required>
       <label for="message">Your Message</label>
       <textarea id="message" name="message" placeholder="Write your message..." required></textarea>
-      <button type="submit">Send</button>
+      <button type="submit">Send Message</button>
     </form>
     <div class="contact-info">
       <h3>Our Contact Details</h3>
@@ -57,8 +77,6 @@
       <p>Address: Reality Shop HQ, kkd, India</p>
     </div>
   </section>
-  
-  <!-- Footer -->
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
   </footer>
