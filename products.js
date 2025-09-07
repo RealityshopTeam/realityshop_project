@@ -1,4 +1,4 @@
- const products = [
+export const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
       {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
       {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
@@ -53,4 +53,5 @@
       {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
       {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
       {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
+
     ];
