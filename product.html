@@ -6,26 +6,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
+    /* Reset & base */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(to right, #a8edea, #fed6e3);
       color: #333;
       line-height: 1.6;
+      min-height: 100vh;
     }
 
+    /* Navbar */
     .navbar {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background: #111827;
       padding: 15px 40px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.28);
       position: sticky;
       top: 0;
       z-index: 1000;
@@ -33,7 +32,7 @@
 
     .navbar .logo {
       font-size: 22px;
-      font-weight: bold;
+      font-weight: 700;
       color: #06b6d4;
       text-decoration: none;
     }
@@ -41,30 +40,33 @@
     .navbar ul {
       list-style: none;
       display: flex;
-      gap: 25px;
+      gap: 24px;
+      align-items: center;
     }
 
     .navbar ul li a {
-      text-decoration: none;
       color: #f3f4f6;
+      text-decoration: none;
       font-weight: 500;
       position: relative;
-      transition: color 0.3s;
+      padding-bottom: 4px;
+      transition: color 0.25s ease;
     }
 
-    .navbar ul li a:hover {
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
       color: #06b6d4;
     }
 
     .navbar ul li a::after {
       content: '';
       position: absolute;
-      width: 0;
-      height: 2px;
       left: 0;
       bottom: -4px;
+      width: 0;
+      height: 2px;
       background: #06b6d4;
-      transition: width 0.3s;
+      transition: width 0.25s ease;
     }
 
     .navbar ul li a:hover::after,
@@ -72,67 +74,131 @@
       width: 100%;
     }
 
+    /* Page layout */
     .page-container {
-      max-width: 960px;
-      margin: 40px auto;
+      max-width: 1100px;
+      margin: 36px auto;
       padding: 20px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 24px;
+      align-items: start;
     }
 
-    model-viewer, img {
-      width: 100%;
-      height: 400px;
-      object-fit: contain;
+    .card {
+      background: #fff;
       border-radius: 12px;
-      margin-bottom: 20px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.06);
+      padding: 18px;
+    }
+
+    /* Product area */
+    .product-card { padding: 24px; }
+
+    model-viewer,
+    .product-media img {
+      width: 100%;
+      height: 480px;
+      object-fit: contain;
+      border-radius: 10px;
+      display: block;
+      background: #fafafa;
+      margin-bottom: 18px;
     }
 
     .product-info {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 15px;
       text-align: center;
     }
 
     .product-info h1 {
-      font-size: 2rem;
+      font-size: 1.9rem;
       color: #00bcd4;
-      font-weight: bold;
+      margin-bottom: 8px;
     }
 
     .product-info p.price {
-      font-weight: bold;
+      font-weight: 700;
       font-size: 1.5rem;
-      color: #00bcd4;
+      color: #ff9800;
+      margin-bottom: 12px;
     }
 
-    .buttons-row button {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
+    .product-info p.description {
+      color: #444;
+      font-size: 0.98rem;
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+
+    .buttons-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg,#00c6ff,#0072ff);
       color: #fff;
-      padding: 10px 24px;
       border: none;
-      border-radius: 30px;
-      font-weight: 600;
+      padding: 10px 22px;
+      border-radius: 28px;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.3s;
-      margin: 5px;
+      box-shadow: 0 6px 12px rgba(0,114,255,0.22);
+      transition: transform .18s ease, box-shadow .18s ease;
     }
 
-    .buttons-row button:hover {
-      transform: translateY(-2px) scale(1.05);
-      box-shadow: 0 6px 18px rgba(0,114,255,0.4);
+    .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,114,255,0.3); }
+
+    .btn-ghost {
+      background: #fff;
+      color: #ff9800;
+      border: 1px solid #ff9800;
+      padding: 10px 20px;
+      border-radius: 28px;
+      font-weight: 700;
+      cursor: pointer;
     }
 
-    @media (max-width: 768px) {
-      .page-container {
-        padding: 10px;
-      }
+    .btn-ghost.active {
+      background: #ff9800; color: #fff; border-color: transparent;
+    }
+
+    /* Related products */
+    .related-products .title { font-weight: 700; color: #00bcd4; margin-bottom: 12px; }
+
+    .related-list { display: flex; flex-direction: column; gap: 14px; }
+
+    .related-item {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      align-items: center;
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 8px;
+      transition: background .18s ease, transform .12s ease;
+    }
+
+    .related-item:hover { background: #f1f8ff; transform: translateY(-3px); }
+
+    .related-media model-viewer,
+    .related-media img { width: 100%; height: 150px; object-fit: contain; border-radius: 8px; }
+
+    .related-meta h4 { margin: 6px 0 4px; color: #00bcd4; font-size: 1rem; }
+
+    .related-meta p { margin: 0; font-weight: 700; color: #333; }
+
+    /* Responsive */
+    @media (max-width: 980px) {
+      .page-container { grid-template-columns: 1fr; padding: 16px; }
+      model-viewer, .product-media img { height: 420px; }
+    }
+
+    @media (max-width: 480px) {
+      model-viewer, .product-media img { height: 320px; }
     }
   </style>
 </head>
@@ -148,205 +214,174 @@
     </ul>
   </nav>
 
-  <div class="page-container" id="product-details">
-    <!-- Product details injected by JS -->
-  </div>
+  <main class="page-container">
+    <section class="card product-card" id="product-details">
+      <!-- product content will be injected here -->
+    </section>
 
-<script>
+    <aside class="card related-products" id="related-products">
+      <div class="title">Related Products</div>
+      <div class="related-list" id="related-list"></div>
+    </aside>
+  </main>
+
+  <script>
+    /* --- Product data --- */
     const products = [
-      {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
-      {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
-      {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
-      {name: "Single Royal Chair", price: 950, glb: "imgs/chair.glb", category: "Furniture"},
-      {name: "Single Cot", price: 999, glb: "imgs/singlecot.glb", category: "Furniture"},
-      {name: "Blue T-shirt", price: 499, img: "imgs/Ts.jpg", category: "Clothing"},
-      {name: "Plain Shirt", price: 450, img: "imgs/short.jpg", category: "Clothing"},
-      {name: "Table", price: 850, glb: "imgs/table.glb", category: "Furniture"},
-      {name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories"},
-      {name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture"},
-      {name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture"},
-      {name: "Sweat Shirt", price: 550, glb: "imgs/short.glb", category: "Clothing"},
-      {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
-      {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
-      {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
-      {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
-      {name: "white crop top",price:345,glb:"imgs/cc0_-_shirt_hanger.glb",category:"Clothings"},
-      {name: "balenciaga t shirt", price:50000,glb:"imgs/balenciaga_t-shirt.glb",category:"Clothing"},
-      {name: "men shirt",price:800,glb:"imgs/realstic_dress_shirt.glb",category:"Clothings"},
-      {name:"clear sunglass",price:250,glb:"imgs/sunglasses_free.glb",category:"sunglass"},
-      {name:"pink sunglass",price:389,glb:"imgs/pink_round_sunglasses.glb",category:"sunglass"},
-      {name:"balenciaga sunglass",price:20000,glb:"imgs/balenciaga_sunglasses.glb",category:"sunglass"},
-      {name:"fancy saree",price:2567,glb:"imgs/indian_woman_in_saree.glb",category:"Clothings"},
-      {name: "wireless ear buds", price:1500,glb:"imgs/wireless_unbranded_in_ear_head_phone",category:"earphones"},
-      {name:"white ear phones",price:350,glb:"imgs/ear_phones.glb",category:"earphones"},
-      {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
-      {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
-      {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
-      {name: "jashin necklace", price:369, glb:"imgs/jashin_necklace.glb", category:"Accessories"},
-      {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
-      {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
-      {name: "braclet", price:148, glb:"imgs/elegant_hand_chain_bangle__3d_model.glb", category:"Accessories"},
-      {name: "star earrings", price:79, glb:"imgs/star_earrings.glb", category:"Accessories"},
-      {name: "louboutin", price:88, glb:"imgs/louboutin_earring(1).glb", category:"Accessories"},
-      {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
-      {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
-      {name:"Samsung led tv",price:52000,glb:"imgs/samsung_55_curved_tv_and_remote.glb",category:"Electronics"},
-      {name:"LG led tv",price:39000,glb:"imgs/tv_led_large.glb",category:"Electronics"},
-      {name:"refrigerator",price:23149,glb:"imgs/refrigerator.glb",category:"Electronics"},
-      {name:"fridge",price:20000,glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb",category:"Electronics"},
-      {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
-      {name:"apple watch",price:45000,glb:"imgs/apple_watch.glb",category:"Electronics"},
-      {name:"silver chain watch",price:1200,glb:"imgs/invicta_watch.glb",category:"Electronics"},
-      {name:"black chain watch",price:999,glb:"imgs/digital_watch.glb",category:"Electronics"},
-      {name:"HP victus laptop",price:700000,glb:"imgs/hp_victus_gaming_laptop.glb",category:"Electronics"},
-      {name:"lenovo laptop",price:55000,glb:"imgs/lenovo_thinkpad_laptop.glb",category:"Electronics"},
-      {name:"smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
-      {name:"washing machine",price:18250,glb:"imgs/washing_machine.glb",category:"Electronics"},
-      {name:"lg washing machine",price:19490,glb:"imgs/washing_machine(1).glb",category:"Electronics"},
-      {name:"Tube Light",price:1900,glb:"imgs/tube_light.glb",category:"Electronics"},
-      {name:"fry pan",price:1500,glb:"imgs/frying_pan_36cm.glb",category:"Electronics"},
-      {name:"gas stove",price:3000,glb:"imgs/gas_stove_kitchen.glb",category:"Electronics"},
-      {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
+      { name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile" },
+      { name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile" },
+      { name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile" },
+      { name: "Single Royal Chair", price: 950, glb: "imgs/chair.glb", category: "Furniture" },
+      { name: "Single Cot", price: 999, glb: "imgs/singlecot.glb", category: "Furniture" },
+      { name: "Blue T-shirt", price: 499, img: "imgs/Ts.jpg", category: "Clothing" },
+      { name: "Plain Shirt", price: 450, img: "imgs/short.jpg", category: "Clothing" },
+      { name: "Table", price: 850, glb: "imgs/table.glb", category: "Furniture" },
+      { name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories" },
+      { name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture" },
+      { name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture" },
+      { name: "Sweat Shirt", price: 550, img: "imgs/Tshort.jpg", category: "Clothing" },
+      { name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics" },
+      { name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture" },
+      { name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category: "Shoes" }
     ];
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
+
+    /* --- Utilities --- */
+    function getQueryParam(key) {
+      return new URLSearchParams(window.location.search).get(key);
     }
+
     function getWishlist() {
       return JSON.parse(localStorage.getItem('wishlist') || '[]');
     }
-    function setWishlist(wishlist) {
-      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+
+    function setWishlist(list) {
+      localStorage.setItem('wishlist', JSON.stringify(list));
     }
+
     function isWishlisted(name) {
-      return getWishlist().some(item => item.name === name);
+      return getWishlist().some(i => i.name === name);
     }
-    function displayProduct(product) {
+
+    /* --- Render product --- */
+    function renderProduct(product) {
       const container = document.getElementById('product-details');
+
       if (!product) {
-        container.innerHTML = `<p>Product not found.</p>`;
+        container.innerHTML = `<div class="product-info"><h2>Product not found</h2><p>Please go back to the <a href="shop.html">shop</a>.</p></div>`;
         return;
       }
-      const canAR = ["Furniture", "Clothing", "Accessories"].includes(product.category);
-      let arButtonHtml = '';
-      if (canAR && product.glb) {
-        arButtonHtml = `<button class="ar-button" onclick="openARViewer('${encodeURIComponent(product.glb)}')">View in AR</button>`;
-      }
-      const canTryOnAvatar = ["Clothing", "Accessories"].includes(product.category);
-      let tryOnHtml = '';
-      if (canTryOnAvatar && (product.img || product.glb)) {
-        const imgParam = product.img ? encodeURIComponent(product.img) : '';
-        const glbParam = product.glb ? encodeURIComponent(product.glb) : '';
-        tryOnHtml = `<button class="tryon-button" onclick="openTryOn('${encodeURIComponent(product.name)}','${imgParam}','${glbParam}')">Try On Avatar</button>`;
-      }
-      container.innerHTML = `
-      ${product.glb ? `
-        <model-viewer 
-          src="${product.glb}" alt="${product.name} 3D model" 
-          camera-controls auto-rotate shadow-intensity="1" 
-          style="width:100%; height:500px; border-radius:8px;" 
-          id="main-model" 
-          interaction-prompt="auto">
-          <button slot="ar-button" id="fullscreen-btn" title="Toggle Fullscreen" style="
-            position: absolute; bottom: 12px; right: 12px; 
-            background: rgba(0,0,0,0.5); color: white; border: none; 
-            border-radius: 30px; padding: 10px 16px; cursor: pointer; z-index: 10;">
-            ⛶
-          </button>
-        </model-viewer>
-      ` : product.img ? `
-        <img src="${product.img}" alt="${product.name}" style="width:100%; height:500px; object-fit: contain; border-radius:8px;">
-      ` : ''}
-      <div class="product-info">
-        <h1>${product.name}</h1>
-        <div class="buttons-row">
-          <button class="btn-main" id="add-cart-btn">Add to Cart</button>
-          <button class="wishlist-btn ${isWishlisted(product.name) ? 'active' : ''}" id="wishlist-btn">
-            ${isWishlisted(product.name) ? "Remove from Wishlist" : "Add to Wishlist"}
-          </button>
-          ${arButtonHtml}
-          ${tryOnHtml}
-        </div>
-        <p class="price">₹${product.price}.00</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan.</p>
-      </div>
-      `;
-      document.getElementById('add-cart-btn').onclick = () => {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        let existing = cart.find(item => item.name === product.name);
-        if(existing) existing.quantity += 1;
-        else cart.push({name: product.name, price: product.price, quantity: 1});
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert(product.name + " added to cart!");
-      };
-      const wishlistBtn = document.getElementById('wishlist-btn');
-      wishlistBtn.onclick = function() {
-        let wishlist = getWishlist();
-        const index = wishlist.findIndex(item => item.name === product.name);
-        if (index > -1) {
-          // Remove from wishlist
-          wishlist.splice(index, 1);
-          wishlistBtn.classList.remove('active');
-          wishlistBtn.textContent = "Add to Wishlist";
-        } else {
-          // Add to wishlist
-          wishlist.push({
-            name: product.name, price: product.price, category: product.category,
-            img: product.img, glb: product.glb
-          });
-          wishlistBtn.classList.add('active');
-          wishlistBtn.textContent = "Remove from Wishlist";
-        }
-        setWishlist(wishlist);
-      };
+
+      // choose preview markup
+      let previewHtml = '';
       if (product.glb) {
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const modelViewer = document.getElementById('main-model');
-        fullscreenBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (!document.fullscreenElement) {
-            modelViewer.requestFullscreen();
-          } else {
-            document.exitFullscreen();
-          }
-        });
+        previewHtml = `<model-viewer id="main-model" src="${product.glb}" alt="${product.name} 3D" camera-controls auto-rotate shadow-intensity="1" style="width:100%; height:480px;"></model-viewer>`;
+      } else if (product.img) {
+        previewHtml = `<div class="product-media"><img src="${product.img}" alt="${product.name}"></div>`;
+      }
+
+      container.innerHTML = `
+        ${previewHtml}
+
+        <div class="product-info">
+          <h1>${product.name}</h1>
+
+          <div class="buttons-row">
+            <button class="btn-primary" id="add-cart">Add to Cart</button>
+            <button class="btn-ghost ${isWishlisted(product.name) ? 'active' : ''}" id="wishlist-btn">${isWishlisted(product.name) ? 'Remove from Wishlist' : 'Add to Wishlist'}</button>
+            ${product.glb ? `<button class="btn-primary" id="ar-btn">View in AR</button>` : ''}
+          </div>
+
+          <p class="price">₹${product.price}.00</p>
+          <p class="description">High-quality product description goes here. Replace with real content to describe features, materials and sizing.</p>
+        </div>
+      `;
+
+      // attach handlers
+      document.getElementById('add-cart').addEventListener('click', () => {
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const found = cart.find(i => i.name === product.name);
+        if (found) found.quantity += 1; else cart.push({ name: product.name, price: product.price, quantity: 1 });
+        localStorage.setItem('cart', JSON.stringify(cart));
+        alert(`${product.name} added to cart`);
+      });
+
+      document.getElementById('wishlist-btn').addEventListener('click', (e) => {
+        let list = getWishlist();
+        const idx = list.findIndex(i => i.name === product.name);
+        const btn = e.currentTarget;
+        if (idx > -1) {
+          list.splice(idx, 1);
+          btn.classList.remove('active');
+          btn.textContent = 'Add to Wishlist';
+        } else {
+          list.push({ name: product.name, price: product.price, category: product.category, img: product.img, glb: product.glb });
+          btn.classList.add('active');
+          btn.textContent = 'Remove from Wishlist';
+        }
+        setWishlist(list);
+      });
+
+      const arBtn = document.getElementById('ar-btn');
+      if (arBtn) arBtn.addEventListener('click', () => {
+        window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
+      });
+
+      // fullscreen helper for model-viewer
+      const mv = document.getElementById('main-model');
+      if (mv) {
+        mv.addEventListener('error', () => console.warn('model-viewer error for', product.glb));
       }
     }
-    function openARViewer(modelPath) {
-      window.open(`ar-view.html?model=${modelPath}`, '_blank');
-    }
-    function openTryOn(name, img, glb) {
-      let url = `avatar.html?name=${name}`;
-      if (img) url += `&img=${img}`;
-      if (glb) url += `&glb=${glb}`;
-      window.open(url, '_blank');
-    }
-    function displayRelated(product) {
-      const container = document.getElementById('related-products');
-      container.innerHTML = `<h3>Related Products</h3>`;
-      const related = products.filter(p => p.category === product.category && p.name !== product.name);
-      (related.length ? related : products.filter(p => p.name !== product.name).slice(0, 4)).forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'related-product';
-        div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
-        div.innerHTML = `
-          ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name} 3D" camera-controls auto-rotate shadow-intensity="1"
-              style="width: 100%; height: 150px; border-radius: 6px;"></model-viewer>`
-          : p.img ? `<img src="${p.img}" alt="${p.name}">`
-          : `<div style="width:100%;height:150px;background:#eee;line-height:150px;">No Image</div>`
-          }
-          <h4>${p.name}</h4>
-          <p>₹${p.price}.00</p>
-        `;
-        container.appendChild(div);
+
+    /* --- Related products --- */
+    function renderRelated(currentProduct) {
+      const list = document.getElementById('related-list');
+      list.innerHTML = '';
+
+      // pick related by category, fallback to others
+      let related = products.filter(p => p.category === currentProduct.category && p.name !== currentProduct.name);
+      if (!related.length) related = products.filter(p => p.name !== currentProduct.name).slice(0, 4);
+
+      related.forEach(p => {
+        const item = document.createElement('div');
+        item.className = 'related-item card';
+        item.tabIndex = 0;
+
+        // preview
+        const preview = document.createElement('div');
+        preview.className = 'related-media';
+        if (p.glb) {
+          preview.innerHTML = `<model-viewer src="${p.glb}" alt="${p.name}" camera-controls auto-rotate shadow-intensity="0.5" style="width:100%; height:150px;"></model-viewer>`;
+        } else if (p.img) {
+          preview.innerHTML = `<img src="${p.img}" alt="${p.name}">`;
+        } else {
+          preview.innerHTML = `<div style="width:100%; height:150px; display:grid; place-items:center; background:#f3f6fb; border-radius:8px;">No Image</div>`;
+        }
+
+        // meta
+        const meta = document.createElement('div');
+        meta.className = 'related-meta';
+        meta.innerHTML = `<h4>${p.name}</h4><p>₹${p.price}.00</p>`;
+
+        item.appendChild(preview);
+        item.appendChild(meta);
+
+        // click behaviour
+        item.addEventListener('click', () => {
+          window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
+        });
+
+        list.appendChild(item);
       });
     }
-    window.onload = () => {
-      const productName = getQueryParam('name');
-      const product = products.find(p => p.name === productName);
-      displayProduct(product);
-      if (product) displayRelated(product);
-    };
+
+    /* --- Init page --- */
+    (function init() {
+      const name = getQueryParam('name');
+      const product = products.find(p => p.name === name) || products[0];
+      renderProduct(product);
+      renderRelated(product);
+    })();
   </script>
 </body>
 </html>
