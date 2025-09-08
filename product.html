@@ -226,6 +226,8 @@
   </main>
 
   <script type="module" src="products.js" defer>
+    import { products } from './products.js';
+    
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
@@ -372,6 +374,7 @@
   </script>
 </body>
 </html>
+
 
 
 
