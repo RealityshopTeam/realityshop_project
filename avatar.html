@@ -2,58 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reality Shop - Avatar Customization</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <title>Reality Shop - Avatar with Product Customization</title>
   <style>
-    body { margin: 0; background: #121212; color: white; font-family: Arial, sans-serif; }
-    .viewer-container { width: 100%; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-    model-viewer { width: 400px; height: 600px; }
-    .controls { margin-top: 15px; display: flex; gap: 10px; }
+    body { margin: 0; overflow: hidden; background: #101010; }
+    #controls { position: absolute; top: 20px; left: 20px; z-index: 10; display: flex; gap: 10px; }
     button {
-      padding: 10px 20px;
+      padding: 10px 15px;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
+      border-radius: 6px;
       background: #00b894;
       color: white;
+      font-weight: bold;
+      cursor: pointer;
     }
     button:hover { background: #019875; }
   </style>
 </head>
 <body>
-  <div class="viewer-container">
-    <!-- Avatar Model -->
-    <model-viewer id="avatar" 
-      src="baseAvatar.glb" 
-      alt="3D Avatar"
-      camera-controls 
-      auto-rotate
-      shadow-intensity="1">
-    </model-viewer>
-
-    <!-- Product Customization Controls -->
-    <div class="controls">
-      <button onclick="changeProduct('shirt')">Shirt</button>
-      <button onclick="changeProduct('jacket')">Jacket</button>
-      <button onclick="changeProduct('shoes')">Shoes</button>
-    </div>
+  <div id="controls">
+    <button onclick="changeProduct('shirt')">Shirt</button>
+    <button onclick="changeProduct('jacket')">Jacket</button>
+    <button onclick="changeProduct('shoes')">Shoes</button>
   </div>
 
-  <script>
-    const avatar = document.getElementById('avatar');
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js";
 
-    // Replace with external clothing/accessory .glb URLs
-    const products = {
-      shirt: "https://modelviewer.dev/shared-assets/models/shirt.glb",
-      jacket: "https://modelviewer.dev/shared-assets/models/jacket.glb",
-      shoes: "https://modelviewer.dev/shared-assets/models/shoes.glb"
-    };
+    let scene, camera, renderer, controls, avatar;
+    let productGroup = new THREE.Group(); // holds current product
+
+    init();
+    loadAvatar();
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x101010);
+
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 1.6, 3);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+      scene.add(light);
+
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.4, 0);
+      controls.update();
+
+      scene.add(productGroup);
+
+      window.addEventListener("resize", onWindowResize);
+      animate();
+    }
+
+    function loadAvatar() {
+      const loader = new GLTFLoader();
+      // External avatar (standing model)
+      loader.load("https://models.readyplayer.me/64f8827a1739b4d902ac6d4f.glb", (gltf) => {
+        avatar = gltf.scene;
+        avatar.scale.set(1, 1, 1);
+        avatar.position.set(0, 0, 0);
+        scene.add(avatar);
+      });
+    }
 
     function changeProduct(type) {
-      avatar.setAttribute("src", products[type]);
+      const loader = new GLTFLoader();
+      productGroup.clear(); // remove previous product
+
+      let url;
+      if (type === "shirt") {
+        url = "https://modelviewer.dev/shared-assets/models/Astronaut.glb"; // replace with shirt.glb
+      } else if (type === "jacket") {
+        url = "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"; // replace with jacket.glb
+      } else if (type === "shoes") {
+        url = "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb"; // replace with shoes.glb
+      }
+
+      loader.load(url, (gltf) => {
+        const product = gltf.scene;
+        product.scale.set(1, 1, 1);
+        product.position.set(0, 0, 0); // adjust position to fit avatar
+        productGroup.add(product);
+      });
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
     }
   </script>
 </body>
 </html>
-
