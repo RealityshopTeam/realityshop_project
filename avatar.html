@@ -2,18 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reality Shop - Avatar with Product Customization</title>
+  <title>Reality Shop - Avatar Customization</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #101010; }
-    #controls { position: absolute; top: 20px; left: 20px; z-index: 10; display: flex; gap: 10px; }
+    body { margin: 0; overflow: hidden; background: #121212; }
+    #controls {
+      position: absolute; top: 20px; left: 20px;
+      z-index: 10; display: flex; gap: 10px;
+    }
     button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 6px;
-      background: #00b894;
-      color: white;
-      font-weight: bold;
-      cursor: pointer;
+      padding: 10px 15px; border: none; border-radius: 6px;
+      background: #00b894; color: white; font-weight: bold; cursor: pointer;
     }
     button:hover { background: #019875; }
   </style>
@@ -31,14 +29,14 @@
     import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js";
 
     let scene, camera, renderer, controls, avatar;
-    let productGroup = new THREE.Group(); // holds current product
+    let productGroup = new THREE.Group(); // container for current product
 
     init();
     loadAvatar();
 
     function init() {
       scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x101010);
+      scene.background = new THREE.Color(0x121212);
 
       camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 1.6, 3);
@@ -62,7 +60,7 @@
 
     function loadAvatar() {
       const loader = new GLTFLoader();
-      // External avatar (standing model)
+      // Replace with your avatar model (GLB file)
       loader.load("https://models.readyplayer.me/64f8827a1739b4d902ac6d4f.glb", (gltf) => {
         avatar = gltf.scene;
         avatar.scale.set(1, 1, 1);
@@ -77,17 +75,17 @@
 
       let url;
       if (type === "shirt") {
-        url = "https://modelviewer.dev/shared-assets/models/Astronaut.glb"; // replace with shirt.glb
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"; 
       } else if (type === "jacket") {
-        url = "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"; // replace with jacket.glb
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Avocado/glTF-Binary/Avocado.glb"; 
       } else if (type === "shoes") {
-        url = "https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb"; // replace with shoes.glb
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Duck/glTF-Binary/Duck.glb"; 
       }
 
       loader.load(url, (gltf) => {
         const product = gltf.scene;
-        product.scale.set(1, 1, 1);
-        product.position.set(0, 0, 0); // adjust position to fit avatar
+        product.scale.set(0.5, 0.5, 0.5);  // adjust size to fit avatar
+        product.position.set(0, 0, 0);     // adjust position to align
         productGroup.add(product);
       });
     }
