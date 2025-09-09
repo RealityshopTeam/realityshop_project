@@ -18,7 +18,9 @@
 </head>
 <body>
   <div id="controls">
-    <button onclick="changeProduct('tshirt')">T-Shirt</button>
+    <button onclick="changeProduct('shirt')">Shirt</button>
+    <button onclick="changeProduct('jacket')">Jacket</button>
+    <button onclick="changeProduct('shoes')">Shoes</button>
   </div>
 
   <script type="module">
@@ -26,8 +28,8 @@
     import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js";
     import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js";
 
-    let scene, camera, renderer, controls, avatar, avatarSkeleton;
-    const loader = new GLTFLoader();
+    let scene, camera, renderer, controls, avatar;
+    let productGroup = new THREE.Group(); // container for current product
 
     init();
     loadAvatar();
@@ -50,47 +52,42 @@
       controls.target.set(0, 1.4, 0);
       controls.update();
 
+      scene.add(productGroup);
+
       window.addEventListener("resize", onWindowResize);
       animate();
     }
 
     function loadAvatar() {
-      loader.load("imgs/baseAvatar.glb", (gltf) => {
+      const loader = new GLTFLoader();
+      // Replace with your avatar model (GLB file)
+      loader.load("https://models.readyplayer.me/64f8827a1739b4d902ac6d4f.glb", (gltf) => {
         avatar = gltf.scene;
         avatar.scale.set(1, 1, 1);
         avatar.position.set(0, 0, 0);
-
-        // find skeleton
-        avatar.traverse((child) => {
-          if (child.isSkinnedMesh) {
-            avatarSkeleton = child.skeleton;
-          }
-        });
-
         scene.add(avatar);
       });
     }
 
     function changeProduct(type) {
-      if (!avatar) {
-        alert("Avatar not loaded yet!");
-        return;
+      const loader = new GLTFLoader();
+      productGroup.clear(); // remove previous product
+
+      let url;
+      if (type === "shirt") {
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"; 
+      } else if (type === "jacket") {
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Avocado/glTF-Binary/Avocado.glb"; 
+      } else if (type === "shoes") {
+        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Duck/glTF-Binary/Duck.glb"; 
       }
 
-      if (type === "tshirt") {
-        loader.load("imgs/Tshort.jpg", (gltf) => {
-          const tshirt = gltf.scene;
-          tshirt.scale.set(1, 1, 1);
-
-          // try to attach to avatar chest or spine
-          let chest = avatar.getObjectByName("Spine") || avatar.getObjectByName("Chest") || avatar;
-          chest.add(tshirt);
-
-          // adjust placement if needed
-          tshirt.position.set(0, 0, 0);
-          tshirt.rotation.set(0, 0, 0);
-        });
-      }
+      loader.load(url, (gltf) => {
+        const product = gltf.scene;
+        product.scale.set(0.5, 0.5, 0.5);  // adjust size to fit avatar
+        product.position.set(0, 0, 0);     // adjust position to align
+        productGroup.add(product);
+      });
     }
 
     function onWindowResize() {
@@ -105,5 +102,4 @@
     }
   </script>
 </body>
-</html>
-
+</html>  alignmnet of the code
