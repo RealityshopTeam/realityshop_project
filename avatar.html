@@ -55,7 +55,7 @@
     }
 
     function loadAvatar() {
-      loader.load("your-avatar.glb", (gltf) => {
+      loader.load("imgs/baseAvatar.glb", (gltf) => {
         avatar = gltf.scene;
         avatar.scale.set(1, 1, 1);
         avatar.position.set(0, 0, 0);
@@ -78,7 +78,7 @@
       }
 
       if (type === "tshirt") {
-        loader.load("your-tshirt.glb", (gltf) => {
+        loader.load("imgs/Tshort.jpg", (gltf) => {
           const tshirt = gltf.scene;
           tshirt.scale.set(1, 1, 1);
 
@@ -106,3 +106,4 @@
   </script>
 </body>
 </html>
+
