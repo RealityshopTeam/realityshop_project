@@ -2,76 +2,435 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Reality Shop - Avatar</title>
+  <title>Product Details - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #f0f2f5;
+    /* Unified Button Style */
+    .btn-primary {
+      background: linear-gradient(135deg,#00cfff,#0072ff);
+      color: #fff;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,114,255,0.22);
+      transition: all 0.3s ease;
+      width: auto;
+      min-width: 140px;
+      user-select: none;
     }
-    canvas {
-      display: block;
+    .btn-primary:hover, .btn-primary:focus {
+      background: linear-gradient(135deg,#0072ff,#0044aa);
+      box-shadow: 0 8px 20px rgba(0,114,255,0.4);
+      transform: translateY(-3px);
+      outline: none;
+    }
+    .btn-primary.active {
+      background: linear-gradient(135deg,#36cfcf,#0072ff);
+    }
+
+    /* Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      background: #111827;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 1000;
+      padding: 0 1rem;
+    }
+    .navbar-container {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 60px;
+    }
+    .navbar .logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #06b4d4;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+      align-items: center;
+    }
+    .navbar ul li a {
+      color: #f3f4f6;
+      text-decoration: none;
+      font-weight: 500;
+      position: relative;
+      padding: 7px 10px;
+      font-size: 1rem;
+      border-radius: 6px;
+      white-space: nowrap;
+      display: inline-block;
+      transition: color 0.3s;
+    }
+    .navbar ul li a:hover,
+    .navbar ul li a.active {
+      color: #06b4d4;
+      background: rgba(6,182,212,0.08);
+    }
+    .navbar ul li a::after {
+      content: '';
+      position: absolute;
+      bottom: -4px;
+      left: 0;
+      width: 0;
+      height: 2px;
+      background: #06b4d4;
+      border-radius: 8px;
+      transition: width 0.3s;
+    }
+    .navbar ul li a:hover::after,
+    .navbar ul li a.active::after {
+      width: 100%;
+    }
+
+    /* Mobile Bottom Navbar */
+    .mobile-bottom-nav {
+      display: none;
+    }
+    @media (max-width: 700px) {
+      .navbar {
+        display: none;
+      }
+      .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 64px;
+        background: #111827;
+        border-top: 1px solid #222c38;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+        justify-content: space-around;
+        align-items: center;
+        z-index: 2000;
+      }
+      .mobile-bottom-nav a {
+        color: #f3f4f6;
+        text-decoration: none;
+        font-size: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1 0 auto;
+        padding: 0 4px;
+        user-select: none;
+      }
+      .mobile-bottom-nav a.active,
+      .mobile-bottom-nav a:focus,
+      .mobile-bottom-nav a:hover {
+        color: #06b4d4;
+      }
+      .mobile-bottom-nav svg {
+        width: 24px;
+        height: 24px;
+        margin-bottom: 2px;
+        display: block;
+      }
+    }
+
+    /* Layout */
+    .page-container {
+      max-width: 1100px;
+      margin: 1.5rem auto;
+      padding: 0 1rem;
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+    @media (max-width: 900px) {
+      .page-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Card */
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 10px 15px rgb(0 0 0 / 0.1);
+      padding: 1.5rem;
+    }
+
+    /* Product Info */
+    .product-info h1 {
+      font-size: 2rem;
+      color: #06b4d4;
+      margin-bottom: 0.25rem;
+    }
+    .product-info .price {
+      font-size: 1.5rem;
+      color: #ff9800;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+    .product-info .description {
+      font-size: 1rem;
+      color: #444;
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    /* Buttons container */
+    .buttons-row {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Responsive Images */
+    model-viewer, img {
+      width: 100%;
+      border-radius: 1rem;
+      background: #fafafa;
+      height: 480px;
+      max-height: 60vh;
+    }
+    @media (max-width: 600px) {
+      model-viewer, img {
+        height: 300px;
+      }
+      .btn-primary {
+        width: 100%;
+        min-width: unset;
+      }
+    }
+
+    /* Related Products */
+    .related-products .title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #06b4d4;
+      margin-bottom: 1rem;
+    }
+    .related-list {
+      max-height: 70vh;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .related-list .product {
+      display: grid;
+      grid-template-columns: 120px 1fr;
+      gap: 1rem;
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 12px;
+      box-shadow: 0 10px 15px rgb(0 0 0 / 0.07);
+      transition: background-color 0.3s, transform 0.3s;
+    }
+    .related-list .product:hover {
+      background-color: #e3f7ff;
+      transform: translateY(-4px);
+    }
+    .related-list model-viewer, .related-list img {
+      width: 120px;
+      height: 90px;
+      object-fit: contain;
+      border-radius: 1rem;
+      background: #fafafa;
+    }
+    .related-list .product h3 {
+      font-size: 1.15rem;
+      color: #06b4d4;
+      margin: 0 0 0.25rem;
+    }
+    .related-list .product p {
+      margin: 0;
+      font-weight: 700;
+      color: #333;
+    }
+
+    /* Footer */
+    footer {
+      background: #f9f9f9;
+      color: #666;
+      text-align: center;
+      padding: 2rem 1rem;
+      margin-top: 2rem;
+      border-top: 1px solid #eee;
+      font-size: 0.9rem;
+    }
+    footer a {
+      color: #06b4d4;
+      text-decoration: none;
+    }
+    footer a:hover {
+      text-decoration: underline;
     }
   </style>
-</head>
-<body>
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.module.js";
-    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/loaders/GLTFLoader.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.150.1/examples/jsm/controls/OrbitControls.js";
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const hamburger = document.createElement('div');
+      hamburger.classList.add('hamburger');
+      hamburger.innerHTML = '<div></div><div></div><div></div>';
+      document.querySelector('.navbar').appendChild(hamburger);
 
-    // Scene setup
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0xf0f2f5);
-
-    // Camera setup
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 3);
-
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    // Lights
-    const light1 = new THREE.DirectionalLight(0xffffff, 1);
-    light1.position.set(5, 10, 7.5);
-    scene.add(light1);
-
-    const light2 = new THREE.AmbientLight(0x404040, 2);
-    scene.add(light2);
-
-    // Orbit Controls
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-
-    // Load GLB model
-    const loader = new GLTFLoader();
-    loader.load("avatar.glb", function (gltf) {
-      const model = gltf.scene;
-      model.scale.set(1.5, 1.5, 1.5);
-      model.position.set(0, 0, 0);
-      scene.add(model);
-
-      // Animation loop
-      function animate() {
-        requestAnimationFrame(animate);
-        model.rotation.y += 0.005; // slow rotation
-        controls.update();
-        renderer.render(scene, camera);
-      }
-      animate();
-    }, undefined, function (error) {
-      console.error("Error loading model:", error);
-    });
-
-    // Resize handling
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      const navList = document.querySelector('.navbar ul');
+      hamburger.addEventListener('click', () => {
+        navList.classList.toggle('open');
+        hamburger.classList.toggle('open');
+      });
     });
   </script>
-</body>
+  <body>
+    <nav class="navbar" role="navigation" aria-label="Primary Navigation">
+      <a href="index.html" class="logo">Reality Shop</a>
+      <ul>
+        <li><a href="index.html" aria-current="page" class="active">Home</a></li>
+        <li><a href="shop.html">Shop</a></li>
+        <li><a href="cart.html">Cart</a></li>
+        <li><a href="wishlist.html">Wishlist</a></li>
+        <li><a href="login.html">Account</a></li>
+      </ul>
+    </nav>
+    <main class="page-container">
+      <section class="card product-card" id="product-details"></section>
+      <aside class="card related-products">
+        <div class="title">Related Products</div>
+        <div class="related-list" id="related-list"></div>
+      </aside>
+    </main>
+    <footer>
+      <p>© 2025 Reality Shop. All rights reserved.</p>
+    </footer>
+    <script type="module">
+      import { products } from './products.js';
+
+      const productDetails = document.getElementById('product-details');
+      const relatedList = document.getElementById('related-list');
+
+      function getQueryParam(param) {
+        return new URLSearchParams(window.location.search).get(param);
+      }
+
+      function getWishlist() {
+        return JSON.parse(localStorage.getItem('wishlist') || '[]');
+      }
+
+      function setWishlist(list) {
+        localStorage.setItem('wishlist', JSON.stringify(list));
+      }
+
+      function isWishlisted(name) {
+        return getWishlist().some(item => item.name === name);
+      }
+
+      function displayProduct(product) {
+        if (!product) {
+          productDetails.innerHTML = "<p>Product not found.</p>";
+          return;
+        }
+        const canAR = ['Furniture', 'Clothing', 'Accessories'].includes(product.category);
+        const canTryOn = ['Clothing', 'Accessories'].includes(product.category);
+        let arBtnHTML = canAR && product.glb ? `<button id="ar-btn" class="btn-primary">View in AR</button>` : '';
+        let tryOnBtnHTML = canTryOn && (product.img || product.glb) ? `<button id="tryon-btn" class="btn-primary">Try On</button>` : '';
+
+        productDetails.innerHTML = `
+          ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1" style="border-radius: 1rem; margin-bottom: 1rem;"></model-viewer>` :
+            product.img ? `<img src="${product.img}" alt="${product.name}" style="border-radius: 1rem; margin-bottom: 1rem;">` :
+            `<div class="no-asset">Preview not available</div>`
+          }
+          <div class="product-info">
+            <h1>${product.name}</h1>
+            <p class="price">₹${product.price}.00</p>
+            <div class="buttons-row">
+              <button id="add-to-cart" class="btn-primary">Add to Cart</button>
+              <button id="wishlist-btn" class="btn-primary ${isWishlisted(product.name) ? 'active' : ''}">
+                ${isWishlisted(product.name) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+              </button>
+              ${arBtnHTML}
+              ${tryOnBtnHTML}
+            </div>
+            <p class="description">High quality product description goes here. Customize this as needed.</p>
+          </div>
+        `;
+
+        document.getElementById('add-to-cart').onclick = () => {
+          let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+          let idx = cart.findIndex(item => item.name === product.name);
+          if (idx > -1) cart[idx].quantity += 1;
+          else cart.push({ name: product.name, price: product.price, quantity: 1 });
+          localStorage.setItem('cart', JSON.stringify(cart));
+          alert(`Added ${product.name} to cart`);
+        };
+
+        const wishlistBtn = document.getElementById('wishlist-btn');
+        wishlistBtn.onclick = () => {
+          let wishlist = getWishlist();
+          let idx = wishlist.findIndex(item => item.name === product.name);
+          if (idx > -1) {
+            wishlist.splice(idx, 1);
+            wishlistBtn.classList.remove('active');
+            wishlistBtn.textContent = "Add to Wishlist";
+          } else {
+            wishlist.push({ name: product.name, price: product.price, category: product.category, img: product.img, glb: product.glb });
+            wishlistBtn.classList.add('active');
+            wishlistBtn.textContent = "Remove from Wishlist";
+          }
+          setWishlist(wishlist);
+        };
+
+        const arBtn = document.getElementById('ar-btn');
+        if (arBtn) arBtn.onclick = () => window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
+
+        const tryOnBtn = document.getElementById('tryon-btn');
+        if (tryOnBtn) tryOnBtn.onclick = () => {
+          let url = `avatar.html?name=${encodeURIComponent(product.name)}`;
+          if (product.img) url += `&img=${encodeURIComponent(product.img)}`;
+          if (product.glb) url += `&glb=${encodeURIComponent(product.glb)}`;
+          window.open(url, '_blank');
+        };
+      }
+
+      function displayRelated(product) {
+        relatedList.innerHTML = '';
+        let related = products.filter(p => p.category === product.category && p.name !== product.name);
+        if (!related.length) related = products.filter(p => p.name !== product.name).slice(0, 4);
+        related.forEach(p => {
+          const div = document.createElement('div');
+          div.className = 'product';
+          div.tabIndex = 0;
+          div.innerHTML = `
+            ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name}" camera-controls auto-rotate shadow-intensity="0.5" style="border-radius: 1rem; height: 90px; margin-bottom: 0.5rem;"></model-viewer>` :
+              p.img ? `<img src="${p.img}" alt="${p.name}" style="border-radius: 1rem; height: 90px; margin-bottom: 0.5rem;" />` :
+              `<div class="no-asset" style="height: 90px;">No Image</div>`
+            }
+            <h3>${p.name}</h3>
+            <p class="price">₹${p.price}.00</p>
+          `;
+          div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
+          relatedList.appendChild(div);
+        });
+      }
+
+      window.onload = () => {
+        const productName = getQueryParam('name');
+        const product = products.find(p => p.name === productName);
+        if (product) {
+          displayProduct(product);
+          displayRelated(product);
+        } else {
+          document.getElementById('product-details').innerHTML = '<p>Product not found.</p>';
+        }
+      };
+    </script>
+  </body>
 </html>
