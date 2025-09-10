@@ -2,251 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Product Details - Reality Shop</title>
+  <title>Reality Shop - Products</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-  <style>
-    /* Combined and adapted CSS from Reality Shop with product details specific styles */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #fdfdfd;
-      color: #333;
-      line-height: 1.6;
-    }
-    nav {
-      background: #212121;
-      padding: 0 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-      position: sticky;
-      top: 0;
-      z-index: 1000;
-    }
-    .nav-container {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 70px;
-    }
-    .logo {
-      color: #fff;
-      font-size: 1.7rem;
-      font-weight: bold;
-      letter-spacing: 2px;
-      text-decoration: none;
-    }
-    ul.nav-links {
-      display: flex;
-      list-style: none;
-      gap: 32px;
-    }
-    ul.nav-links li a {
-      color: #fff;
-      text-decoration: none;
-      font-size: 1rem;
-      padding: 8px 0;
-      transition: color 0.2s;
-    }
-    ul.nav-links li a:hover,
-    ul.nav-links li a.active {
-      color: #ff9800;
-    }
-    .page-container {
-      max-width: 1200px;
-      margin: 40px auto;
-      padding: 0 20px;
-      display: flex;
-      gap: 24px;
-      min-height: 600px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .product-details {
-      flex: 1 1 50%;
-      padding: 24px;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-width: 300px;
-      background: #fff;
-      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
-    }
-    .related-products {
-      flex: 1 1 50%;
-      padding: 16px;
-      border-radius: 12px;
-      max-height: 600px;
-      overflow-y: auto;
-      min-width: 280px;
-      background: #fff;
-      box-shadow: 0px 0px 8px rgba(0,0,0,0.1);
-    }
-    model-viewer {
-      width: 100%;
-      height: 500px;
-      border-radius: 8px;
-      background-color: #fefefe;
-      margin-bottom: 20px;
-      position: relative;
-      box-shadow: 0 4px 18px rgba(0,114,255,0.3);
-      transition: box-shadow 0.3s ease;
-    }
-    model-viewer:hover {
-      box-shadow: 0 6px 24px rgba(0,114,255,0.5);
-    }
-    .product-info {
-      width: 100%;
-      max-width: 700px;
-      text-align: center;
-    }
-    .product-info h1 {
-      margin-top: 0;
-      font-size: 2.2rem;
-      color: #00bcd4;
-      font-weight: bold;
-    }
-    .product-info p.price {
-      font-weight: bold;
-      font-size: 1.8rem;
-      color: #ff9800;
-      margin: 10px 0 20px;
-    }
-    .product-info p {
-      font-size: 1rem;
-      color: #444;
-      margin-bottom: 20px;
-      line-height: 1.5;
-    }
-    .product-info button, .ar-button, .tryon-button {
-      background: linear-gradient(135deg, #00c6ff, #0072ff);
-      color: #fff;
-      padding: 12px 32px;
-      border: none;
-      border-radius: 30px;
-      font-weight: bold;
-      font-size: 1.1rem;
-      cursor: pointer;
-      transition: background 0.3s ease;
-      margin-right: 12px;
-      margin-bottom: 10px;
-      display: inline-block;
-      box-shadow: 0 6px 12px rgba(0, 114, 255, 0.4);
-    }
-    .product-info button:hover, .ar-button:hover, .tryon-button:hover {
-      background: linear-gradient(135deg, #0072ff, #004c99);
-    }
-    .wishlist-btn {
-      background: #eee;
-      color: #ff9800;
-      border: 1px solid #ff9800;
-      font-weight: bold;
-      border-radius: 30px;
-      padding: 12px 32px;
-      margin-right: 12px;
-      margin-bottom: 10px;
-      transition: background 0.3s;
-      cursor: pointer;
-      display: inline-block;
-      box-shadow: inset 0 0 0 0 #ff9800;
-      transition: box-shadow 0.3s ease;
-    }
-    .wishlist-btn.active {
-      background: #ff9800;
-      color: #fff;
-      cursor: default;
-      border: none;
-      box-shadow: inset 0 0 10px 2px #ff9800;
-    }
-    .buttons-row {
-      margin: 10px 0 20px;
-      text-align: center;
-    }
-    .related-product {
-      cursor: pointer;
-      margin-bottom: 16px;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      transition: background 0.2s ease;
-    }
-    .related-product:hover {
-      background: #f1f9ff;
-    }
-    .related-product:last-child {
-      border-bottom: none;
-    }
-    .related-product h4 {
-      margin: 8px 0 6px;
-      text-align: center;
-      color: #00bcd4;
-    }
-    .related-product model-viewer,
-    .related-product img {
-      width: 100%;
-      height: 150px;
-      object-fit: contain;
-      border-radius: 6px;
-      margin-bottom: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-      transition: box-shadow 0.3s ease;
-    }
-    .related-product model-viewer:hover,
-    .related-product img:hover {
-      box-shadow: 0 6px 20px rgba(0, 114, 255, 0.4);
-    }
-
-    /* Responsive */
-    @media (max-width: 991px) {
-      .page-container {
-        flex-direction: column;
-        margin: 20px 15px;
-        min-height: auto;
-      }
-      .product-details, .related-products {
-        width: 100%;
-        max-width: 100%;
-        min-width: auto;
-        min-height: auto;
-      }
-      .related-products {
-        margin-top: 30px;
-        max-height: none;
-        overflow-y: visible;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="productlogic.js" defer></script>
+  <script type="module" src="products.js" defer></script>
 </head>
 <body>
-  <nav>
-    <div class="nav-container">
-      <a href="index.html" class="logo">Reality Shop</a>
-      <ul class="nav-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="shop.html" class="active">Shop</a></li>
-        <li><a href="cart.html">Cart</a></li>
-        <li><a href="wishlist.html">Wish list</a></li>
-        <li><a href="login.html">Account</a></li>
-      </ul>
-    </div>
+  <nav class="navbar">
+    <a href="index.html" class="logo">Reality Shop</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html" class="active">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="wishlist.html">Wishlist</a></li>
+      <li><a href="login.html">Account</a></li>
+    </ul>
   </nav>
-  <div class="page-container">
-    <section class="product-details" id="product-details">
-      <!-- Product details injected here -->
-    </section>
-    <aside class="related-products" id="related-products">
-      <h3>Related Products</h3>
-      <!-- Related products injected here -->
-    </aside>
+
+  <nav class="mobile-bottom-nav">
+    <a href="index.html" class="active">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l9-9 9 9M4 10v10a1 1 0 001 1h3a1 1 0 001-1v-5a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 001 1h3a1 1 0 001-1V10"/></svg>
+      Home
+    </a>
+    <a href="shop.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path stroke-linecap="round" stroke-linejoin="round" d="M8 12h8M12 8v8"/></svg>
+      Shop
+    </a>
+    <a href="cart.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2.01 2.01 0 002 1.61h9.72a2 2 0 002-1.75l1.38-8.25H6.5"/></svg>
+      Cart
+    </a>
+    <a href="wishlist.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 016.364 0l1.318 1.318 1.318-1.318a4.5 4.5 0 116.364 6.364L12 21.682l-7.682-7.682a4.5 4.5 0 010-6.364z"/></svg>
+      Wishlist
+    </a>
+    <a href="login.html">
+      <svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 00-8 0v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Account
+    </a>
+  </nav>
+
+  <div class="container">
+    <h1 class="section-title">Our Products</h1>
+    <div class="search-sort-bar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="Search products..." aria-label="Search products" />
+      </div>
+      <div class="sort-box">
+        <select id="sortSelect" aria-label="Sort products">
+          <option value="">Sort By</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="name-asc">Name: A to Z</option>
+          <option value="name-desc">Name: Z to A</option>
+          <option value="category-asc">Category: A to Z</option>
+          <option value="category-desc">Category: Z to A</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid" id="product-grid" role="list" aria-live="polite" aria-label="Product list"></div>
   </div>
   <script>
-    const products = [
+  const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
       {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
       {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
@@ -258,20 +77,19 @@
       {name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories"},
       {name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture"},
       {name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture"},
-      {name: "Sweat Shirt", price: 550, glb: "imgs/short.glb", category: "Clothing"},
+      {name: "Sweat Shirt", price: 550, img: "imgs/Tshort.jpg", category: "Clothing"},
       {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
       {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
       {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
       {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
-      {name: "white crop top",price:345,glb:"imgs/cc0_-_shirt_hanger.glb",category:"Clothings"},
-      {name: "balenciaga t shirt", price:50000,glb:"imgs/balenciaga_t-shirt.glb",category:"Clothing"},
-      {name: "men shirt",price:800,glb:"imgs/realstic_dress_shirt.glb",category:"Clothings"},
-      {name:"clear sunglass",price:250,glb:"imgs/sunglasses_free.glb",category:"sunglass"},
-      {name:"pink sunglass",price:389,glb:"imgs/pink_round_sunglasses.glb",category:"sunglass"},
-      {name:"balenciaga sunglass",price:20000,glb:"imgs/balenciaga_sunglasses.glb",category:"sunglass"},
-      {name:"fancy saree",price:2567,glb:"imgs/indian_woman_in_saree.glb",category:"Clothings"},
-      {name: "wireless ear buds", price:1500,glb:"imgs/wireless_unbranded_in_ear_head_phone",category:"earphones"},
-      {name:"white ear phones",price:350,glb:"imgs/ear_phones.glb",category:"earphones"},
+      {name: "white crop top",price:345, glb:"imgs/cc0_-_shirt_on_hanger.glb", category:"Clothing"},
+      {name: "men shirt",price:800, glb:"imgs/realistic_dress_shirt.glb", category:"Clothing"},
+      {name:"clear sunglass",price:250, glb:"imgs/sunglasses_free.glb", category:"Accessories"},
+      {name:"pink sunglass",price:389, glb:"imgs/pink_round_sunglasses.glb", category:"Accessories"},
+      {name:"balenciaga sunglass",price:20000, glb:"imgs/balenciaga_sunglasses.glb", category:"Accessories"},
+      {name: "wireless ear buds", price:1500, glb:"imgs/wireless_unbranded_in_ear_head_phones.glb", category:"Electronics"},
+      {name:"white ear phones",price:350, glb:"imgs/ear_phones.glb", category:"Electronics"},
+      {name:"head phones",price:2000, glb:"imgs/ear_phone.glb", category:"Electronics"},
       {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
       {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
       {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
@@ -279,167 +97,182 @@
       {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
       {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
       {name: "braclet", price:148, glb:"imgs/elegant_hand_chain_bangle__3d_model.glb", category:"Accessories"},
-      {name: "star earrings", price:79, glb:"imgs/star_earrings.glb", category:"Accessories"},
-      {name: "louboutin", price:88, glb:"imgs/louboutin_earring(1).glb", category:"Accessories"},
+      {name: "star earrings", price:79, glb:"imgs/stars_earrings.glb", category:"Accessories"},
+      {name: "louboutin", price:88, glb:"imgs/louboutin_earring.glb", category:"Accessories"},
       {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
       {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
-      {name:"Samsung led tv",price:52000,glb:"imgs/samsung_55_curved_tv_and_remote.glb",category:"Electronics"},
-      {name:"LG led tv",price:39000,glb:"imgs/tv_led_large.glb",category:"Electronics"},
-      {name:"refrigerator",price:23149,glb:"imgs/refrigerator.glb",category:"Electronics"},
-      {name:"fridge",price:20000,glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb",category:"Electronics"},
+      {name:"men checks shirt",price:567, glb:"imgs/mens_casual_shirt.glb", category:"Clothing"},
+      {name:"canon retro camera",price:70000, glb:"imgs/canon_at-1_retro_camera.glb", category:"Electronics"},
+      {name:"Samsung led tv",price:52000, glb:"imgs/samsung_55_curved_tv_and_remote.glb", category:"Electronics"},
+      {name:"LG led tv",price:39000, glb:"imgs/tv_led_large.glb", category:"Electronics"},
+      {name:"refrigerator",price:23149, glb:"imgs/refrigerator.glb", category:"Electronics"},
+      {name:"fridge",price:20000, glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb", category:"Electronics"},
       {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
-      {name:"apple watch",price:45000,glb:"imgs/apple_watch.glb",category:"Electronics"},
-      {name:"silver chain watch",price:1200,glb:"imgs/invicta_watch.glb",category:"Electronics"},
-      {name:"black chain watch",price:999,glb:"imgs/digital_watch.glb",category:"Electronics"},
-      {name:"HP victus laptop",price:700000,glb:"imgs/hp_victus_gaming_laptop.glb",category:"Electronics"},
-      {name:"lenovo laptop",price:55000,glb:"imgs/lenovo_thinkpad_laptop.glb",category:"Electronics"},
-      {name:"smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
-      {name:"washing machine",price:18250,glb:"imgs/washing_machine.glb",category:"Electronics"},
-      {name:"lg washing machine",price:19490,glb:"imgs/washing_machine(1).glb",category:"Electronics"},
-      {name:"Tube Light",price:1900,glb:"imgs/tube_light.glb",category:"Electronics"},
-      {name:"fry pan",price:1500,glb:"imgs/frying_pan_36cm.glb",category:"Electronics"},
-      {name:"gas stove",price:3000,glb:"imgs/gas_stove_kitchen.glb",category:"Electronics"},
-      {name:"mobile charger",price:550,glb:"imgs/mobile_charger.glb",category:"Electonics"},
+      {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
+      {name:"apple watch",price:45000, glb:"imgs/apple_watch.glb", category:"Electronics"},
+      {name:"silver chain watch",price:1200, glb:"imgs/invicta_watch.glb", category:"Electronics"},
+      {name:"black chain watch",price:999, glb:"imgs/digital_watch.glb", category:"Electronics"},
+      {name:"HP victus laptop",price:700000, glb:"imgs/hp_victus_gaming_laptop.glb", category:"Electronics"},
+      {name:"lenovo laptop",price:55000, glb:"imgs/lenovo_thinkpad_laptop.glb", category:"Electronics"},
+      {name:"washing machine",price:18250, glb:"imgs/washing_machine.glb", category:"Electronics"},
+      {name:"lg washing machine",price:19490, glb:"imgs/washing_machine(1).glb", category:"Electronics"},
+      {name:"Tube Light",price:1900, glb:"imgs/tube_light.glb", category:"Electronics"},
+      {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
+      {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
+      {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
     ];
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-    function getWishlist() {
-      return JSON.parse(localStorage.getItem('wishlist') || '[]');
-    }
-    function setWishlist(wishlist) {
-      localStorage.setItem('wishlist', JSON.stringify(wishlist));
-    }
-    function isWishlisted(name) {
-      return getWishlist().some(item => item.name === name);
-    }
-    function displayProduct(product) {
-      const container = document.getElementById('product-details');
-      if (!product) {
-        container.innerHTML = `<p>Product not found.</p>`;
-        return;
+
+const grid = document.getElementById('product-grid');
+const searchInput = document.getElementById('searchInput');
+const sortSelect = document.getElementById('sortSelect');
+const assetOkCache = new Map();
+
+async function assetExists(url) {
+  if (!url) return false;
+  if (assetOkCache.has(url)) return assetOkCache.get(url);
+  try {
+    const res = await fetch(url, { method: 'HEAD' });
+    const ok = res.ok;
+    assetOkCache.set(url, ok);
+    return ok;
+  } catch {
+    assetOkCache.set(url, false);
+    return false;
+  }
+}
+
+function makeFallbackNode(text = 'Preview not available') {
+  const d = document.createElement('div');
+  d.className = 'no-asset';
+  d.textContent = text;
+  return d;
+}
+
+function makeImageNode(src, alt) {
+  const img = document.createElement('img');
+  img.src = src;
+  img.alt = alt;
+  img.addEventListener('error', () => {
+    img.replaceWith(makeFallbackNode());
+  });
+  return img;
+}
+
+function getWishlist() {
+  return JSON.parse(localStorage.getItem('wishlist') || '[]');
+}
+
+function setWishlist(wishlist) {
+  localStorage.setItem('wishlist', JSON.stringify(wishlist));
+}
+
+function isWishlisted(name) {
+  return getWishlist().some(item => item.name === name);
+}
+
+async function renderProducts() {
+  const searchTerm = (searchInput.value || '').toLowerCase();
+  let filtered = products.filter(
+    p => p.name.toLowerCase().includes(searchTerm) ||
+         p.category.toLowerCase().includes(searchTerm)
+  );
+  const sortValue = sortSelect.value;
+  if (sortValue) {
+    const [key, order] = sortValue.split('-');
+    filtered.sort((a, b) => {
+      if (key === 'price') {
+        return order === 'asc' ? a.price - b.price : b.price - a.price;
+      } else if (key === 'name' || key === 'category') {
+        const aVal = String(a[key]).toLowerCase();
+        const bVal = String(b[key]).toLowerCase();
+        if (aVal < bVal) return order === 'asc' ? -1 : 1;
+        if (aVal > bVal) return order === 'asc' ? 1 : -1;
+        return 0;
       }
-      const canAR = ["Furniture", "Clothing", "Accessories"].includes(product.category);
-      let arButtonHtml = '';
-      if (canAR && product.glb) {
-        arButtonHtml = `<button class="ar-button" onclick="openARViewer('${encodeURIComponent(product.glb)}')">View in AR</button>`;
-      }
-      const canTryOnAvatar = ["Clothing", "Accessories"].includes(product.category);
-      let tryOnHtml = '';
-      if (canTryOnAvatar && (product.img || product.glb)) {
-        const imgParam = product.img ? encodeURIComponent(product.img) : '';
-        const glbParam = product.glb ? encodeURIComponent(product.glb) : '';
-        tryOnHtml = `<button class="tryon-button" onclick="openTryOn('${encodeURIComponent(product.name)}','${imgParam}','${glbParam}')">Try On Avatar</button>`;
-      }
-      container.innerHTML = `
-      ${product.glb ? `
-        <model-viewer 
-          src="${product.glb}" alt="${product.name} 3D model" 
-          camera-controls auto-rotate shadow-intensity="1" 
-          style="width:100%; height:500px; border-radius:8px;" 
-          id="main-model" 
-          interaction-prompt="auto">
-          <button slot="ar-button" id="fullscreen-btn" title="Toggle Fullscreen" style="
-            position: absolute; bottom: 12px; right: 12px; 
-            background: rgba(0,0,0,0.5); color: white; border: none; 
-            border-radius: 30px; padding: 10px 16px; cursor: pointer; z-index: 10;">
-            ⛶
-          </button>
-        </model-viewer>
-      ` : product.img ? `
-        <img src="${product.img}" alt="${product.name}" style="width:100%; height:500px; object-fit: contain; border-radius:8px;">
-      ` : ''}
-      <div class="product-info">
-        <h1>${product.name}</h1>
-        <div class="buttons-row">
-          <button class="btn-main" id="add-cart-btn">Add to Cart</button>
-          <button class="wishlist-btn ${isWishlisted(product.name) ? 'active' : ''}" id="wishlist-btn">
-            ${isWishlisted(product.name) ? "Remove from Wishlist" : "Add to Wishlist"}
-          </button>
-          ${arButtonHtml}
-          ${tryOnHtml}
-        </div>
-        <p class="price">₹${product.price}.00</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod bibendum laoreet. Proin gravida dolor sit amet lacus accumsan.</p>
-      </div>
-      `;
-      document.getElementById('add-cart-btn').onclick = () => {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        let existing = cart.find(item => item.name === product.name);
-        if(existing) existing.quantity += 1;
-        else cart.push({name: product.name, price: product.price, quantity: 1});
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert(product.name + " added to cart!");
-      };
-      const wishlistBtn = document.getElementById('wishlist-btn');
-      wishlistBtn.onclick = function() {
-        let wishlist = getWishlist();
-        const index = wishlist.findIndex(item => item.name === product.name);
-        if (index > -1) {
-          // Remove from wishlist
-          wishlist.splice(index, 1);
-          wishlistBtn.classList.remove('active');
-          wishlistBtn.textContent = "Add to Wishlist";
-        } else {
-          // Add to wishlist
-          wishlist.push({
-            name: product.name, price: product.price, category: product.category,
-            img: product.img, glb: product.glb
-          });
-          wishlistBtn.classList.add('active');
-          wishlistBtn.textContent = "Remove from Wishlist";
-        }
-        setWishlist(wishlist);
-      };
-      if (product.glb) {
-        const fullscreenBtn = document.getElementById('fullscreen-btn');
-        const modelViewer = document.getElementById('main-model');
-        fullscreenBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          if (!document.fullscreenElement) {
-            modelViewer.requestFullscreen();
-          } else {
-            document.exitFullscreen();
-          }
-        });
-      }
-    }
-    function openARViewer(modelPath) {
-      window.open(`ar-view.html?model=${modelPath}`, '_blank');
-    }
-    function openTryOn(name, img, glb) {
-      let url = `avatar.html?name=${name}`;
-      if (img) url += `&img=${img}`;
-      if (glb) url += `&glb=${glb}`;
-      window.open(url, '_blank');
-    }
-    function displayRelated(product) {
-      const container = document.getElementById('related-products');
-      container.innerHTML = `<h3>Related Products</h3>`;
-      const related = products.filter(p => p.category === product.category && p.name !== product.name);
-      (related.length ? related : products.filter(p => p.name !== product.name).slice(0, 4)).forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'related-product';
-        div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
-        div.innerHTML = `
-          ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name} 3D" camera-controls auto-rotate shadow-intensity="1"
-              style="width: 100%; height: 150px; border-radius: 6px;"></model-viewer>`
-          : p.img ? `<img src="${p.img}" alt="${p.name}">`
-          : `<div style="width:100%;height:150px;background:#eee;line-height:150px;">No Image</div>`
-          }
-          <h4>${p.name}</h4>
-          <p>₹${p.price}.00</p>
-        `;
-        container.appendChild(div);
-      });
-    }
-    window.onload = () => {
-      const productName = getQueryParam('name');
-      const product = products.find(p => p.name === productName);
-      displayProduct(product);
-      if (product) displayRelated(product);
+      return 0;
+    });
+  }
+  grid.innerHTML = '';
+  for (const p of filtered) {
+    const div = document.createElement('div');
+    div.className = 'product';
+    div.setAttribute('data-name', p.name);
+    div.setAttribute('data-price', p.price);
+    div.setAttribute('data-category', p.category);
+    div.onclick = (e) => {
+      if (e.target.tagName === 'BUTTON') return;
+      window.location.href = 'product.html?name=' + encodeURIComponent(p.name);
     };
-  </script>
+    let previewNode = null;
+    const hasGLB = await assetExists(p.glb);
+    if (hasGLB) {
+      const mv = document.createElement('model-viewer');
+      mv.setAttribute('src', p.glb);
+      mv.setAttribute('alt', p.name + ' 3D view');
+      mv.setAttribute('auto-rotate', '');
+      mv.setAttribute('camera-controls', '');
+      mv.setAttribute('ar', '');
+      mv.setAttribute('shadow-intensity', '1');
+      mv.addEventListener('error', () => {
+        mv.replaceWith(p.img ? makeImageNode(p.img, p.name) : makeFallbackNode());
+      });
+      previewNode = mv;
+    } else if (p.img) {
+      previewNode = makeImageNode(p.img, p.name);
+    } else {
+      previewNode = makeFallbackNode();
+    }
+    div.appendChild(previewNode);
+    div.insertAdjacentHTML('beforeend', `
+      <h3>${p.name}</h3>
+      <p class="category">${p.category}</p>
+      <p>₹${p.price}.00</p>
+      <div class="button-row">
+        <button class="cart-btn" type="button">Add to Cart</button>
+        <button class="wishlist-btn${isWishlisted(p.name) ? ' added' : ''}" type="button">
+          ${isWishlisted(p.name) ? "Remove from Wishlist" : "Add to Wishlist"}
+        </button>
+      </div>
+    `);
+    div.querySelector('.cart-btn').onclick = (event) => {
+      event.stopPropagation();
+      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      const existing = cart.find(item => item.name === p.name);
+      if (existing) existing.quantity += 1;
+      else cart.push({ name: p.name, price: p.price, quantity: 1 });
+      localStorage.setItem('cart', JSON.stringify(cart));
+      alert(p.name + " added to cart!");
+    };
+    const wishBtn = div.querySelector('.wishlist-btn');
+    wishBtn.onclick = (event) => {
+      event.stopPropagation();
+      let wishlist = getWishlist();
+      const index = wishlist.findIndex(item => item.name === p.name);
+      if (index > -1) {
+        wishlist.splice(index, 1);
+        wishBtn.classList.remove('added');
+        wishBtn.textContent = "Add to Wishlist";
+      } else {
+        wishlist.push({ name: p.name, price: p.price, category: p.category, img: p.img, glb: p.glb });
+        wishBtn.classList.add('added');
+        wishBtn.textContent = "Remove from Wishlist";
+      }
+      setWishlist(wishlist);
+    };
+    grid.appendChild(div);
+  }
+}
+
+searchInput.addEventListener('input', () => { renderProducts(); });
+sortSelect.addEventListener('change', () => { renderProducts(); });
+window.onload = () => { renderProducts(); };
+        </script>
+
+  <footer>
+    <p>© 2025 Reality Shop. All rights reserved.</p>
+  </footer>
 </body>
 </html>
+
+
+
