@@ -2,45 +2,85 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Avatar with Dress</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Clothing Avatar Creator</title>
+  <style>
+    #avatar {
+      width: 200px;
+      height: 400px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .controls {
+      margin-bottom: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Avatar with Selected Dress</h1>
+  <div id="avatar"></div>
+  <div class="controls">
+    Gender:
+    <select id="gender">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
+    Height:
+    <select id="height">
+      <option value="short">Short</option>
+      <option value="medium">Medium</option>
+      <option value="tall">Tall</option>
+    </select>
+    Clothes:
+    <select id="clothes">
+      <option value="tshirt">T-Shirt</option>
+      <option value="dress">Dress</option>
+      <option value="jacket">Jacket</option>
+    </select>
+    <button onclick="updateAvatar()">Update Avatar</button>
+  </div>
 
-  <canvas id="avatarCanvas" width="300" height="500"></canvas>
+  <script>
+    function updateAvatar() {
+      const gender = document.getElementById('gender').value;
+      const height = document.getElementById('height').value;
+      const clothes = document.getElementById('clothes').value;
+      let avatarSVG = '';
 
-  <script src="script.js"></script>
-  body {
-  font-family: sans-serif;
-  text-align: center;
-  padding: 40px;
-  background-color: #f4f4f4;
-}
+      // Very basic SVG – in real cases, use separate SVGs or images for each combination and clothing.
+      if (gender === 'male') {
+        avatarSVG += `<rect x="80" y="60" width="40" height="100" rx="20" fill="#fae0b7"/>
+        <circle cx="100" cy="40" r="30" fill="#edd3af"/>`;  // Head + Body
+      } else {
+        avatarSVG += `<rect x="80" y="75" width="40" height="100" rx="24" fill="#ffe6c9"/>
+        <ellipse cx="100" cy="50" rx="28" ry="28" fill="#f2cab9"/>`;
+      }
 
-canvas {
-  border: 2px solid #888;
-  background-color: #fff;
-}
-const canvas = document.getElementById("avatarCanvas");
-const ctx = canvas.getContext("2d");
+      // Simple clothing overlay
+      if (clothes === 'tshirt') {
+        avatarSVG += `<rect x="80" y="100" width="40" height="40" fill="#5a9"/>
+        <rect x="70" y="110" width="20" height="15" fill="#5a9"/>
+        <rect x="110" y="110" width="20" height="15" fill="#5a9"/>`;
+      } else if (clothes === 'dress') {
+        avatarSVG += `<rect x="80" y="120" width="40" height="60" fill="#c96c9a"/>
+        <ellipse cx="100" cy="180" rx="28" ry="20" fill="#c96c9a"/>`;
+      } else if (clothes === 'jacket') {
+        avatarSVG += `<rect x="80" y="100" width="40" height="60" fill="#333"/>
+        <rect x="90" y="120" width="10" height="30" fill="#deaa87"/>
+        <rect x="100" y="120" width="10" height="30" fill="#deaa87"/>`;
+      }
 
-// Load base avatar
-const baseImage = new Image();
-baseImage.src = "assets/base.png";
+      // Adjust for height
+      let scaleH = 1;
+      if (height === 'short') scaleH = 0.9;
+      if (height === 'tall') scaleH = 1.2;
 
-// Load dress image
-const dressImage = new Image();
-dressImage.src = "assets/dress_red.png";
-
-// Draw both when ready
-baseImage.onload = () => {
-  ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
-
-  dressImage.onload = () => {
-    ctx.drawImage(dressImage, 0, 0, canvas.width, canvas.height);
-  };
-};
-
+      document.getElementById('avatar').innerHTML =
+        `<svg width="200" height="400">
+          <g transform="scale(1,${scaleH})">
+            ${avatarSVG}
+          </g>
+        </svg>`;
+    }
+    updateAvatar();
+  </script>
 </body>
 </html>
