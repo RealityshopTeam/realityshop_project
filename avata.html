@@ -11,5 +11,36 @@
   <canvas id="avatarCanvas" width="300" height="500"></canvas>
 
   <script src="script.js"></script>
+  body {
+  font-family: sans-serif;
+  text-align: center;
+  padding: 40px;
+  background-color: #f4f4f4;
+}
+
+canvas {
+  border: 2px solid #888;
+  background-color: #fff;
+}
+const canvas = document.getElementById("avatarCanvas");
+const ctx = canvas.getContext("2d");
+
+// Load base avatar
+const baseImage = new Image();
+baseImage.src = "assets/base.png";
+
+// Load dress image
+const dressImage = new Image();
+dressImage.src = "assets/dress_red.png";
+
+// Draw both when ready
+baseImage.onload = () => {
+  ctx.drawImage(baseImage, 0, 0, canvas.width, canvas.height);
+
+  dressImage.onload = () => {
+    ctx.drawImage(dressImage, 0, 0, canvas.width, canvas.height);
+  };
+};
+
 </body>
 </html>
