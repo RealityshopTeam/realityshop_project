@@ -1,105 +1,279 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Reality Shop - Avatar Customization</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Avatar Builder — Reality Shop</title>
   <style>
-    body { margin: 0; overflow: hidden; background: #121212; }
-    #controls {
-      position: absolute; top: 20px; left: 20px;
-      z-index: 10; display: flex; gap: 10px;
-    }
-    button {
-      padding: 10px 15px; border: none; border-radius: 6px;
-      background: #00b894; color: white; font-weight: bold; cursor: pointer;
-    }
-    button:hover { background: #019875; }
+    :root{--bg:#0f1720;--panel:#0b1220;--muted:#9aa7b2}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Arial;background:var(--bg);color:#e6eef3}
+    .app{display:grid;grid-template-columns:1fr 360px;gap:18px;height:100vh;padding:18px}
+    .canvas-wrap{background:#071019;border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:center}
+    #canvas3d{width:100%;height:100%;border-radius:8px;display:block}
+    .panel{background:linear-gradient(180deg,#071322 0%, #071019 100%);border-radius:12px;padding:16px;box-shadow:0 6px 20px rgba(2,6,23,0.6);overflow:auto}
+    h2{margin:0 0 12px 0;font-size:18px}
+    label{display:block;font-size:13px;color:var(--muted);margin-top:10px}
+    input[type=color],input[type=range],select,button{width:100%;margin-top:6px;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:inherit}
+    .row{display:flex;gap:8px}
+    .row > *{flex:1}
+    .small{font-size:12px;color:var(--muted);margin-top:6px}
+    .button-row{display:flex;gap:8px;margin-top:12px}
+    footer{font-size:12px;color:var(--muted);margin-top:12px}
+    .uploader{display:flex;gap:8px;align-items:center}
+    .uploader img{width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.04)}
   </style>
 </head>
 <body>
-  <div id="controls">
-    <button onclick="changeProduct('shirt')">Shirt</button>
-    <button onclick="changeProduct('jacket')">Jacket</button>
-    <button onclick="changeProduct('shoes')">Shoes</button>
+  <div class="app">
+    <div class="canvas-wrap">
+      <canvas id="canvas3d"></canvas>
+    </div><aside class="panel">
+  <h2>Avatar Builder</h2>
+
+  <label>Upload selfie (optional) — will sample central colors</label>
+  <div class="uploader">
+    <input id="photoInput" type="file" accept="image/*">
+    <img id="photoPreview" alt="preview" src="" style="display:none">
+  </div>
+  <div class="small">Tip: upload a clear face selfie. The builder will sample average color to suggest skin tone.</div>
+
+  <label>Skin color</label>
+  <input id="skinColor" type="color" value="#d9b58f">
+
+  <label>Hair color</label>
+  <input id="hairColor" type="color" value="#2b1f15">
+
+  <label>Outfit color</label>
+  <input id="outfitColor" type="color" value="#0ea5a4">
+
+  <label>Head size</label>
+  <input id="headSize" type="range" min="0.6" max="1.6" step="0.01" value="1">
+
+  <label>Body width</label>
+  <input id="bodyWidth" type="range" min="0.6" max="1.6" step="0.01" value="1">
+
+  <label>Hair style</label>
+  <select id="hairStyle">
+    <option value="short">Short</option>
+    <option value="long">Long</option>
+    <option value="bun">Bun</option>
+    <option value="bald">Bald</option>
+  </select>
+
+  <div class="button-row">
+    <button id="randomize">Randomize</button>
+    <button id="exportGLB">Export GLB</button>
   </div>
 
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/controls/OrbitControls.js";
-    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/loaders/GLTFLoader.js";
+  <footer>
+    This is a lightweight, single-file starter for a web avatar. It builds a simple 3D character from primitives (no external models). Use it as a starting point — you can swap in GLTF models or a fuller sculpt later.
+  </footer>
+</aside>
 
-    let scene, camera, renderer, controls, avatar;
-    let productGroup = new THREE.Group(); // container for current product
+  </div>  <script type="module">
+    import * as THREE from 'https://unpkg.com/three@0.152.2/build/three.module.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js';
+    import { GLTFExporter } from 'https://unpkg.com/three@0.152.2/examples/jsm/exporters/GLTFExporter.js';
 
-    init();
-    loadAvatar();
+    // Renderer, scene, camera
+    const canvas = document.getElementById('canvas3d');
+    const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(canvas.clientWidth || 800, canvas.clientHeight || 600, false);
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x121212);
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x071019);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
-      camera.position.set(0, 1.6, 3);
+    const camera = new THREE.PerspectiveCamera(45, 1.2, 0.1, 100);
+    camera.position.set(0, 1.6, 3);
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0,1,0);
+    controls.update();
 
-      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-      scene.add(light);
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 0.7);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+    dir.position.set(5,10,2);
+    scene.add(dir);
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 1.4, 0);
-      controls.update();
+    // Ground
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial({color:0x06101a,metalness:0,roughness:1}));
+    ground.rotation.x = -Math.PI/2; ground.position.y = 0; scene.add(ground);
 
-      scene.add(productGroup);
+    // Avatar group
+    let avatarGroup = new THREE.Group();
+    scene.add(avatarGroup);
 
-      window.addEventListener("resize", onWindowResize);
-      animate();
-    }
+    function buildAvatar(opts={}){
+      // clear
+      while(avatarGroup.children.length) avatarGroup.remove(avatarGroup.children[0]);
 
-    function loadAvatar() {
-      const loader = new GLTFLoader();
-      // Replace with your avatar model (GLB file)
-      loader.load("https://models.readyplayer.me/64f8827a1739b4d902ac6d4f.glb", (gltf) => {
-        avatar = gltf.scene;
-        avatar.scale.set(1, 1, 1);
-        avatar.position.set(0, 0, 0);
-        scene.add(avatar);
-      });
-    }
+      const skinColor = new THREE.Color(opts.skinColor || 0xd9b58f);
+      const hairColor = new THREE.Color(opts.hairColor || 0x2b1f15);
+      const outfitColor = new THREE.Color(opts.outfitColor || 0x0ea5a4);
+      const headSize = opts.headSize || 1;
+      const bodyWidth = opts.bodyWidth || 1;
+      const hairStyle = opts.hairStyle || 'short';
 
-    function changeProduct(type) {
-      const loader = new GLTFLoader();
-      productGroup.clear(); // remove previous product
+      // torso
+      const torsoGeo = new THREE.CapsuleGeometry(0.35*bodyWidth, 0.7, 6, 12);
+      const torsoMat = new THREE.MeshStandardMaterial({color:outfitColor, metalness:0.1, roughness:0.6});
+      const torso = new THREE.Mesh(torsoGeo, torsoMat);
+      torso.position.y = 1.0;
+      avatarGroup.add(torso);
 
-      let url;
-      if (type === "shirt") {
-        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/CesiumMan/glTF-Binary/CesiumMan.glb"; 
-      } else if (type === "jacket") {
-        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Avocado/glTF-Binary/Avocado.glb"; 
-      } else if (type === "shoes") {
-        url = "https://cdn.jsdelivr.net/gh/KhronosGroup/glTF-Sample-Models@master/2.0/Duck/glTF-Binary/Duck.glb"; 
+      // head
+      const headGeo = new THREE.SphereGeometry(0.28*headSize, 32, 32);
+      const headMat = new THREE.MeshStandardMaterial({color:skinColor, metalness:0.03, roughness:0.7});
+      const head = new THREE.Mesh(headGeo, headMat);
+      head.position.y = 1.78;
+      avatarGroup.add(head);
+
+      // eyes (simple)
+      const eyeMat = new THREE.MeshStandardMaterial({color:0x0a0a0a});
+      const eyeGeo = new THREE.SphereGeometry(0.03*headSize,16,16);
+      const leftEye = new THREE.Mesh(eyeGeo, eyeMat); leftEye.position.set(-0.08,1.82,0.24); avatarGroup.add(leftEye);
+      const rightEye = leftEye.clone(); rightEye.position.x = 0.08; avatarGroup.add(rightEye);
+
+      // neck
+      const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12*headSize,0.12*headSize,0.18,12), headMat);
+      neck.position.y = 1.58; avatarGroup.add(neck);
+
+      // arms
+      const armGeo = new THREE.CylinderGeometry(0.08,0.08,0.9,10);
+      const armLeft = new THREE.Mesh(armGeo, headMat); armLeft.position.set(-0.55,1.0,0); armLeft.rotation.z = 0.2; avatarGroup.add(armLeft);
+      const armRight = armLeft.clone(); armRight.position.x = 0.55; armRight.rotation.z = -0.2; avatarGroup.add(armRight);
+
+      // legs
+      const legGeo = new THREE.CylinderGeometry(0.11,0.11,1.0,12);
+      const leftLeg = new THREE.Mesh(legGeo, new THREE.MeshStandardMaterial({color:0x111216,metalness:0.1,roughness:0.9})); leftLeg.position.set(-0.18,0.0,0); avatarGroup.add(leftLeg);
+      const rightLeg = leftLeg.clone(); rightLeg.position.x = 0.18; avatarGroup.add(rightLeg);
+
+      // hair
+      if(hairStyle !== 'bald'){
+        if(hairStyle === 'short'){
+          const hairGeo = new THREE.SphereGeometry(0.30*headSize,32,32,0,Math.PI*2,0,Math.PI*0.8);
+          const hair = new THREE.Mesh(hairGeo, new THREE.MeshStandardMaterial({color:hairColor,metalness:0.05,roughness:0.6}));
+          hair.position.y = 1.86; hair.scale.set(1,0.9,1); avatarGroup.add(hair);
+        } else if(hairStyle === 'long'){
+          const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.30*headSize,32,32,0,Math.PI*2,0,Math.PI*0.8), new THREE.MeshStandardMaterial({color:hairColor})); hairTop.position.y = 1.86; avatarGroup.add(hairTop);
+          const hairBack = new THREE.Mesh(new THREE.CylinderGeometry(0.28*headSize,0.28*headSize,0.9,16), new THREE.MeshStandardMaterial({color:hairColor})); hairBack.position.set(0,1.46,-0.08); hairBack.rotation.x = 0.05; avatarGroup.add(hairBack);
+        } else if(hairStyle === 'bun'){
+          const bun = new THREE.Mesh(new THREE.SphereGeometry(0.12*headSize,20,20), new THREE.MeshStandardMaterial({color:hairColor})); bun.position.set(0,2.06,-0.02); avatarGroup.add(bun);
+          const hairTop = new THREE.Mesh(new THREE.SphereGeometry(0.30*headSize,32,32,0,Math.PI*2,0,Math.PI*0.8), new THREE.MeshStandardMaterial({color:hairColor})); hairTop.position.y = 1.86; avatarGroup.add(hairTop);
+        }
       }
 
-      loader.load(url, (gltf) => {
-        const product = gltf.scene;
-        product.scale.set(0.5, 0.5, 0.5);  // adjust size to fit avatar
-        product.position.set(0, 0, 0);     // adjust position to align
-        productGroup.add(product);
+      // subtle scale/center
+      avatarGroup.position.y = 0;
+      avatarGroup.rotation.y = 0;
+    }
+
+    // initial build
+    buildAvatar({});
+
+    // handle resize
+    function resize(){
+      const w = canvas.clientWidth || canvas.parentElement.clientWidth;
+      const h = canvas.clientHeight || canvas.parentElement.clientHeight;
+      renderer.setSize(w,h,false);
+      camera.aspect = w/h; camera.updateProjectionMatrix();
+    }
+    window.addEventListener('resize', resize);
+
+    // animate
+    function animate(){
+      requestAnimationFrame(animate);
+      avatarGroup.rotation.y += 0.002;
+      renderer.render(scene,camera);
+    }
+    animate();
+
+    // UI bindings
+    const skinColorInput = document.getElementById('skinColor');
+    const hairColorInput = document.getElementById('hairColor');
+    const outfitColorInput = document.getElementById('outfitColor');
+    const headSizeInput = document.getElementById('headSize');
+    const bodyWidthInput = document.getElementById('bodyWidth');
+    const hairStyleInput = document.getElementById('hairStyle');
+    const randomizeBtn = document.getElementById('randomize');
+    const exportBtn = document.getElementById('exportGLB');
+
+    function rebuildFromUI(){
+      buildAvatar({
+        skinColor: skinColorInput.value,
+        hairColor: hairColorInput.value,
+        outfitColor: outfitColorInput.value,
+        headSize: parseFloat(headSizeInput.value),
+        bodyWidth: parseFloat(bodyWidthInput.value),
+        hairStyle: hairStyleInput.value
       });
     }
 
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
+    [skinColorInput,hairColorInput,outfitColorInput,headSizeInput,bodyWidthInput,hairStyleInput].forEach(el=>el.addEventListener('input',rebuildFromUI));
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-  </script>
-</body>
-</html>  alignmnet of the code
+    randomizeBtn.addEventListener('click', ()=>{
+      function rndColor(){ return '#'+Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'); }
+      skinColorInput.value = rndColor(); hairColorInput.value = rndColor(); outfitColorInput.value = rndColor();
+      headSizeInput.value = (0.7 + Math.random()*0.9).toFixed(2);
+      bodyWidthInput.value = (0.75 + Math.random()*0.9).toFixed(2);
+      hairStyleInput.value = ['short','long','bun','bald'][Math.floor(Math.random()*4)];
+      rebuildFromUI();
+    });
+
+    // Export GLB
+    exportBtn.addEventListener('click', ()=>{
+      const exporter = new GLTFExporter();
+      exporter.parse(avatarGroup, function(result){
+        let output;
+        if(result instanceof ArrayBuffer){
+          output = new Blob([result], {type:'application/octet-stream'});
+        } else {
+          const str = JSON.stringify(result);
+          output = new Blob([str], {type:'application/json'});
+        }
+        const url = URL.createObjectURL(output);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'avatar.glb'; document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }, {binary:true});
+    });
+
+    // Photo upload -> sample average color for skin
+    const photoInput = document.getElementById('photoInput');
+    const photoPreview = document.getElementById('photoPreview');
+    photoInput.addEventListener('change', async (e)=>{
+      const file = e.target.files && e.target.files[0];
+      if(!file) return;
+      const url = URL.createObjectURL(file);
+      photoPreview.src = url; photoPreview.style.display = 'block';
+      // sample image
+      const img = new Image(); img.crossOrigin = 'anonymous'; img.src = url;
+      await img.decode();
+      const canvas2 = document.createElement('canvas');
+      const ctx = canvas2.getContext('2d');
+      // sample central square region
+      const sw = img.naturalWidth, sh = img.naturalHeight;
+      const size = Math.min(sw,sh)*0.35;
+      canvas2.width = size; canvas2.height = size;
+      const sx = (sw-size)/2, sy = (sh-size)/2;
+      ctx.drawImage(img, sx, sy, size, size, 0,0,size,size);
+      const data = ctx.getImageData(0,0,size,size).data;
+      // compute average RGB but ignore very dark pixels (background)
+      let r=0,g=0,b=0,count=0;
+      for(let i=0;i<data.length;i+=4){
+        const R = data[i], G = data[i+1], B = data[i+2], A = data[i+3];
+        const luminance = 0.2126*R + 0.7152*G + 0.0722*B;
+        if(A>128 && luminance>30){ r+=R; g+=G; b+=B; count++; }
+      }
+      if(count>0){ r=Math.round(r/count); g=Math.round(g/count); b=Math.round(b/count); const hex = '#'+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); skinColorInput.value = hex; rebuildFromUI(); }
+      URL.revokeObjectURL(url);
+    });
+
+    // initial resize
+    resize();
+  </script></body>
+</html>
