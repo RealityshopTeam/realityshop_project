@@ -18,12 +18,6 @@
 </head>
 <body>
   <div id="ui">
-    <label>Gender</label>
-    <select id="gender">
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-    </select>
-
     <label>Height</label>
     <select id="height">
       <option value="short">Short</option>
@@ -79,30 +73,27 @@
     let avatar, clothes, hair, accessory;
     let autoRotate = true;
 
-    // External URLs (replace with your actual model URLs)
-    const BASES = {
-      male: 'https://your-server.com/models/avatar_male.glb',
-      female: 'https://your-server.com/models/avatar_female.glb'
-    };
+    // Use baseAvatar.glb as main avatar
+    const BASE_AVATAR = './models/baseAvatar.glb';
     const CLOTHES = {
       none: null,
-      tshirt: 'https://your-server.com/models/clothes_tshirt.glb',
-      jacket: 'https://your-server.com/models/clothes_jacket.glb'
+      tshirt: './models/clothes_tshirt.glb',
+      jacket: './models/clothes_jacket.glb'
     };
     const HAIR = {
       none: null,
-      short: 'https://your-server.com/models/hair_short.glb',
-      long: 'https://your-server.com/models/hair_long.glb',
-      curly: 'https://your-server.com/models/hair_curly.glb'
+      short: './models/hair_short.glb',
+      long: './models/hair_long.glb',
+      curly: './models/hair_curly.glb'
     };
     const ACCESSORIES = {
       none: null,
-      glasses: 'https://your-server.com/models/glasses.glb',
-      hat: 'https://your-server.com/models/hat.glb'
+      glasses: './models/glasses.glb',
+      hat: './models/hat.glb'
     };
 
     init();
-    loadAvatar(BASES.male);
+    loadAvatar(BASE_AVATAR);
 
     function init() {
       scene = new THREE.Scene();
@@ -117,20 +108,18 @@
       document.body.appendChild(renderer.domElement);
 
       // Lights
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
       hemiLight.position.set(0, 20, 0);
       scene.add(hemiLight);
 
       const dirLight = new THREE.DirectionalLight(0xffffff, 1);
       dirLight.position.set(5, 10, 7);
       dirLight.castShadow = true;
-      dirLight.shadow.mapSize.width = 2048;
-      dirLight.shadow.mapSize.height = 2048;
       scene.add(dirLight);
 
       // Ground
       const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(10,10),
+        new THREE.PlaneGeometry(20,20),
         new THREE.MeshStandardMaterial({color: 0xe6e6e6})
       );
       ground.rotation.x = -Math.PI/2;
@@ -139,12 +128,12 @@
 
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enablePan = false;
+      controls.target.set(0, 1, 0);
 
       window.addEventListener('resize', onWindowResize);
       animate();
 
       // UI events
-      document.getElementById('gender').addEventListener('change', e => loadAvatar(BASES[e.target.value]));
       document.getElementById('height').addEventListener('change', e => resizeAvatar(e.target.value));
       document.getElementById('clothes').addEventListener('change', e => loadClothes(CLOTHES[e.target.value]));
       document.getElementById('color').addEventListener('input', e => recolor(clothes, e.target.value));
@@ -161,6 +150,8 @@
         if (avatar) scene.remove(avatar);
         avatar = gltf.scene;
         avatar.traverse(c=>{ if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; } });
+        avatar.position.set(0, 0, 0);
+        avatar.scale.set(1.2, 1.2, 1.2); // Ensure visibility
         scene.add(avatar);
       });
     }
@@ -177,6 +168,8 @@
         model.traverse(c=>{
           if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; if(color && c.material) c.material.color.set(color);}
         });
+        model.position.set(0,0,0);
+        model.scale.set(1.2,1.2,1.2);
         scene.add(model);
         callback(model);
       });
@@ -196,6 +189,7 @@
     function animate() {
       requestAnimationFrame(animate);
       if (avatar && autoRotate) avatar.rotation.y += 0.003;
+      controls.update();
       renderer.render(scene, camera);
     }
 
@@ -206,12 +200,4 @@
     }
 
     function takeScreenshot() {
-      const dataURL = renderer.domElement.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = 'avatar.png';
-      a.click();
-    }
-  </script>
-</body>
-</html>
+      const dataURL = renderer.domElement.toDataURL('
