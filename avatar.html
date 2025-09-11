@@ -63,7 +63,6 @@
     <button id="screenshot">Download Screenshot</button>
   </div>
 
-  <!-- Three.js -->
   <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/examples/js/loaders/GLTFLoader.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/examples/js/controls/OrbitControls.js"></script>
@@ -73,7 +72,6 @@
     let avatar, clothes, hair, accessory;
     let autoRotate = true;
 
-    // Use baseAvatar.glb as main avatar
     const BASE_AVATAR = './baseAvatar.glb';
     const CLOTHES = {
       none: null,
@@ -100,7 +98,7 @@
       scene.background = new THREE.Color(0xf0f0f0);
 
       camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
-      camera.position.set(0, 1.6, 3);
+      camera.position.set(0, 1.6, 2.5); // Slightly closer for visibility
 
       renderer = new THREE.WebGLRenderer({antialias: true});
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -113,8 +111,10 @@
       scene.add(hemiLight);
 
       const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(5, 10, 7);
+      dirLight.position.set(5, 10, 5);
       dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
       scene.add(dirLight);
 
       // Ground
@@ -151,7 +151,7 @@
         avatar = gltf.scene;
         avatar.traverse(c=>{ if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; } });
         avatar.position.set(0, 0, 0);
-        avatar.scale.set(1.2, 1.2, 1.2); // Ensure visibility
+        avatar.scale.set(1.3, 1.3, 1.3); // Adjusted for better visibility
         scene.add(avatar);
       });
     }
@@ -169,7 +169,7 @@
           if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; if(color && c.material) c.material.color.set(color);}
         });
         model.position.set(0,0,0);
-        model.scale.set(1.2,1.2,1.2);
+        model.scale.set(1.3,1.3,1.3);
         scene.add(model);
         callback(model);
       });
@@ -179,7 +179,7 @@
     function recolorSkin(color) { if(!avatar) return; avatar.traverse(c=>{ if(c.isMesh && c.material && c.material.name.toLowerCase().includes("skin")) c.material.color.set(color); }); }
 
     function resizeAvatar(height) {
-      const scale = height==="short"?0.9:height==="tall"?1.15:1.0;
+      const scale = height==="short"?1.0:height==="tall"?1.5:1.3;
       if(avatar) avatar.scale.set(scale, scale, scale);
       if(clothes) clothes.scale.set(scale, scale, scale);
       if(hair) hair.scale.set(scale, scale, scale);
@@ -200,6 +200,12 @@
     }
 
     function takeScreenshot() {
-      const dataURL = renderer.domElement.toDataURL('
-
-
+      const dataURL = renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = 'avatar.png';
+      a.click();
+    }
+  </script>
+</body>
+</html>
