@@ -4,18 +4,51 @@
   <meta charset="UTF-8">
   <title>Clothing Avatar Creator</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
     #avatar {
       width: 200px;
       height: 400px;
-      border: 1px solid #ccc;
-      margin-bottom: 10px;
+      border: 2px solid #ccc;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
     .controls {
-      margin-bottom: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+    select, button {
+      padding: 6px 10px;
+      border-radius: 6px;
+      border: 1px solid #aaa;
+      font-size: 14px;
+    }
+    button {
+      background: #4caf50;
+      color: white;
+      cursor: pointer;
+      border: none;
+    }
+    button:hover {
+      background: #45a049;
     }
   </style>
 </head>
 <body>
+  <h2>Clothing Avatar Creator</h2>
   <div id="avatar"></div>
   <div class="controls">
     Gender:
@@ -43,39 +76,43 @@
       const gender = document.getElementById('gender').value;
       const height = document.getElementById('height').value;
       const clothes = document.getElementById('clothes').value;
-      let avatarSVG = '';
 
-      // Very basic SVG – in real cases, use separate SVGs or images for each combination and clothing.
-      if (gender === 'male') {
-        avatarSVG += `<rect x="80" y="60" width="40" height="100" rx="20" fill="#fae0b7"/>
-        <circle cx="100" cy="40" r="30" fill="#edd3af"/>`;  // Head + Body
-      } else {
-        avatarSVG += `<rect x="80" y="75" width="40" height="100" rx="24" fill="#ffe6c9"/>
-        <ellipse cx="100" cy="50" rx="28" ry="28" fill="#f2cab9"/>`;
-      }
-
-      // Simple clothing overlay
-      if (clothes === 'tshirt') {
-        avatarSVG += `<rect x="80" y="100" width="40" height="40" fill="#5a9"/>
-        <rect x="70" y="110" width="20" height="15" fill="#5a9"/>
-        <rect x="110" y="110" width="20" height="15" fill="#5a9"/>`;
-      } else if (clothes === 'dress') {
-        avatarSVG += `<rect x="80" y="120" width="40" height="60" fill="#c96c9a"/>
-        <ellipse cx="100" cy="180" rx="28" ry="20" fill="#c96c9a"/>`;
-      } else if (clothes === 'jacket') {
-        avatarSVG += `<rect x="80" y="100" width="40" height="60" fill="#333"/>
-        <rect x="90" y="120" width="10" height="30" fill="#deaa87"/>
-        <rect x="100" y="120" width="10" height="30" fill="#deaa87"/>`;
-      }
-
-      // Adjust for height
+      // Scale for height
       let scaleH = 1;
       if (height === 'short') scaleH = 0.9;
       if (height === 'tall') scaleH = 1.2;
 
+      // Head
+      let avatarSVG = `<circle cx="100" cy="60" r="40" fill="#f1c27d" stroke="#333" stroke-width="2"/>`;
+
+      // Hair (different by gender)
+      if (gender === 'male') {
+        avatarSVG += `<ellipse cx="100" cy="40" rx="45" ry="25" fill="#3b2e2e"/>`;
+      } else {
+        avatarSVG += `<ellipse cx="100" cy="35" rx="50" ry="30" fill="#5a2d82"/>`;
+      }
+
+      // Eyes
+      avatarSVG += `
+        <circle cx="85" cy="60" r="5" fill="#000"/>
+        <circle cx="115" cy="60" r="5" fill="#000"/>`;
+
+      // Body
+      avatarSVG += `<rect x="70" y="100" width="60" height="120" rx="20" fill="#f1c27d" stroke="#333" stroke-width="2"/>`;
+
+      // Clothing
+      if (clothes === 'tshirt') {
+        avatarSVG += `<rect x="70" y="100" width="60" height="70" rx="10" fill="#4cafef"/>`;
+      } else if (clothes === 'dress') {
+        avatarSVG += `<path d="M70 100 Q100 160 130 100 L130 200 Q100 260 70 200Z" fill="#c96c9a"/>`;
+      } else if (clothes === 'jacket') {
+        avatarSVG += `<rect x="70" y="100" width="60" height="120" rx="10" fill="#333"/>
+                      <line x1="100" y1="100" x2="100" y2="220" stroke="#fff" stroke-width="2"/>`;
+      }
+
       document.getElementById('avatar').innerHTML =
         `<svg width="200" height="400">
-          <g transform="scale(1,${scaleH})">
+          <g transform="scale(1,${scaleH}) translate(0, ${height === 'tall' ? -20 : height === 'short' ? 20 : 0})">
             ${avatarSVG}
           </g>
         </svg>`;
@@ -84,5 +121,3 @@
   </script>
 </body>
 </html>
-
-
