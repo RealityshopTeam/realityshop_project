@@ -1,183 +1,217 @@
-// AvatarBuilder.jsx (updated for Reality Shop project)
-// This version loads avatar and clothing models directly from /public/models/ directory
-// Place your .glb models inside /public/models/ before running
-
-import React, { useRef, useState, Suspense, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, useGLTF, Html, Environment } from '@react-three/drei';
-
-export default function AvatarBuilder() {
-  // Load local models from /public/models/
-  const BASES = {
-    male: '/models/avatar_male.glb',
-    female: '/models/avatar_female.glb'
-  };
-
-  const CLOTHES = {
-    none: null,
-    tshirt: '/models/clothes_tshirt.glb',
-    jacket: '/models/clothes_jacket.glb'
-  };
-
-  const [baseUrl, setBaseUrl] = useState(BASES.male);
-  const [clothesUrl, setClothesUrl] = useState(null);
-  const [gender, setGender] = useState('male');
-  const [height, setHeight] = useState('medium');
-  const [clothingColor, setClothingColor] = useState('#4caf50');
-  const [autoRotate, setAutoRotate] = useState(true);
-
-  function handleGenderChange(g) {
-    setGender(g);
-    setBaseUrl(BASES[g]);
-  }
-
-  function handleHeightChange(h) {
-    setHeight(h);
-  }
-
-  function handleClothesChange(key) {
-    setClothesUrl(CLOTHES[key]);
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
-      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Controls */}
-        <div className="md:col-span-1 bg-white rounded-2xl p-6 shadow">
-          <h2 className="text-xl font-semibold mb-4">Avatar Controls</h2>
-
-          <label className="block mb-2">Gender</label>
-          <div className="flex gap-2 mb-4">
-            <button className={`px-3 py-2 rounded ${gender === 'male' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleGenderChange('male')}>Male</button>
-            <button className={`px-3 py-2 rounded ${gender === 'female' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleGenderChange('female')}>Female</button>
-          </div>
-
-          <label className="block mb-2">Height</label>
-          <div className="flex gap-2 mb-4">
-            <button className={`px-3 py-2 rounded ${height === 'short' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('short')}>Short</button>
-            <button className={`px-3 py-2 rounded ${height === 'medium' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('medium')}>Medium</button>
-            <button className={`px-3 py-2 rounded ${height === 'tall' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('tall')}>Tall</button>
-          </div>
-
-          <label className="block mb-2">Clothes</label>
-          <select className="w-full mb-4 p-2 rounded border" onChange={(e) => handleClothesChange(e.target.value)}>
-            <option value="none">None</option>
-            <option value="tshirt">T-Shirt</option>
-            <option value="jacket">Jacket</option>
-          </select>
-
-          <label className="block mb-2">Clothing Color</label>
-          <input type="color" value={clothingColor} onChange={(e) => setClothingColor(e.target.value)} className="mb-4 w-20 h-10 p-0 border-0" />
-
-          <div className="flex items-center gap-2 mb-4">
-            <input id="autorotate" type="checkbox" checked={autoRotate} onChange={(e) => setAutoRotate(e.target.checked)} />
-            <label htmlFor="autorotate">Auto-rotate</label>
-          </div>
-        </div>
-
-        {/* Canvas */}
-        <div className="md:col-span-2 bg-white rounded-2xl p-4 shadow flex flex-col">
-          <div className="flex-1 h-[640px] rounded-lg overflow-hidden relative">
-            <Canvas shadows camera={{ position: [0, 1.6, 3], fov: 45 }}>
-              <Suspense fallback={<Html center>Loading avatar...</Html>}>
-                <Scene
-                  baseUrl={baseUrl}
-                  clothesUrl={clothesUrl}
-                  clothingColor={clothingColor}
-                  height={height}
-                  autoRotate={autoRotate}
-                />
-                <Environment preset="studio" />
-              </Suspense>
-              <OrbitControls enablePan={false} />
-            </Canvas>
-          </div>
-
-          <div className="mt-4 flex gap-2">
-            <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={() => downloadScreenshot()}>Download Screenshot</button>
-            <button className="px-4 py-2 rounded bg-gray-200" onClick={() => resetView()}>Reset View</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Scene({ baseUrl, clothesUrl, clothingColor, height, autoRotate }) {
-  const scaleMap = { short: 0.9, medium: 1.0, tall: 1.15 };
-  const scaleValue = scaleMap[height] || 1.0;
-
-  return (
-    <group>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 10, 7]} intensity={1} />
-
-      <AvatarModel url={baseUrl} scale={scaleValue} autoRotate={autoRotate} />
-      {clothesUrl && <ClothingModel url={clothesUrl} scale={scaleValue} color={clothingColor} />}
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
-        <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color="#e6e6e6" />
-      </mesh>
-    </group>
-  );
-}
-
-function AvatarModel({ url, scale = 1, autoRotate = true }) {
-  const gltf = useGLTF(url, true);
-  const ref = useRef();
-  useFrame((state, delta) => {
-    if (ref.current && autoRotate) {
-      ref.current.rotation.y += delta * 0.4;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reality Shop - Realistic Avatar Customization</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; background: #f5f5f5; }
+    #ui {
+      position: absolute; top: 10px; left: 10px; background: white; padding: 12px;
+      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      max-width: 250px; font-size: 14px;
     }
-  });
+    canvas { display: block; }
+    label { display: block; margin: 6px 0 4px; font-weight: bold; }
+    select, input[type=color] { width: 100%; margin-bottom: 10px; padding: 4px; }
+    button { margin-top: 8px; padding: 6px 10px; width: 100%; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <label>Gender</label>
+    <select id="gender">
+      <option value="male">Male</option>
+      <option value="female">Female</option>
+    </select>
 
-  const content = useMemo(() => {
-    const group = gltf.scene.clone();
-    group.traverse((c) => {
-      if (c.isMesh) {
-        c.castShadow = true;
-        c.receiveShadow = true;
-      }
-    });
-    return group;
-  }, [gltf]);
+    <label>Height</label>
+    <select id="height">
+      <option value="short">Short</option>
+      <option value="medium" selected>Medium</option>
+      <option value="tall">Tall</option>
+    </select>
 
-  return <primitive ref={ref} object={content} scale={[scale, scale, scale]} />;
-}
+    <label>Clothes</label>
+    <select id="clothes">
+      <option value="none">None</option>
+      <option value="tshirt">T-Shirt</option>
+      <option value="jacket">Jacket</option>
+    </select>
 
-function ClothingModel({ url, scale = 1, color = '#4caf50' }) {
-  const gltf = useGLTF(url, true);
-  const ref = useRef();
+    <label>Clothing Color</label>
+    <input type="color" id="color" value="#4caf50" />
 
-  const content = useMemo(() => {
-    const group = gltf.scene.clone();
-    group.traverse((c) => {
-      if (c.isMesh) {
-        c.castShadow = true;
-        c.receiveShadow = true;
-        if (c.material && c.material.isMeshStandardMaterial) {
-          c.material = c.material.clone();
-          try { c.material.color.set(color); } catch {}
-        }
-      }
-    });
-    return group;
-  }, [gltf, color]);
+    <label>Hair Style</label>
+    <select id="hair">
+      <option value="none">None</option>
+      <option value="short">Short Hair</option>
+      <option value="long">Long Hair</option>
+      <option value="curly">Curly Hair</option>
+    </select>
 
-  return <primitive ref={ref} object={content} scale={[scale, scale, scale]} />;
-}
+    <label>Hair Color</label>
+    <input type="color" id="hairColor" value="#2e2e2e" />
 
-function downloadScreenshot() {
-  const canvas = document.querySelector('canvas');
-  if (!canvas) return;
-  const dataURL = canvas.toDataURL('image/png');
-  const a = document.createElement('a');
-  a.href = dataURL;
-  a.download = 'avatar.png';
-  a.click();
-}
+    <label>Skin Tone</label>
+    <input type="color" id="skin" value="#f5d1b5" />
 
-function resetView() {
-  window.location.reload();
-}
+    <label>Accessories</label>
+    <select id="accessories">
+      <option value="none">None</option>
+      <option value="glasses">Glasses</option>
+      <option value="hat">Hat</option>
+    </select>
+
+    <div>
+      <label><input type="checkbox" id="autorotate" checked /> Auto Rotate</label>
+    </div>
+
+    <button id="screenshot">Download Screenshot</button>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.156.1/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    let scene, camera, renderer, controls;
+    let avatar, clothes, hair, accessory;
+    let autoRotate = true;
+
+    // External URLs (replace with your actual model URLs)
+    const BASES = {
+      male: 'https://your-server.com/models/avatar_male.glb',
+      female: 'https://your-server.com/models/avatar_female.glb'
+    };
+    const CLOTHES = {
+      none: null,
+      tshirt: 'https://your-server.com/models/clothes_tshirt.glb',
+      jacket: 'https://your-server.com/models/clothes_jacket.glb'
+    };
+    const HAIR = {
+      none: null,
+      short: 'https://your-server.com/models/hair_short.glb',
+      long: 'https://your-server.com/models/hair_long.glb',
+      curly: 'https://your-server.com/models/hair_curly.glb'
+    };
+    const ACCESSORIES = {
+      none: null,
+      glasses: 'https://your-server.com/models/glasses.glb',
+      hat: 'https://your-server.com/models/hat.glb'
+    };
+
+    init();
+    loadAvatar(BASES.male);
+
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0f0f0);
+
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
+      camera.position.set(0, 1.6, 3);
+
+      renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      document.body.appendChild(renderer.domElement);
+
+      // Lights
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+      hemiLight.position.set(0, 20, 0);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+      dirLight.position.set(5, 10, 7);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 2048;
+      dirLight.shadow.mapSize.height = 2048;
+      scene.add(dirLight);
+
+      // Ground
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(10,10),
+        new THREE.MeshStandardMaterial({color: 0xe6e6e6})
+      );
+      ground.rotation.x = -Math.PI/2;
+      ground.receiveShadow = true;
+      scene.add(ground);
+
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enablePan = false;
+
+      window.addEventListener('resize', onWindowResize);
+      animate();
+
+      // UI events
+      document.getElementById('gender').addEventListener('change', e => loadAvatar(BASES[e.target.value]));
+      document.getElementById('height').addEventListener('change', e => resizeAvatar(e.target.value));
+      document.getElementById('clothes').addEventListener('change', e => loadClothes(CLOTHES[e.target.value]));
+      document.getElementById('color').addEventListener('input', e => recolor(clothes, e.target.value));
+      document.getElementById('hair').addEventListener('change', e => loadHair(HAIR[e.target.value]));
+      document.getElementById('hairColor').addEventListener('input', e => recolor(hair, e.target.value));
+      document.getElementById('skin').addEventListener('input', e => recolorSkin(e.target.value));
+      document.getElementById('accessories').addEventListener('change', e => loadAccessory(ACCESSORIES[e.target.value]));
+      document.getElementById('autorotate').addEventListener('change', e => autoRotate = e.target.checked);
+      document.getElementById('screenshot').addEventListener('click', takeScreenshot);
+    }
+
+    function loadAvatar(url) {
+      new THREE.GLTFLoader().load(url, gltf => {
+        if (avatar) scene.remove(avatar);
+        avatar = gltf.scene;
+        avatar.traverse(c=>{ if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; } });
+        scene.add(avatar);
+      });
+    }
+
+    function loadClothes(url) { loadModel(url, clothes, m=>clothes=m); }
+    function loadHair(url) { loadModel(url, hair, m=>hair=m, document.getElementById("hairColor").value); }
+    function loadAccessory(url) { loadModel(url, accessory, m=>accessory=m); }
+
+    function loadModel(url, current, callback, color=null) {
+      if (!url) { if (current) scene.remove(current); callback(null); return; }
+      new THREE.GLTFLoader().load(url, gltf=>{
+        if (current) scene.remove(current);
+        const model = gltf.scene;
+        model.traverse(c=>{
+          if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; if(color && c.material) c.material.color.set(color);}
+        });
+        scene.add(model);
+        callback(model);
+      });
+    }
+
+    function recolor(obj, color) { if(!obj) return; obj.traverse(c=>{ if(c.isMesh && c.material) c.material.color.set(color); }); }
+    function recolorSkin(color) { if(!avatar) return; avatar.traverse(c=>{ if(c.isMesh && c.material && c.material.name.toLowerCase().includes("skin")) c.material.color.set(color); }); }
+
+    function resizeAvatar(height) {
+      const scale = height==="short"?0.9:height==="tall"?1.15:1.0;
+      if(avatar) avatar.scale.set(scale, scale, scale);
+      if(clothes) clothes.scale.set(scale, scale, scale);
+      if(hair) hair.scale.set(scale, scale, scale);
+      if(accessory) accessory.scale.set(scale, scale, scale);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      if (avatar && autoRotate) avatar.rotation.y += 0.003;
+      renderer.render(scene, camera);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function takeScreenshot() {
+      const dataURL = renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      a.href = dataURL;
+      a.download = 'avatar.png';
+      a.click();
+    }
+  </script>
+</body>
+</html>
