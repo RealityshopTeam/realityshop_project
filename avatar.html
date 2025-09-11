@@ -1,117 +1,183 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>External Avatar Loader (Three.js)</title>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-      background: #111;
-      color: #fff;
-      font-family: Arial, sans-serif;
+// AvatarBuilder.jsx (updated for Reality Shop project)
+// This version loads avatar and clothing models directly from /public/models/ directory
+// Place your .glb models inside /public/models/ before running
+
+import React, { useRef, useState, Suspense, useMemo } from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import { OrbitControls, useGLTF, Html, Environment } from '@react-three/drei';
+
+export default function AvatarBuilder() {
+  // Load local models from /public/models/
+  const BASES = {
+    male: '/models/avatar_male.glb',
+    female: '/models/avatar_female.glb'
+  };
+
+  const CLOTHES = {
+    none: null,
+    tshirt: '/models/clothes_tshirt.glb',
+    jacket: '/models/clothes_jacket.glb'
+  };
+
+  const [baseUrl, setBaseUrl] = useState(BASES.male);
+  const [clothesUrl, setClothesUrl] = useState(null);
+  const [gender, setGender] = useState('male');
+  const [height, setHeight] = useState('medium');
+  const [clothingColor, setClothingColor] = useState('#4caf50');
+  const [autoRotate, setAutoRotate] = useState(true);
+
+  function handleGenderChange(g) {
+    setGender(g);
+    setBaseUrl(BASES[g]);
+  }
+
+  function handleHeightChange(h) {
+    setHeight(h);
+  }
+
+  function handleClothesChange(key) {
+    setClothesUrl(CLOTHES[key]);
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex flex-col items-center p-6">
+      <div className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Controls */}
+        <div className="md:col-span-1 bg-white rounded-2xl p-6 shadow">
+          <h2 className="text-xl font-semibold mb-4">Avatar Controls</h2>
+
+          <label className="block mb-2">Gender</label>
+          <div className="flex gap-2 mb-4">
+            <button className={`px-3 py-2 rounded ${gender === 'male' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleGenderChange('male')}>Male</button>
+            <button className={`px-3 py-2 rounded ${gender === 'female' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleGenderChange('female')}>Female</button>
+          </div>
+
+          <label className="block mb-2">Height</label>
+          <div className="flex gap-2 mb-4">
+            <button className={`px-3 py-2 rounded ${height === 'short' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('short')}>Short</button>
+            <button className={`px-3 py-2 rounded ${height === 'medium' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('medium')}>Medium</button>
+            <button className={`px-3 py-2 rounded ${height === 'tall' ? 'bg-indigo-600 text-white' : 'bg-gray-100'}`} onClick={() => handleHeightChange('tall')}>Tall</button>
+          </div>
+
+          <label className="block mb-2">Clothes</label>
+          <select className="w-full mb-4 p-2 rounded border" onChange={(e) => handleClothesChange(e.target.value)}>
+            <option value="none">None</option>
+            <option value="tshirt">T-Shirt</option>
+            <option value="jacket">Jacket</option>
+          </select>
+
+          <label className="block mb-2">Clothing Color</label>
+          <input type="color" value={clothingColor} onChange={(e) => setClothingColor(e.target.value)} className="mb-4 w-20 h-10 p-0 border-0" />
+
+          <div className="flex items-center gap-2 mb-4">
+            <input id="autorotate" type="checkbox" checked={autoRotate} onChange={(e) => setAutoRotate(e.target.checked)} />
+            <label htmlFor="autorotate">Auto-rotate</label>
+          </div>
+        </div>
+
+        {/* Canvas */}
+        <div className="md:col-span-2 bg-white rounded-2xl p-4 shadow flex flex-col">
+          <div className="flex-1 h-[640px] rounded-lg overflow-hidden relative">
+            <Canvas shadows camera={{ position: [0, 1.6, 3], fov: 45 }}>
+              <Suspense fallback={<Html center>Loading avatar...</Html>}>
+                <Scene
+                  baseUrl={baseUrl}
+                  clothesUrl={clothesUrl}
+                  clothingColor={clothingColor}
+                  height={height}
+                  autoRotate={autoRotate}
+                />
+                <Environment preset="studio" />
+              </Suspense>
+              <OrbitControls enablePan={false} />
+            </Canvas>
+          </div>
+
+          <div className="mt-4 flex gap-2">
+            <button className="px-4 py-2 rounded bg-blue-600 text-white" onClick={() => downloadScreenshot()}>Download Screenshot</button>
+            <button className="px-4 py-2 rounded bg-gray-200" onClick={() => resetView()}>Reset View</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Scene({ baseUrl, clothesUrl, clothingColor, height, autoRotate }) {
+  const scaleMap = { short: 0.9, medium: 1.0, tall: 1.15 };
+  const scaleValue = scaleMap[height] || 1.0;
+
+  return (
+    <group>
+      <ambientLight intensity={0.6} />
+      <directionalLight position={[5, 10, 7]} intensity={1} />
+
+      <AvatarModel url={baseUrl} scale={scaleValue} autoRotate={autoRotate} />
+      {clothesUrl && <ClothingModel url={clothesUrl} scale={scaleValue} color={clothingColor} />}
+
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]}>
+        <planeGeometry args={[10, 10]} />
+        <meshStandardMaterial color="#e6e6e6" />
+      </mesh>
+    </group>
+  );
+}
+
+function AvatarModel({ url, scale = 1, autoRotate = true }) {
+  const gltf = useGLTF(url, true);
+  const ref = useRef();
+  useFrame((state, delta) => {
+    if (ref.current && autoRotate) {
+      ref.current.rotation.y += delta * 0.4;
     }
-    #controls {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.7);
-      padding: 10px;
-      border-radius: 8px;
-    }
-    select, button {
-      margin: 5px;
-      padding: 5px;
-      border-radius: 5px;
-      border: none;
-    }
-    button {
-      background: #4caf50;
-      color: white;
-      cursor: pointer;
-    }
-    button:hover {
-      background: #45a049;
-    }
-  </style>
-</head>
-<body>
-  <div id="controls">
-    Avatar:
-    <select id="avatarSelect">
-      <option value="https://models.readyplayer.me/65f6bfa8d1ad1f6c2f9f.glb">Avatar 1</option>
-      <option value="https://models.readyplayer.me/63c5dbeefcd23b1a2c8f.glb">Avatar 2</option>
-      <option value="https://models.readyplayer.me/64f7c1ad3d1c5c2b3e9b.glb">Avatar 3</option>
-    </select>
-    <button onclick="updateAvatar()">Load Avatar</button>
-  </div>
+  });
 
-  <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.module.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/controls/OrbitControls.js";
-    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.161.0/examples/jsm/loaders/GLTFLoader.js";
+  const content = useMemo(() => {
+    const group = gltf.scene.clone();
+    group.traverse((c) => {
+      if (c.isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+      }
+    });
+    return group;
+  }, [gltf]);
 
-    let scene, camera, renderer, controls;
-    let avatar;
-    const loader = new GLTFLoader();
+  return <primitive ref={ref} object={content} scale={[scale, scale, scale]} />;
+}
 
-    init();
-    loadAvatar(document.getElementById("avatarSelect").value); // load first avatar by default
+function ClothingModel({ url, scale = 1, color = '#4caf50' }) {
+  const gltf = useGLTF(url, true);
+  const ref = useRef();
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x111111);
+  const content = useMemo(() => {
+    const group = gltf.scene.clone();
+    group.traverse((c) => {
+      if (c.isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+        if (c.material && c.material.isMeshStandardMaterial) {
+          c.material = c.material.clone();
+          try { c.material.color.set(color); } catch {}
+        }
+      }
+    });
+    return group;
+  }, [gltf, color]);
 
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(0, 1.6, 3);
+  return <primitive ref={ref} object={content} scale={[scale, scale, scale]} />;
+}
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+function downloadScreenshot() {
+  const canvas = document.querySelector('canvas');
+  if (!canvas) return;
+  const dataURL = canvas.toDataURL('image/png');
+  const a = document.createElement('a');
+  a.href = dataURL;
+  a.download = 'avatar.png';
+  a.click();
+}
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.enableDamping = true;
-
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-      hemiLight.position.set(0, 1, 0);
-      scene.add(hemiLight);
-
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(3, 10, 5);
-      scene.add(dirLight);
-
-      animate();
-      window.addEventListener("resize", onWindowResize);
-    }
-
-    function loadAvatar(url) {
-      loader.load(url, function (gltf) {
-        if (avatar) scene.remove(avatar); // remove previous avatar
-        avatar = gltf.scene;
-        avatar.position.set(0, 0, 0);
-        avatar.scale.set(1, 1, 1);
-        scene.add(avatar);
-      }, undefined, function (error) {
-        console.error("Error loading avatar:", error);
-      });
-    }
-
-    function updateAvatar() {
-      const url = document.getElementById("avatarSelect").value;
-      loadAvatar(url);
-    }
-
-    function onWindowResize() {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    }
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-  </script>
-</body>
-</html>
+function resetView() {
+  window.location.reload();
+}
