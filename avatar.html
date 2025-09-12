@@ -1,210 +1,219 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Reality Shop - Realistic Avatar Customization</title>
+  <title>three.js webgl - decal splatter</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
   <style>
-    body { margin: 0; font-family: sans-serif; background: #f5f5f5; overflow: hidden; }
-    #ui {
-      position: absolute; top: 10px; left: 10px; background: white; padding: 12px;
-      border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      max-width: 250px; font-size: 14px;
+    body { margin: 0; overflow: hidden; }
+    #info {
+      position: absolute;
+      top: 10px;
+      width: 100%;
+      text-align: center;
+      color: #fff;
+      font-family: sans-serif;
+      z-index: 100;
     }
-    label { display: block; margin: 6px 0 4px; font-weight: bold; }
-    select, input[type=color], button { width: 100%; margin-bottom: 10px; padding: 4px; }
   </style>
 </head>
 <body>
-  <div id="ui">
-    <label>Height</label>
-    <select id="height">
-      <option value="short">Short</option>
-      <option value="medium" selected>Medium</option>
-      <option value="tall">Tall</option>
-    </select>
 
-    <label>Clothes</label>
-    <select id="clothes">
-      <option value="none">None</option>
-      <option value="tshirt">T-Shirt</option>
-      <option value="jacket">Jacket</option>
-    </select>
-
-    <label>Clothing Color</label>
-    <input type="color" id="color" value="#4caf50" />
-
-    <label>Hair Style</label>
-    <select id="hair">
-      <option value="none">None</option>
-      <option value="short">Short Hair</option>
-      <option value="long">Long Hair</option>
-      <option value="curly">Curly Hair</option>
-    </select>
-
-    <label>Hair Color</label>
-    <input type="color" id="hairColor" value="#2e2e2e" />
-
-    <label>Skin Tone</label>
-    <input type="color" id="skin" value="#f5d1b5" />
-
-    <label>Accessories</label>
-    <select id="accessories">
-      <option value="none">None</option>
-      <option value="glasses">Glasses</option>
-      <option value="hat">Hat</option>
-    </select>
-
-    <div>
-      <label><input type="checkbox" id="autorotate" checked /> Auto Rotate</label>
-    </div>
-
-    <button id="screenshot">Download Screenshot</button>
+  <div id="container"></div>
+  <div id="info">
+    <a href="https://threejs.org" target="_blank" rel="noopener">three.js</a> - decal splatter<br/>
+    click to shoot
   </div>
 
-  <!-- Three.js ES Modules -->
   <script type="module">
-    import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.156.1/build/three.module.js';
-    import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.156.1/examples/jsm/loaders/GLTFLoader.js';
-    import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.156.1/examples/jsm/controls/OrbitControls.js';
+    import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
 
-    let scene, camera, renderer, controls;
-    let avatar, clothes, hair, accessory;
-    let autoRotate = true;
+    import Stats from 'https://unpkg.com/three@0.160.0/examples/jsm/libs/stats.module.js';
+    import { GUI } from 'https://unpkg.com/three@0.160.0/examples/jsm/libs/lil-gui.module.min.js';
+    import { OrbitControls } from 'https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+    import { DecalGeometry } from 'https://unpkg.com/three@0.160.0/examples/jsm/geometries/DecalGeometry.js';
 
-    const BASE_AVATAR = './baseAvatar.glb';
-    const CLOTHES = {
-      none: null,
-      tshirt: './models/clothes_tshirt.glb',
-      jacket: './models/clothes_jacket.glb'
-    };
-    const HAIR = {
-      none: null,
-      short: './models/hair_short.glb',
-      long: './models/hair_long.glb',
-      curly: './models/hair_curly.glb'
-    };
-    const ACCESSORIES = {
-      none: null,
-      glasses: './models/glasses.glb',
-      hat: './models/hat.glb'
+    let renderer, scene, camera, stats, mesh, raycaster, line;
+    const container = document.getElementById('container');
+
+    const intersection = { intersects: false, point: new THREE.Vector3(), normal: new THREE.Vector3() };
+    const mouse = new THREE.Vector2();
+    const intersects = [];
+
+    const textureLoader = new THREE.TextureLoader();
+    const decalDiffuse = textureLoader.load('https://threejs.org/examples/textures/decal/decal-diffuse.png');
+    decalDiffuse.colorSpace = THREE.SRGBColorSpace;
+    const decalNormal = textureLoader.load('https://threejs.org/examples/textures/decal/decal-normal.jpg');
+
+    const decalMaterial = new THREE.MeshPhongMaterial({
+      specular: 0x444444,
+      map: decalDiffuse,
+      normalMap: decalNormal,
+      normalScale: new THREE.Vector2(1, 1),
+      shininess: 30,
+      transparent: true,
+      depthTest: true,
+      depthWrite: false,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      wireframe: false
+    });
+
+    const decals = [];
+    let mouseHelper;
+    const position = new THREE.Vector3();
+    const orientation = new THREE.Euler();
+    const size = new THREE.Vector3(10, 10, 10);
+
+    const params = {
+      minScale: 10,
+      maxScale: 20,
+      rotate: true,
+      clear: function () { removeDecals(); }
     };
 
     init();
-    loadAvatar(BASE_AVATAR);
 
     function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf0f0f0);
-
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
-      camera.position.set(0, 1.6, 2.5);
-
-      renderer = new THREE.WebGLRenderer({antialias:true});
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.shadowMap.enabled = true;
-      document.body.appendChild(renderer.domElement);
+      renderer.setAnimationLoop(animate);
+      container.appendChild(renderer.domElement);
 
-      // Lights
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.8);
-      hemiLight.position.set(0, 20, 0);
-      scene.add(hemiLight);
+      stats = new Stats();
+      container.appendChild(stats.dom);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(5, 10, 5);
-      dirLight.castShadow = true;
-      scene.add(dirLight);
+      scene = new THREE.Scene();
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 1000);
+      camera.position.z = 120;
 
-      // Ground
-      const ground = new THREE.Mesh(
-        new THREE.PlaneGeometry(20, 20),
-        new THREE.MeshStandardMaterial({color: 0xe6e6e6})
-      );
-      ground.rotation.x = -Math.PI/2;
-      ground.receiveShadow = true;
-      scene.add(ground);
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.minDistance = 50;
+      controls.maxDistance = 200;
 
-      // Controls
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.enablePan = false;
-      controls.target.set(0, 1, 0);
+      scene.add(new THREE.AmbientLight(0x666666));
+
+      const dirLight1 = new THREE.DirectionalLight(0xffddcc, 3);
+      dirLight1.position.set(1, 0.75, 0.5);
+      scene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0xccccff, 3);
+      dirLight2.position.set(-1, 0.75, -0.5);
+      scene.add(dirLight2);
+
+      const geometry = new THREE.BufferGeometry();
+      geometry.setFromPoints([new THREE.Vector3(), new THREE.Vector3()]);
+      line = new THREE.Line(geometry, new THREE.LineBasicMaterial());
+      scene.add(line);
+
+      loadLeePerrySmith();
+      raycaster = new THREE.Raycaster();
+
+      mouseHelper = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 10), new THREE.MeshNormalMaterial());
+      mouseHelper.visible = false;
+      scene.add(mouseHelper);
 
       window.addEventListener('resize', onWindowResize);
 
-      // UI Events
-      document.getElementById('height').addEventListener('change', e => resizeAvatar(e.target.value));
-      document.getElementById('clothes').addEventListener('change', e => loadClothes(CLOTHES[e.target.value]));
-      document.getElementById('color').addEventListener('input', e => recolor(clothes, e.target.value));
-      document.getElementById('hair').addEventListener('change', e => loadHair(HAIR[e.target.value]));
-      document.getElementById('hairColor').addEventListener('input', e => recolor(hair, e.target.value));
-      document.getElementById('skin').addEventListener('input', e => recolorSkin(e.target.value));
-      document.getElementById('accessories').addEventListener('change', e => loadAccessory(ACCESSORIES[e.target.value]));
-      document.getElementById('autorotate').addEventListener('change', e => autoRotate = e.target.checked);
-      document.getElementById('screenshot').addEventListener('click', takeScreenshot);
+      let moved = false;
+      controls.addEventListener('change', () => moved = true);
+      window.addEventListener('pointerdown', () => moved = false);
 
-      animate();
-    }
-
-    function loadAvatar(url) {
-      new GLTFLoader().load(url, gltf => {
-        if(avatar) scene.remove(avatar);
-        avatar = gltf.scene;
-        avatar.traverse(c => { if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; } });
-        avatar.position.set(0, 0, 0);
-        avatar.scale.set(1.3,1.3,1.3);
-        scene.add(avatar);
-        console.log("Avatar loaded:", avatar); // Visible in console
+      window.addEventListener('pointerup', (event) => {
+        if (!moved) {
+          checkIntersection(event.clientX, event.clientY);
+          if (intersection.intersects) shoot();
+        }
       });
+
+      window.addEventListener('pointermove', (event) => {
+        if (event.isPrimary) checkIntersection(event.clientX, event.clientY);
+      });
+
+      const gui = new GUI();
+      gui.add(params, 'minScale', 1, 30);
+      gui.add(params, 'maxScale', 1, 30);
+      gui.add(params, 'rotate');
+      gui.add(params, 'clear');
+      gui.open();
     }
 
-    function loadClothes(url) { loadModel(url, clothes, m=>clothes=m); }
-    function loadHair(url) { loadModel(url, hair, m=>hair=m, document.getElementById("hairColor").value); }
-    function loadAccessory(url) { loadModel(url, accessory, m=>accessory=m); }
+    function loadLeePerrySmith() {
+      const map = textureLoader.load('https://threejs.org/examples/models/gltf/LeePerrySmith/Map-COL.jpg');
+      map.colorSpace = THREE.SRGBColorSpace;
+      const specularMap = textureLoader.load('https://threejs.org/examples/models/gltf/LeePerrySmith/Map-SPEC.jpg');
+      const normalMap = textureLoader.load('https://threejs.org/examples/models/gltf/LeePerrySmith/Infinite-Level_02_Tangent_SmoothUV.jpg');
 
-    function loadModel(url, current, callback, color=null){
-      if(!url){ if(current) scene.remove(current); callback(null); return; }
-      new GLTFLoader().load(url, gltf=>{
-        if(current) scene.remove(current);
-        const model = gltf.scene;
-        model.traverse(c=>{ 
-          if(c.isMesh){ c.castShadow=true; c.receiveShadow=true; if(color && c.material) c.material.color.set(color); } 
+      const loader = new GLTFLoader();
+      loader.load('https://threejs.org/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb', (gltf) => {
+        mesh = gltf.scene.children[0];
+        mesh.material = new THREE.MeshPhongMaterial({
+          specular: 0x111111,
+          map: map,
+          specularMap: specularMap,
+          normalMap: normalMap,
+          shininess: 25
         });
-        model.position.set(0,0,0);
-        model.scale.set(1.3,1.3,1.3);
-        scene.add(model);
-        callback(model);
+        scene.add(mesh);
+        mesh.scale.multiplyScalar(10);
       });
     }
 
-    function recolor(obj,color){ if(!obj) return; obj.traverse(c=>{ if(c.isMesh && c.material) c.material.color.set(color); }); }
-    function recolorSkin(color){ if(!avatar) return; avatar.traverse(c=>{ if(c.isMesh && c.material && c.material.name.toLowerCase().includes("skin")) c.material.color.set(color); }); }
-
-    function resizeAvatar(height){
-      const scale = height==="short"?1.0:height==="tall"?1.5:1.3;
-      if(avatar) avatar.scale.set(scale,scale,scale);
-      if(clothes) clothes.scale.set(scale,scale,scale);
-      if(hair) hair.scale.set(scale,scale,scale);
-      if(accessory) accessory.scale.set(scale,scale,scale);
+    function checkIntersection(x, y) {
+      if (!mesh) return;
+      mouse.x = (x / window.innerWidth) * 2 - 1;
+      mouse.y = -(y / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(mouse, camera);
+      raycaster.intersectObject(mesh, false, intersects);
+      if (intersects.length > 0) {
+        const p = intersects[0].point;
+        mouseHelper.position.copy(p);
+        intersection.point.copy(p);
+        const normalMatrix = new THREE.Matrix3().getNormalMatrix(mesh.matrixWorld);
+        const n = intersects[0].face.normal.clone().applyNormalMatrix(normalMatrix).multiplyScalar(10).add(p);
+        intersection.normal.copy(intersects[0].face.normal);
+        mouseHelper.lookAt(n);
+        const positions = line.geometry.attributes.position;
+        positions.setXYZ(0, p.x, p.y, p.z);
+        positions.setXYZ(1, n.x, n.y, n.z);
+        positions.needsUpdate = true;
+        intersection.intersects = true;
+        intersects.length = 0;
+      } else {
+        intersection.intersects = false;
+      }
     }
 
-    function animate(){
-      requestAnimationFrame(animate);
-      if(avatar && autoRotate) avatar.rotation.y += 0.003;
-      controls.update();
-      renderer.render(scene,camera);
+    function shoot() {
+      position.copy(intersection.point);
+      orientation.copy(mouseHelper.rotation);
+      if (params.rotate) orientation.z = Math.random() * 2 * Math.PI;
+      const scale = params.minScale + Math.random() * (params.maxScale - params.minScale);
+      size.set(scale, scale, scale);
+      const material = decalMaterial.clone();
+      material.color.setHex(Math.random() * 0xffffff);
+      const m = new THREE.Mesh(new DecalGeometry(mesh, position, orientation, size), material);
+      m.renderOrder = decals.length;
+      decals.push(m);
+      mesh.add(m);
     }
 
-    function onWindowResize(){
-      camera.aspect = window.innerWidth/window.innerHeight;
+    function removeDecals() {
+      decals.forEach((d) => mesh.remove(d));
+      decals.length = 0;
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    function takeScreenshot(){
-      const dataURL = renderer.domElement.toDataURL('image/png');
-      const a = document.createElement('a');
-      a.href = dataURL;
-      a.download = 'avatar.png';
-      a.click();
+    function animate() {
+      renderer.render(scene, camera);
+      stats.update();
     }
   </script>
 </body>
