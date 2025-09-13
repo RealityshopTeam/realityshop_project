@@ -83,6 +83,14 @@ loader.load("baseAvatar.glb", gltf => {
   loadSelectedProduct();
 }, undefined, err => console.error(err));
 
+// Define anchor positions and scales for different clothing types
+const clothingAnchors = {
+  "Clothing": { y: 1.05, scale: 1 },   // Shirts / Tops
+  "Pants": { y: 0.6, scale: 1 },       // Pants / Bottoms
+  "Shoes": { y: 0.1, scale: 1 },       // Shoes
+  "Accessories": { y: 1.5, scale: 1 }, // Hats, Sunglasses, Necklaces
+};
+
 // Load selected clothing/product from localStorage
 function loadSelectedProduct() {
   const selectedProduct = JSON.parse(localStorage.getItem("selectedClothing"));
@@ -92,9 +100,11 @@ function loadSelectedProduct() {
     const clothing = gltf.scene;
     clothing.traverse(c => { if(c.isMesh) c.castShadow = true; });
 
-    // Positioning on avatar
-    clothing.position.set(0,1.05,0); // adjust Y based on avatar height
-    clothing.scale.set(1,1,1); // adjust scale to fit avatar
+    // Determine anchor based on category
+    const anchor = clothingAnchors[selectedProduct.category] || { y: 1.05, scale: 1 };
+    clothing.position.set(0, anchor.y, 0);
+    clothing.scale.set(anchor.scale, anchor.scale, anchor.scale);
+
     scene.add(clothing);
   }, undefined, err => console.error(err));
 }
