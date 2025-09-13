@@ -16,10 +16,9 @@
       font-family: Arial, sans-serif;
       border-radius: 8px;
       font-size: 14px;
+      z-index: 10;
     }
   </style>
-
-  <!-- Importmap for Three.js -->
   <script type="importmap">
     {
       "imports": {
@@ -33,7 +32,6 @@
 <body>
   <div id="info">👕 Loading avatar with clothing...</div>
   <canvas id="c"></canvas>
-
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -53,7 +51,7 @@
     controls.target.set(0, 1.4, 0);
     controls.update();
 
-    // Lights
+    // Lighting
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
     scene.add(hemiLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -61,51 +59,70 @@
     scene.add(dirLight);
 
     const loader = new GLTFLoader();
-    let avatar, clothing;
+    let avatar = null, clothing = null;
 
-    // Load base avatar
+    function removeClothing() {
+      if (avatar && clothing) {
+        avatar.remove(clothing);
+        clothing.traverse((child) => {
+          if (child.isMesh) child.geometry.dispose();
+          if (child.material) child.material.dispose();
+        });
+        clothing = null;
+      }
+    }
+
+    function attachClothing(url) {
+      loader.load(url, (gltf) => {
+        removeClothing();
+        clothing = gltf.scene;
+        // Adjust clothing scale/position as needed for fit
+        clothing.position.set(0, 0, 0);
+        clothing.scale.set(1, 1, 1); // You might need to adjust scale for specific clothing files!
+        // Optionally, attach to a specific bone if necessary for rigged avatars
+        avatar.add(clothing);
+        document.getElementById("info").textContent += " | Clothing applied!";
+        console.log("👕 Clothing applied:", url);
+      }, undefined, (err) => {
+        document.getElementById("info").textContent = "❌ Error loading clothing!";
+        console.error("Error loading clothing:", err);
+      });
+    }
+
+    // Load avatar and then clothing
     loader.load('baseAvatar.glb', (gltf) => {
       avatar = gltf.scene;
       avatar.position.set(0, 0, 0);
       avatar.scale.set(1, 1, 1);
+
       scene.add(avatar);
       console.log("✅ Base Avatar loaded");
 
-      // Load clothing from localStorage
+      // Pull data from localStorage
       const stored = localStorage.getItem("selectedClothing");
       if (stored) {
         const selected = JSON.parse(stored);
         if (selected.glb) {
-          loadClothing(selected.glb);
           document.getElementById("info").textContent = `Wearing: ${selected.name}`;
+          attachClothing(selected.glb);
         } else {
           document.getElementById("info").textContent = "⚠️ No 3D model for this clothing.";
         }
       } else {
         document.getElementById("info").textContent = "⚠️ No clothing selected.";
       }
+    }, undefined, (err) => {
+      document.getElementById("info").textContent = "❌ Error loading avatar!";
+      console.error("Error loading avatar:", err);
     });
 
-    // Function to load clothing and attach to avatar
-    function loadClothing(url) {
-      loader.load(url, (gltf) => {
-        if (clothing) avatar.remove(clothing); // remove old clothing
-        clothing = gltf.scene;
-        clothing.position.set(0, 0, 0);
-        clothing.scale.set(1, 1, 1);
-        avatar.add(clothing);
-        console.log("👕 Clothing applied:", url);
-      }, undefined, (err) => console.error("❌ Error loading clothing:", err));
-    }
-
-    // Resize handling
+    // Responsive canvas
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Animation loop
     function animate() {
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
