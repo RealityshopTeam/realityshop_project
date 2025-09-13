@@ -40,9 +40,9 @@ function init() {
   controls.target.set(0, 1.6, 0);
   controls.update();
 
-  const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-  light.position.set(0, 20, 0);
-  scene.add(light);
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+  hemiLight.position.set(0, 20, 0);
+  scene.add(hemiLight);
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
   dirLight.position.set(-3, 10, -10);
@@ -63,14 +63,14 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// Load avatar
 function loadAvatar() {
   const loader = new GLTFLoader();
-  loader.load('baseAvatar.glb', gltf => {
+  loader.load('basAevatar.glb', gltf => {
     avatar = gltf.scene;
     avatar.scale.set(1,1,1);
     scene.add(avatar);
 
-    // Traverse bones
     avatar.traverse(obj => {
       if(obj.isBone) {
         const name = obj.name.toLowerCase();
@@ -84,6 +84,7 @@ function loadAvatar() {
   });
 }
 
+// Load clothing
 function loadClothing() {
   const selected = JSON.parse(localStorage.getItem("selectedClothing") || '{}');
   if(!selected.glb) return;
@@ -91,45 +92,51 @@ function loadClothing() {
   const loader = new GLTFLoader();
   loader.load(selected.glb, gltf => {
     clothing = gltf.scene;
-    
-    // Automatically attach to correct bone
+
+    // Determine attachment
     const cat = selected.category.toLowerCase();
     if(cat === 'clothing') {
       if(selected.name.toLowerCase().includes('shirt') || selected.name.toLowerCase().includes('t-shirt') || selected.name.toLowerCase().includes('crop')) {
-        if(spineBone) spineBone.add(clothing);
+        if(spineBone) attachClothing(clothing, spineBone, {yOffset:0});
       } else if(selected.name.toLowerCase().includes('pants') || selected.name.toLowerCase().includes('jeans')) {
-        if(hipsBone) hipsBone.add(clothing);
+        if(hipsBone) attachClothing(clothing, hipsBone, {yOffset:0});
       }
     } else if(cat === 'shoes') {
       if(leftFootBone && rightFootBone) {
         const leftShoe = clothing.clone();
         const rightShoe = clothing.clone();
-        leftFootBone.add(leftShoe);
-        rightFootBone.add(rightShoe);
-        leftShoe.position.set(0,0,0);
-        rightShoe.position.set(0,0,0);
-        return;
+        attachClothing(leftShoe, leftFootBone, {yOffset:0});
+        attachClothing(rightShoe, rightFootBone, {yOffset:0});
       }
+      return;
     } else if(cat === 'accessories') {
-      if(headBone) headBone.add(clothing);
+      if(headBone) attachClothing(clothing, headBone, {yOffset:0});
     }
-
-    clothing.position.set(0,0,0);
-    clothing.rotation.set(0,0,0);
-
-    // Scale clothing to fit avatar roughly
-    const box = new THREE.Box3().setFromObject(clothing);
-    const size = new THREE.Vector3();
-    box.getSize(size);
-    const scaleFactor = 1.6 / size.y; // match avatar height
-    clothing.scale.setScalar(scaleFactor);
   });
+}
+
+// Attach clothing to bone with scaling
+function attachClothing(cloth, bone, options={}) {
+  bone.add(cloth);
+  cloth.position.set(0, options.yOffset || 0, 0);
+  cloth.rotation.set(0,0,0);
+
+  // Auto-scale to avatar
+  const box = new THREE.Box3().setFromObject(cloth);
+  const size = new THREE.Vector3();
+  box.getSize(size);
+
+  const heightScale = 1 / size.y;
+  const widthScale = 0.5 / size.x;
+  const depthScale = 0.5 / size.z;
+
+  const scaleFactor = Math.min(heightScale, widthScale, depthScale);
+  cloth.scale.setScalar(scaleFactor);
 }
 </script>
 <style>
-  body { margin:0; overflow:hidden; }
+body { margin:0; overflow:hidden; }
 </style>
 </head>
-<body>
-</body>
+<body></body>
 </html>
