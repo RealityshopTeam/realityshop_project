@@ -1,120 +1,353 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Avatar Customization</title>
+  <meta charset="utf-8" />
+  <title>Auto Avatar Generator + Customizer</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { margin: 0; overflow: hidden; background: #111; }
-    canvas { display: block; }
-    #info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      padding: 8px 12px;
-      background: rgba(0,0,0,0.6);
-      color: #fff;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-      border-radius: 6px;
-    }
+    :root { --ui-w: 380px; --bg: #0f1724; --card: #0b1220; --accent: #06b4d4; }
+    html,body { height: 100%; margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background: linear-gradient(180deg, #071028 0%, #071220 100%); color: #e6eef6; }
+    .layout { display: grid; grid-template-columns: var(--ui-w) 1fr; height: 100vh; gap: 12px; padding: 12px; box-sizing: border-box; }
+    .panel { background: rgba(255,255,255,0.02); border-radius: 12px; padding: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.6); overflow: auto; }
+    .ui { width: calc(var(--ui-w) - 24px); }
+    h1 { margin: 0 0 8px 0; font-size: 18px; color: var(--accent); }
+    p { margin: 6px 0 12px; color: #cfeaf5; font-size: 13px; }
+    label { display:block; margin-top:8px; font-size:13px; color:#bfe8f7; }
+    select,input[type=color],input[type=text],button { width:100%; padding:8px; margin-top:6px; border-radius:8px; border: none; box-sizing: border-box; }
+    button { background: linear-gradient(90deg,#00cfff,#0072ff); color: white; cursor: pointer; font-weight:700; }
+    button.secondary { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: #dbefff }
+    .small { font-size:12px; opacity:.9 }
+    #iframeWrap { height: 420px; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.04); }
+    #avatarCanvasWrap { position: relative; background: linear-gradient(180deg,#071028,#071220); border-radius:12px; overflow:hidden; }
+    #status { position:absolute; left:12px; top:12px; z-index:50; background:rgba(0,0,0,0.45); padding:8px 12px; border-radius:8px; color:#dff5ff; }
+    #screenshotLink { display:inline-block; margin-top:8px; color:#fff; text-decoration:none; background:#0b1220; padding:6px 10px; border-radius:8px; }
+    .row { display:flex; gap:8px; align-items:center; }
+    .muted { color:#8fbfd0; font-size:12px }
   </style>
+
+  <!-- Import map + module scripts (Three.js) -->
   <script type="importmap">
     {
       "imports": {
-        "three": "https://unpkg.com/three@0.152.2/build/three.module.js",
-        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.152.2/examples/jsm/loaders/GLTFLoader.js",
-        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.152.2/examples/jsm/controls/OrbitControls.js"
+        "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.156.1/examples/jsm/controls/OrbitControls.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.156.1/examples/jsm/loaders/GLTFLoader.js"
       }
     }
   </script>
 </head>
 <body>
-  <div id="info">👕 Loading avatar...</div>
+  <div class="layout">
+    <!-- Left UI -->
+    <div class="panel ui">
+      <h1>Auto Avatar Generator</h1>
+      <p>Create a Ready Player Me avatar (or paste a GLB URL). The avatar will automatically load into the 3D scene for customization.</p>
 
+      <div>
+        <label>1) Open Avatar Creator</label>
+        <div id="iframeWrap">
+          <!-- The iframe will be set by JS. We show a placeholder message briefly -->
+          <iframe id="rmpIframe" title="Avatar Creator" style="width:100%; height:100%; border:0;" src=""></iframe>
+        </div>
+        <p class="small muted">When you finish creating the avatar in the creator UI, the exported GLB will be loaded automatically here.</p>
+      </div>
+
+      <label>2) Or paste a GLB URL (publicly accessible)</label>
+      <input id="manualUrl" type="text" placeholder="https://example.com/avatar.glb" />
+      <div class="row">
+        <button id="loadUrlBtn">Load GLB</button>
+        <button class="secondary" id="clearSelection">Clear</button>
+      </div>
+
+      <label>3) Quick customization</label>
+      <div class="row">
+        <label style="flex:1">Clothing color</label>
+        <input id="colorCloth" type="color" value="#4caf50" style="width:54px;height:36px;padding:0;border-radius:8px" />
+      </div>
+      <label class="small">Apply color to meshes that contain 'shirt|jacket|cloth|top' in their name</label>
+
+      <label>Accessories</label>
+      <select id="accessorySelect">
+        <option value="">None</option>
+        <option value="glasses">Glasses (example)</option>
+        <option value="hat">Hat (example)</option>
+      </select>
+
+      <div style="margin-top:12px">
+        <button id="screenshotBtn">Download Screenshot</button>
+        <a id="screenshotLink" download="avatar.png" style="display:none">Download</a>
+      </div>
+
+      <p class="muted" style="margin-top:12px">Notes: the avatar creator is provided by Ready Player Me. Some features require Ready Player Me terms and domain allowlisting for production. This demo listens to messages the creator posts back with the exported GLB URL.</p>
+    </div>
+
+    <!-- Right: 3D viewport -->
+    <div id="avatarCanvasWrap" class="panel">
+      <div id="status">No avatar loaded</div>
+      <canvas id="threeCanvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Main script: loads iframe (Ready Player Me) and Three.js scene + loader -->
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-    // Scene setup
+    // ---------- Configuration ----------
+    // Ready Player Me universal avatar creator URL (opens the creator)
+    // You can optionally add a "frameApi" query param to request readyplayerme to post message on export.
+    // The base url below opens the universal creator. You may change language or other params per RPM docs.
+    const RPM_IFRAME_URL = 'https://creator.readyplayer.me/avatar?frameApi';
+
+    // ---------- DOM ----------
+    const iframe = document.getElementById('rmpIframe');
+    const status = document.getElementById('status');
+    const manualUrl = document.getElementById('manualUrl');
+    const loadUrlBtn = document.getElementById('loadUrlBtn');
+    const clearBtn = document.getElementById('clearSelection');
+    const colorCloth = document.getElementById('colorCloth');
+    const accessorySelect = document.getElementById('accessorySelect');
+    const screenshotBtn = document.getElementById('screenshotBtn');
+    const screenshotLink = document.getElementById('screenshotLink');
+    const canvas = document.getElementById('threeCanvas');
+
+    // put iframe src
+    iframe.src = RPM_IFRAME_URL;
+
+    // ---------- Three.js scene ----------
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x202020);
+    scene.background = new THREE.Color(0x101218);
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 3);
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setSize(window.innerWidth - 420, window.innerHeight - 24);
+    renderer.outputEncoding = THREE.sRGBEncoding;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    const camera = new THREE.PerspectiveCamera(45, (window.innerWidth - 420) / (window.innerHeight - 24), 0.1, 100);
+    camera.position.set(0, 1.6, 2.6);
 
-    // Lights
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    hemiLight.position.set(0, 20, 0);
-    scene.add(hemiLight);
+    // lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
+    hemi.position.set(0, 20, 0);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(5, 10, 7);
+    dir.castShadow = true;
+    scene.add(dir);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-    dirLight.position.set(5, 10, 7.5);
-    scene.add(dirLight);
+    // ground plane
+    const g = new THREE.Mesh(new THREE.PlaneGeometry(10,10), new THREE.MeshStandardMaterial({ color: 0x0f1724 }));
+    g.rotation.x = -Math.PI/2;
+    g.position.y = 0;
+    g.receiveShadow = true;
+    scene.add(g);
 
-    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
     controls.target.set(0, 1.4, 0);
+    controls.update();
+    controls.enableDamping = true;
 
-    // Loader
     const loader = new GLTFLoader();
-    let avatar, clothing;
+    let currentAvatar = null;
+    let currentAccessory = null;
 
-    // Load base avatar
-    loader.load('./baseAvatar.glb', (gltf) => {
-      avatar = gltf.scene;
-      avatar.position.set(0, 0, 0);
-      avatar.scale.set(1, 1, 1);
-      scene.add(avatar);
-      document.getElementById('info').innerText = "✅ Avatar loaded";
-      
-      // After base loads, try clothing
-      loadClothing();
-    }, undefined, (err) => {
-      console.error("Error loading avatar:", err);
-      document.getElementById('info').innerText = "❌ Failed to load avatar";
-    });
+    // utility: fit camera to object bounding box
+    function frameObject(object, offset = 1.4) {
+      const box = new THREE.Box3().setFromObject(object);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) * offset;
+      camera.position.z = center.z + cameraZ;
+      camera.position.x = center.x;
+      camera.position.y = center.y + maxDim * 0.2;
+      camera.lookAt(center);
+      controls.target.copy(center);
+      controls.update();
+    }
 
-    // Load clothing from localStorage
-    function loadClothing() {
-      const selected = JSON.parse(localStorage.getItem("selectedClothing"));
-      if (!selected || !selected.glb) {
-        document.getElementById('info').innerText = "👕 No clothing selected.";
-        return;
+    // load GLB and add to scene (replaces previous avatar)
+    async function loadAvatarFromUrl(url) {
+      if (!url) return;
+      status.innerText = 'Loading avatar...';
+      try {
+        // clean up existing avatar & accessory
+        if (currentAccessory) { scene.remove(currentAccessory); currentAccessory = null; }
+        if (currentAvatar) { scene.remove(currentAvatar); currentAvatar = null; }
+
+        // load
+        const gltf = await new Promise((resolve, reject) => loader.load(url, resolve, xhr => {
+          // progress - show percent if known
+          if (xhr && xhr.total) {
+            const pct = ((xhr.loaded / xhr.total) * 100).toFixed(0);
+            status.innerText = `Loading avatar... ${pct}%`;
+          }
+        }, reject));
+        currentAvatar = gltf.scene;
+        // ensure shadows
+        currentAvatar.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; c.material.side = THREE.FrontSide; }});
+        // center & scale (if needed)
+        currentAvatar.position.set(0, 0, 0);
+        scene.add(currentAvatar);
+
+        // try to normalize size if model is too small or large
+        const box = new THREE.Box3().setFromObject(currentAvatar);
+        const size = box.getSize(new THREE.Vector3()).length();
+        const scale = (1.5 / size) || 1;
+        currentAvatar.scale.setScalar(scale);
+
+        // frame camera
+        frameObject(currentAvatar, 1.4);
+
+        status.innerText = 'Avatar loaded — ready';
+        console.log('Loaded avatar:', currentAvatar);
+
+        // apply initial clothing color (if user already selected)
+        applyClothingColor(colorCloth.value);
+      } catch (err) {
+        console.error('Failed to load avatar GLB', err);
+        status.innerText = 'Failed to load avatar';
       }
+    }
 
-      loader.load(selected.glb, (gltf) => {
-        clothing = gltf.scene;
-        clothing.position.set(0, 0, 0);
-        clothing.scale.set(1, 1, 1);
-        avatar.add(clothing);
-        document.getElementById('info').innerText = `✅ Wearing: ${selected.name}`;
-        console.log("Clothing applied:", selected);
-      }, undefined, (err) => {
-        console.error("Error loading clothing:", err);
-        document.getElementById('info').innerText = "❌ Failed to load clothing";
+    // apply color heuristics: recolor meshes whose names include keywords
+    function applyClothingColor(hex) {
+      if (!currentAvatar) return;
+      const re = /(shirt|jacket|coat|top|cloth|t-shirt|tee|dress|hoodie|sweater|garment)/i;
+      currentAvatar.traverse(node => {
+        if (node.isMesh && node.material) {
+          // material can be an array or single
+          const mats = Array.isArray(node.material) ? node.material : [node.material];
+          if (re.test(node.name || node.userData?.name || '')) {
+            mats.forEach(m => {
+              try { if (m.color) m.color.set(hex); } catch(e){}
+            });
+          }
+        }
       });
     }
 
-    // Handle resize
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    // accessory loader (example placeholder — must have your own accessory GLBs)
+    async function loadAccessoryByName(name) {
+      // remove old
+      if (currentAccessory) { scene.remove(currentAccessory); currentAccessory = null; }
+      if (!name) return;
+
+      // map example to local assets (you should provide actual accessory GLB paths)
+      const mapping = {
+        glasses: './assets/accessories/glasses.glb',
+        hat: './assets/accessories/hat.glb'
+      };
+      const url = mapping[name];
+      if (!url) {
+        console.warn('Accessory not provided for:', name);
+        return;
+      }
+      try {
+        const gltf = await new Promise((res, rej) => loader.load(url, res, null, rej));
+        currentAccessory = gltf.scene;
+        // attach to avatar if possible: try to find head bone or add to avatar root
+        if (currentAvatar) {
+          // attempt to find a head bone by common names
+          const head = currentAvatar.getObjectByName('Head') || currentAvatar.getObjectByName('head') || currentAvatar.getObjectByProperty && currentAvatar.getObjectByProperty('type', 'Bone');
+          if (head) {
+            head.add(currentAccessory);
+            currentAccessory.position.set(0,0,0);
+          } else {
+            // fallback to adding to avatar root and position manually
+            currentAccessory.position.set(0, 1.6, 0);
+            currentAvatar.add(currentAccessory);
+          }
+        } else {
+          scene.add(currentAccessory);
+        }
+        status.innerText = `Accessory added: ${name}`;
+      } catch (err) {
+        console.error('Accessory load error', err);
+      }
+    }
+
+    // Listen to messages from Ready Player Me iframe.
+    // Ready Player Me creator posts messages; different event names exist in docs.
+    window.addEventListener('message', (event) => {
+      // For security, you could check event.origin for "https://creator.readyplayer.me" in production.
+      const data = event.data;
+      // Ready Player Me typical message shape: { source: 'readyplayerme', eventName: 'v1.avatar.exported', data: { url: '...' } }
+      // But some variations exist; check data.eventName and data.data.url OR data.url
+      try {
+        if (!data) return;
+        // debug: uncomment to inspect
+        // console.log('iframe message', data);
+
+        // common patterns:
+        const url = data?.data?.url || data?.url || data?.modelUrl || (data?.detail && data.detail?.url);
+        const source = data?.source || data?.detail?.source;
+        const eventName = data?.eventName || data?.type || data?.detail?.eventName;
+
+        // Accept messages from readyplayerme creator
+        if (source === 'readyplayerme' || String(eventName || '').toLowerCase().includes('avatar')) {
+          if (url) {
+            // url may be an obj/gltf/gltf.zip. Ready Player Me typically returns .glb
+            console.log('Avatar exported URL detected:', url);
+            // load avatar into scene
+            loadAvatarFromUrl(url);
+          }
+        }
+      } catch (e) {
+        console.warn('Error processing iframe message', e);
+      }
     });
 
-    // Render loop
+    // Manual input button
+    loadUrlBtn.addEventListener('click', () => {
+      const url = manualUrl.value.trim();
+      if (!url) { alert('Paste a publicly accessible GLB URL'); return; }
+      loadAvatarFromUrl(url);
+    });
+
+    // clear
+    clearBtn.addEventListener('click', () => {
+      if (currentAvatar) { scene.remove(currentAvatar); currentAvatar = null; }
+      if (currentAccessory) { scene.remove(currentAccessory); currentAccessory = null; }
+      status.innerText = 'Cleared selection';
+    });
+
+    // color change
+    colorCloth.addEventListener('input', () => applyClothingColor(colorCloth.value));
+
+    // accessory change
+    accessorySelect.addEventListener('change', () => loadAccessoryByName(accessorySelect.value));
+
+    // screenshot
+    screenshotBtn.addEventListener('click', () => {
+      renderer.render(scene, camera);
+      const dataURL = renderer.domElement.toDataURL('image/png');
+      screenshotLink.href = dataURL;
+      screenshotLink.style.display = 'inline-block';
+      screenshotLink.click();
+      setTimeout(()=> screenshotLink.style.display = 'none', 800);
+    });
+
+    // resize handling
+    window.addEventListener('resize', () => {
+      const w = window.innerWidth - 420;
+      const h = window.innerHeight - 24;
+      renderer.setSize(Math.max(300, w), Math.max(300, h));
+      camera.aspect = (Math.max(300,w) / Math.max(300,h));
+      camera.updateProjectionMatrix();
+    });
+
+    // animate loop
     function animate() {
       requestAnimationFrame(animate);
-      controls.update();
       renderer.render(scene, camera);
     }
     animate();
+
+    // Helpful: tryReadyPlayerMe quick open in a new tab:
+    // window.open('https://creator.readyplayer.me/avatar?frameApi', '_blank');
   </script>
 </body>
 </html>
