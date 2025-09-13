@@ -8,7 +8,58 @@
   <link rel="stylesheet" href="styles.css">
 
   <style>
-    /* ... your existing CSS ... */
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg,#00cfff,#0072ff);
+      color: #fff;
+      border: none;
+      padding: 10px 26px;
+      border-radius: 28px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,114,255,0.22);
+      transition: all 0.3s ease;
+      min-width: 140px;
+    }
+    .btn-primary:hover, .btn-primary:focus {
+      background: linear-gradient(135deg,#0072ff,#0044aa);
+      box-shadow: 0 8px 20px rgba(0,114,255,0.4);
+      transform: translateY(-3px);
+    }
+    .btn-primary.active {
+      background: linear-gradient(135deg,#36cfcf,#0072ff);
+    }
+
+    /* Navbar */
+    .navbar { position: sticky; top: 0; background: #111827; box-shadow: 0 2px 8px rgba(0,0,0,0.3); z-index: 1000; padding: 0 1rem; }
+    .navbar-container { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; height: 60px; }
+    .navbar .logo { font-size: 22px; font-weight: 700; color: #06b4d4; text-decoration: none; }
+    .navbar ul { list-style: none; display: flex; gap: 25px; align-items: center; }
+    .navbar ul li a { color: #f3f4f6; text-decoration: none; font-weight: 500; padding: 7px 10px; font-size: 1rem; border-radius: 6px; }
+    .navbar ul li a:hover, .navbar ul li a.active { color: #06b4d4; background: rgba(6,182,212,0.08); }
+
+    /* Layout */
+    .page-container { max-width: 1100px; margin: 1.5rem auto; padding: 0 1rem; display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; }
+    @media (max-width: 900px) { .page-container { grid-template-columns: 1fr; } }
+
+    /* Card */
+    .card { background: #fff; border-radius: 16px; box-shadow: 0 10px 15px rgb(0 0 0 / 0.1); padding: 1.5rem; }
+
+    /* Product */
+    .product-info h1 { font-size: 2rem; color: #06b4d4; margin-bottom: 0.25rem; }
+    .product-info .price { font-size: 1.5rem; color: #ff9800; margin-bottom: 1rem; font-weight: 700; }
+    .buttons-row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+
+    model-viewer, img { width: 100%; border-radius: 1rem; height: 480px; max-height: 60vh; background: #fafafa; }
+    @media (max-width: 600px) { model-viewer, img { height: 300px; } .btn-primary { width: 100%; } }
+
+    /* Related */
+    .related-products .title { font-size: 1.5rem; font-weight: 700; color: #06b4d4; margin-bottom: 1rem; }
+    .related-list { max-height: 70vh; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+    .related-list .product { display: grid; grid-template-columns: 120px 1fr; gap: 1rem; cursor: pointer; padding: 0.5rem; border-radius: 12px; box-shadow: 0 10px 15px rgb(0 0 0 / 0.07); }
+    .related-list .product:hover { background-color: #e3f7ff; transform: translateY(-4px); }
+    .related-list model-viewer, .related-list img { width: 120px; height: 90px; border-radius: 1rem; }
   </style>
 </head>
 <body>
@@ -34,6 +85,7 @@
   <footer><p>© 2025 Reality Shop. All rights reserved.</p></footer>
 
   <script type="module">
+    // === Product Data ===
     const products = [
       {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
       {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
@@ -114,7 +166,8 @@
         return;
       }
 
-      const canTryOn = ['Clothing','Shoes','Accessories'].includes(product.category);
+      const canAR = ['Furniture'].includes(product.category);
+      const canTryOn = ['Clothing'].includes(product.category);
 
       productDetails.innerHTML = `
         ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1"></model-viewer>` :
@@ -127,6 +180,7 @@
             <button id="wishlist-btn" class="btn-primary ${isWishlisted(product.name) ? 'active' : ''}">
               ${isWishlisted(product.name) ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </button>
+            ${canAR && product.glb ? `<button id="ar-btn" class="btn-primary">View in AR</button>` : ''}
             ${canTryOn ? `<button id="tryon-btn" class="btn-primary">Try On</button>` : ''}
           </div>
           <p class="description">High quality product description goes here.</p>
@@ -160,45 +214,51 @@
         setWishlist(wishlist);
       };
 
-      // Try On → Save selected clothing and open avatar.html
+      // AR Button
+      const arBtn = document.getElementById('ar-btn');
+      if (arBtn) arBtn.onclick = () => window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
+
+      // Try On Button → Save to localStorage and go to avatar.html
       const tryOnBtn = document.getElementById('tryon-btn');
-      if(tryOnBtn){
-        tryOnBtn.onclick = () => {
-          const selectedProduct = {
-            name: product.name,
-            glb: product.glb,
-            category: product.category
-          };
-          localStorage.setItem("selectedClothing", JSON.stringify(selectedProduct));
-          window.open("avatar.html", "_blank");
+      if (tryOnBtn) tryOnBtn.onclick = () => {
+        const selectedProduct = {
+          name: product.name,
+          img: product.img || null,
+          glb: product.glb || null,
+          category: product.category
         };
-      }
+        localStorage.setItem("selectedClothing", JSON.stringify(selectedProduct));
+        window.open("avatar.html", "_blank");
+      };
     }
 
-    function displayRelated(product){
+    function displayRelated(product) {
       relatedList.innerHTML = '';
       let related = products.filter(p => p.category === product.category && p.name !== product.name);
-      if(!related.length) related = products.slice(0,4);
-      related.forEach(p=>{
+      if (!related.length) related = products.slice(0, 4);
+      related.forEach(p => {
         const div = document.createElement('div');
-        div.className='product';
-        div.innerHTML=`
+        div.className = 'product';
+        div.innerHTML = `
           ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name}" camera-controls auto-rotate></model-viewer>` :
-          p.img ? `<img src="${p.img}" alt="${p.name}" />` : `<div>No Image</div>`}
+            p.img ? `<img src="${p.img}" alt="${p.name}" />` : `<div>No Image</div>`}
           <h3>${p.name}</h3><p class="price">₹${p.price}.00</p>
         `;
-        div.onclick = ()=>window.location.href=`product.html?name=${encodeURIComponent(p.name)}`;
+        div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
         relatedList.appendChild(div);
       });
     }
 
+    // On Load
     window.onload = () => {
       const productName = getQueryParam('name');
-      const product = products.find(p=>p.name===productName);
-      if(product){
+      const product = products.find(p => p.name === productName);
+      if (product) {
         displayProduct(product);
         displayRelated(product);
-      } else productDetails.innerHTML='<p>Product not found.</p>';
+      } else {
+        productDetails.innerHTML = '<p>Product not found.</p>';
+      }
     };
   </script>
 </body>
