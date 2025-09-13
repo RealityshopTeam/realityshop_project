@@ -45,7 +45,6 @@
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-    import { SkeletonUtils } from 'three/examples/utils/SkeletonUtils.js';
 
     const container = document.getElementById('canvas-container');
 
@@ -104,11 +103,13 @@
       }
 
       loader.load(selected.glb, (gltf) => {
-        const clothing = SkeletonUtils.clone(gltf.scene);
+        const clothing = gltf.scene;
         clothing.scale.set(1.2, 1.2, 1.2);
 
         if (avatar) {
+          // Attach to avatar
           avatar.add(clothing);
+          // Adjust position if needed
           clothing.position.set(0, 0, 0);
         } else {
           scene.add(clothing);
