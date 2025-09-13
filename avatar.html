@@ -5,7 +5,7 @@
   <title>Reality Shop - Avatar Try On</title>
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
-    canvas, #videoCanvas { display: block; }
+    canvas { display: block; }
     #info {
       position: absolute;
       top: 10px;
@@ -18,32 +18,6 @@
       font-size: 14px;
       z-index: 10;
     }
-    #captureContainer {
-      position: absolute;
-      top: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #222;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
-      padding: 16px;
-      color: white;
-      z-index: 20;
-      display: none;
-      flex-direction: column;
-      align-items: center;
-    }
-    #videoCanvas {
-      width: 220px; height: 220px; border-radius: 50%;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-    #captureBtn, #closeBtn {
-      margin-top: 12px;
-      background: #06b4d4; color: #fff; border: none;
-      padding: 8px 18px; border-radius: 6px; cursor: pointer; font-weight: bold;
-      outline: none;
-    }
-    #captureBtn:hover, #closeBtn:hover { background: #00cfff; }
   </style>
   <script type="importmap">
     {
@@ -56,54 +30,13 @@
   </script>
 </head>
 <body>
-  <div id="info">👕 Loading avatar with clothing...<br/><button id="startSelfie">📷 Take a Selfie</button></div>
-  <div id="captureContainer">
-    <video id="video" width="220" height="220" autoplay muted></video><br/>
-    <button id="captureBtn">Capture</button>
-    <button id="closeBtn">Cancel</button>
-  </div>
+  <div id="info">👕 Loading avatar with clothing...</div>
   <canvas id="c"></canvas>
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-    let selfieTexture = null;
-
-    // --- Webcam UI ---
-    const infoDiv = document.getElementById("info");
-    const captureContainer = document.getElementById("captureContainer");
-    const startBtn = document.getElementById('startSelfie');
-    const videoElem = document.getElementById('video');
-    const captureBtn = document.getElementById('captureBtn');
-    const closeBtn = document.getElementById('closeBtn');
-
-    startBtn.onclick = () => {
-      captureContainer.style.display = 'flex';
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => videoElem.srcObject = stream)
-        .catch(() => alert("Camera permission denied."));
-    };
-    closeBtn.onclick = () => {
-      captureContainer.style.display = 'none';
-      videoElem.srcObject.getTracks().forEach(track => track.stop());
-    };
-    captureBtn.onclick = () => {
-      // Capture selfie from video
-      const canvasShot = document.createElement('canvas');
-      canvasShot.width = 220; canvasShot.height = 220;
-      const ctx = canvasShot.getContext('2d');
-      ctx.drawImage(videoElem, 0, 0, 220, 220);
-      selfieTexture = new THREE.Texture(canvasShot);
-      selfieTexture.needsUpdate = true;
-      applySelfieToAvatar();
-      captureContainer.style.display = 'none';
-      videoElem.srcObject.getTracks().forEach(track => track.stop());
-      infoDiv.innerHTML = "✅ Selfie applied!<br><button id=\"startSelfie\">📷 Retake Selfie</button>";
-      document.getElementById('startSelfie').onclick = startBtn.onclick;
-    };
-
-    // --- Three.js/Avatar code ---
     const canvas = document.querySelector('#c');
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -117,7 +50,7 @@
     controls.target.set(0, 1.4, 0);
     controls.update();
 
-    // Lighting
+    // Lights
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
     scene.add(hemiLight);
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -142,49 +75,46 @@
       loader.load(url, (gltf) => {
         removeClothing();
         clothing = gltf.scene;
-        clothing.position.set(0, 0, 0);
-        clothing.scale.set(1, 1, 1);
+
+        // Position and scale must be adjusted to fit avatar correctly
+        // Adjust these as per your avatar and clothing model specifics
+        clothing.position.set(0, -1.0, 0);  // Example: move clothing down by 1 unit on Y-axis
+        clothing.scale.set(1, 1, 1);        // Adjust scale if needed
+
         avatar.add(clothing);
-        infoDiv.innerHTML += " | Clothing applied!";
+        document.getElementById("info").textContent += " | Clothing applied!";
+        console.log("👕 Clothing applied:", url);
       }, undefined, (err) => {
-        infoDiv.innerHTML = "❌ Error loading clothing!";
+        document.getElementById("info").textContent = "❌ Error loading clothing!";
+        console.error("Error loading clothing:", err);
       });
     }
 
-    function applySelfieToAvatar() {
-      if (!avatar || !selfieTexture) return;
-      avatar.traverse(obj => {
-        if (obj.isMesh && obj.material && obj.material.name.toLowerCase().includes("face")) {
-          obj.material.map = selfieTexture;
-          obj.material.needsUpdate = true;
-        }
-      });
-    }
-
-    // Main logic: load avatar and selected clothing if present
+    // Load avatar and selected clothing
     loader.load('baseAvatar.glb', (gltf) => {
       avatar = gltf.scene;
       avatar.position.set(0, 0, 0);
       avatar.scale.set(1, 1, 1);
       scene.add(avatar);
 
+      console.log("✅ Base Avatar loaded");
+
+      // Load clothing info from localStorage
       const stored = localStorage.getItem("selectedClothing");
       if (stored) {
         const selected = JSON.parse(stored);
         if (selected && selected.glb) {
-          infoDiv.innerHTML = `Wearing: ${selected.name}<br /><button id="startSelfie">📷 Take a Selfie</button>`;
+          document.getElementById("info").textContent = `Wearing: ${selected.name}`;
           attachClothing(selected.glb);
-          document.getElementById('startSelfie').onclick = startBtn.onclick;
         } else {
-          infoDiv.innerHTML = "⚠️ No 3D model for this clothing.<br /><button id=\"startSelfie\">📷 Take a Selfie</button>";
-          document.getElementById('startSelfie').onclick = startBtn.onclick;
+          document.getElementById("info").textContent = "⚠️ No 3D model for this clothing.";
         }
       } else {
-        infoDiv.innerHTML = "⚠️ No clothing selected.<br /><button id=\"startSelfie\">📷 Take a Selfie</button>";
-        document.getElementById('startSelfie').onclick = startBtn.onclick;
+        document.getElementById("info").textContent = "⚠️ No clothing selected.";
       }
     }, undefined, (err) => {
-      infoDiv.innerHTML = "❌ Error loading avatar!";
+      document.getElementById("info").textContent = "❌ Error loading avatar!";
+      console.error("Error loading avatar:", err);
     });
 
     window.addEventListener('resize', () => {
