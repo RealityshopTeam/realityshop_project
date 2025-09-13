@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Avatar Customization - Reality Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Avatar Try-On - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Importmap for Three.js -->
   <script type="importmap">
   {
     "imports": {
@@ -12,89 +14,121 @@
     }
   }
   </script>
+
   <style>
-    body { margin: 0; background: #121212; overflow: hidden; }
+    body { margin: 0; overflow: hidden; background: #111; }
     #canvas-container { width: 100vw; height: 100vh; }
+    #back-btn {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      padding: 10px 20px;
+      background: linear-gradient(135deg,#00cfff,#0072ff);
+      border: none;
+      border-radius: 20px;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      z-index: 10;
+    }
+    #back-btn:hover {
+      background: linear-gradient(135deg,#0072ff,#0044aa);
+    }
   </style>
 </head>
 <body>
+  <button id="back-btn" onclick="window.close()">⟵ Back</button>
   <div id="canvas-container"></div>
 
   <script type="module">
     import * as THREE from 'three';
-    import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
+    import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
     import { SkeletonUtils } from 'three/examples/utils/SkeletonUtils.js';
-
 
     const container = document.getElementById('canvas-container');
 
+    // Scene
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x121212);
+    scene.background = new THREE.Color(0x111111);
 
+    // Camera
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 3);
 
+    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     container.appendChild(renderer.domElement);
 
+    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0,1.5,0);
+    controls.target.set(0, 1.5, 0);
     controls.update();
 
-    const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    light.position.set(0, 20, 0);
-    scene.add(light);
+    // Lights
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    hemiLight.position.set(0, 20, 0);
+    scene.add(hemiLight);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(5,10,7.5);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(3, 10, 10);
     scene.add(dirLight);
 
+    // Loaders
     const loader = new GLTFLoader();
 
-    let avatar, clothing;
+    // Base avatar (replace this file with your avatar.glb)
+    const avatarFile = "baseAvatar.glb";
+    let avatar;
 
-    // Load base avatar
-    loader.load('baseAvatar.glb', (gltf)=>{
+    loader.load(avatarFile, (gltf) => {
       avatar = gltf.scene;
-      avatar.scale.set(1,1,1);
+      avatar.scale.set(1.2, 1.2, 1.2);
+      avatar.position.set(0, 0, 0);
       scene.add(avatar);
 
-      const selectedClothing = JSON.parse(localStorage.getItem('selectedClothing'));
-      if(selectedClothing && selectedClothing.glb){
-        loader.load(selectedClothing.glb, (gltf2)=>{
-          clothing = SkeletonUtils.clone(gltf2.scene); // clone to keep skeleton intact
+      // Once avatar is loaded, try clothing
+      loadClothing();
+    }, undefined, (err) => {
+      console.error("Error loading avatar:", err);
+    });
 
-          // Determine target bone for clothing
-          let targetBoneName;
-          switch(selectedClothing.category.toLowerCase()){
-            case 'clothing': targetBoneName = 'Spine'; break; // shirt/jacket attaches to spine
-            case 'shoes': targetBoneName = 'Foot_L'; break;  // attach to left foot, right foot handled automatically
-            case 'accessories': targetBoneName = 'Head'; break;
-            default: targetBoneName = 'Spine';
-          }
-
-          // Find the bone
-          avatar.traverse((child)=>{
-            if(child.isBone && child.name.includes(targetBoneName)){
-              child.add(clothing);
-            }
-          });
-
-          // Optional: scale clothing to fit avatar
-          clothing.scale.set(1,1,1);
-        }, undefined, console.error);
+    // Clothing loader
+    function loadClothing() {
+      const selected = JSON.parse(localStorage.getItem("selectedClothing") || "null");
+      if (!selected || !selected.glb) {
+        console.log("No clothing selected.");
+        return;
       }
-    }, undefined, console.error);
 
-    window.addEventListener('resize', ()=>{
-      camera.aspect = window.innerWidth/window.innerHeight;
+      loader.load(selected.glb, (gltf) => {
+        const clothing = SkeletonUtils.clone(gltf.scene);
+        clothing.scale.set(1.2, 1.2, 1.2);
+
+        if (avatar) {
+          avatar.add(clothing);
+          clothing.position.set(0, 0, 0);
+        } else {
+          scene.add(clothing);
+        }
+
+        console.log("Clothing loaded:", selected.name);
+      }, undefined, (err) => {
+        console.error("Error loading clothing:", err);
+      });
+    }
+
+    // Resize handler
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    function animate(){
+    // Animate
+    function animate() {
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
     }
@@ -102,5 +136,3 @@
   </script>
 </body>
 </html>
-
-
