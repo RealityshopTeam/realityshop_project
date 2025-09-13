@@ -46,7 +46,6 @@
 
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 1.6, 3);
-
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 1.4, 0);
     controls.update();
@@ -76,33 +75,27 @@
       loader.load(url, (gltf) => {
         removeClothing();
         clothing = gltf.scene;
-        // Adjust clothing scale/position as needed for fit
+        // Scale/position adjustment if needed
         clothing.position.set(0, 0, 0);
-        clothing.scale.set(1, 1, 1); // You might need to adjust scale for specific clothing files!
-        // Optionally, attach to a specific bone if necessary for rigged avatars
+        clothing.scale.set(1, 1, 1);
         avatar.add(clothing);
         document.getElementById("info").textContent += " | Clothing applied!";
-        console.log("👕 Clothing applied:", url);
       }, undefined, (err) => {
         document.getElementById("info").textContent = "❌ Error loading clothing!";
-        console.error("Error loading clothing:", err);
       });
     }
 
-    // Load avatar and then clothing
+    // Main logic: load avatar and selected clothing if present
     loader.load('baseAvatar.glb', (gltf) => {
       avatar = gltf.scene;
       avatar.position.set(0, 0, 0);
       avatar.scale.set(1, 1, 1);
-
       scene.add(avatar);
-      console.log("✅ Base Avatar loaded");
 
-      // Pull data from localStorage
       const stored = localStorage.getItem("selectedClothing");
       if (stored) {
         const selected = JSON.parse(stored);
-        if (selected.glb) {
+        if (selected && selected.glb) {
           document.getElementById("info").textContent = `Wearing: ${selected.name}`;
           attachClothing(selected.glb);
         } else {
@@ -113,10 +106,9 @@
       }
     }, undefined, (err) => {
       document.getElementById("info").textContent = "❌ Error loading avatar!";
-      console.error("Error loading avatar:", err);
     });
 
-    // Responsive canvas
+    // Responsive
     window.addEventListener('resize', () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
