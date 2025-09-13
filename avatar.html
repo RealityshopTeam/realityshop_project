@@ -1,51 +1,36 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Avatar Try-On - Reality Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-        "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
-      }
-    }
-  </script>
-
-  <style>
-    body { margin: 0; overflow: hidden; background: #121212; }
-    #avatar-container { width: 100vw; height: 100vh; }
-    #info { position: absolute; top: 20px; left: 20px; color: #fff; z-index: 10; font-family: sans-serif; }
-  </style>
-</head>
-<body>
-<div id="avatar-container"></div>
-<div id="info">Use mouse to rotate. Scroll to zoom.</div>
-
+<meta charset="UTF-8" />
+<title>Avatar Try-On - Reality Shop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+    "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+  }
+}
+</script>
 <script type="module">
-import * as THREE from "three";
-import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/loaders/GLTFLoader.js";
-import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/controls/OrbitControls.js";
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Scene
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x121212);
 
-// Camera
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 3);
 
-// Renderer
-const renderer = new THREE.WebGLRenderer({antialias:true});
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
-document.getElementById("avatar-container").appendChild(renderer.domElement);
+document.body.appendChild(renderer.domElement);
 
-// Controls
+// Orbit Controls
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1,0);
+controls.target.set(0, 1, 0);
 controls.update();
 
 // Lights
@@ -54,84 +39,90 @@ hemiLight.position.set(0, 20, 0);
 scene.add(hemiLight);
 
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(5, 10, 7.5);
+dirLight.position.set(-3, 10, -10);
 dirLight.castShadow = true;
 scene.add(dirLight);
-
-// Floor
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(10,10),
-  new THREE.ShadowMaterial({ opacity: 0.2 })
-);
-floor.rotation.x = -Math.PI/2;
-floor.position.y = 0;
-floor.receiveShadow = true;
-scene.add(floor);
 
 // Load Avatar
 const loader = new GLTFLoader();
 let avatar, avatarBox;
 
-loader.load("baseAvatar.glb", gltf => {
+loader.load('baseAvatar.glb', gltf => {
   avatar = gltf.scene;
   avatar.traverse(c => { if(c.isMesh) c.castShadow = true; });
-  avatar.position.set(0,0,0);
   scene.add(avatar);
 
-  // Get avatar bounding box to auto-scale clothing
   avatarBox = new THREE.Box3().setFromObject(avatar);
 
-  // Load selected clothing/product
-  loadSelectedProduct();
+  // Load product after avatar
+  loadProduct();
 }, undefined, err => console.error(err));
 
-// Anchor points for different clothing categories
-const clothingAnchors = {
-  "Clothing": { offsetY: 0.1 },  // Shirts/Tops
-  "Pants": { offsetY: -0.5 },    // Pants/Bottoms
-  "Shoes": { offsetY: -1.0 },    // Shoes
-  "Accessories": { offsetY: 0.2 }, // Hats, Necklaces, Glasses
-};
-
-function loadSelectedProduct() {
-  const selectedProduct = JSON.parse(localStorage.getItem("selectedClothing"));
-  if (!selectedProduct || !selectedProduct.glb) return;
+// Load selected product
+function loadProduct() {
+  const selectedProduct = JSON.parse(localStorage.getItem('selectedClothing') || 'null');
+  if(!selectedProduct || !selectedProduct.glb) return;
 
   loader.load(selectedProduct.glb, gltf => {
     const product = gltf.scene;
     product.traverse(c => { if(c.isMesh) c.castShadow = true; });
 
-    // Compute avatar size
     const avatarSize = avatarBox.getSize(new THREE.Vector3());
+    const avatarCenterY = avatarBox.min.y + avatarSize.y / 2;
+
     const productBox = new THREE.Box3().setFromObject(product);
     const productSize = productBox.getSize(new THREE.Vector3());
+    const productCenterY = (productBox.min.y + productBox.max.y)/2;
 
-    // Scale product to match avatar
-    const scale = avatarSize.y / productSize.y * 0.95; // 95% of avatar height
+    // Scale product to fit avatar
+    const scale = avatarSize.y / productSize.y * 0.95;
     product.scale.set(scale, scale, scale);
 
-    // Position product according to category
-    const anchor = clothingAnchors[selectedProduct.category] || { offsetY: 0.1 };
-    const avatarCenterY = avatarBox.min.y + avatarSize.y/2;
-    product.position.set(0, avatarCenterY + anchor.offsetY, 0);
+    // Position product on avatar
+    const clothingAnchors = {
+      'Clothing': 0,
+      'Shoes': -0.8,
+      'Accessories': 0.1
+    };
+    const anchor = clothingAnchors[selectedProduct.category] || 0;
+    product.position.set(
+      0,
+      avatarCenterY - (productCenterY * scale) + anchor,
+      0
+    );
 
     scene.add(product);
   }, undefined, err => console.error(err));
 }
 
-// Handle window resize
-window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+// Ground
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(50, 50),
+  new THREE.MeshStandardMaterial({ color: 0x222222 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.position.y = 0;
+ground.receiveShadow = true;
+scene.add(ground);
 
-// Render loop
+// Animate
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);
 }
 animate();
+
+// Handle resize
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
-</body>
+
+<style>
+body { margin:0; overflow:hidden; }
+</style>
+</head>
+<body></body>
 </html>
