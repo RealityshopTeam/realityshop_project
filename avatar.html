@@ -24,7 +24,6 @@
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
-    import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
     const container = document.getElementById('canvas-container');
 
@@ -51,53 +50,45 @@
     scene.add(dirLight);
 
     const loader = new GLTFLoader();
+
     let avatar, clothing;
 
-    function getBoundingBoxSize(object){
-      const box = new THREE.Box3().setFromObject(object);
-      return box.getSize(new THREE.Vector3());
-    }
-
+    // Load base avatar
     loader.load('baseAvatar.glb', (gltf)=>{
       avatar = gltf.scene;
       avatar.scale.set(1,1,1);
       scene.add(avatar);
 
+      // After avatar is loaded, load selected clothing
       const selectedClothing = JSON.parse(localStorage.getItem('selectedClothing'));
       if(selectedClothing && selectedClothing.glb){
         loader.load(selectedClothing.glb, (gltf2)=>{
-          clothing = SkeletonUtils.clone(gltf2.scene);
+          clothing = gltf2.scene;
 
-          // Determine target bone
-          let targetBoneName;
+          // Auto-position based on category
           switch(selectedClothing.category.toLowerCase()){
-            case 'clothing': targetBoneName = 'Spine'; break;
-            case 'shoes': targetBoneName = 'Foot_L'; break;
-            case 'accessories': targetBoneName = 'Head'; break;
-            default: targetBoneName = 'Spine';
+            case 'clothing': 
+              clothing.position.set(0,1.4,0); // torso
+              clothing.scale.set(1,1,1);
+              break;
+            case 'shoes': 
+              clothing.position.set(0,0,0); // feet
+              clothing.scale.set(1,1,1);
+              break;
+            case 'accessories':
+              clothing.position.set(0,1.7,0); // head/neck
+              clothing.scale.set(1,1,1);
+              break;
+            default:
+              clothing.position.set(0,1,0);
           }
 
-          // Auto-scale clothing
-          const avatarSize = getBoundingBoxSize(avatar);
-          const clothingSize = getBoundingBoxSize(clothing);
-
-          const scaleFactor = Math.min(
-            avatarSize.x / clothingSize.x,
-            avatarSize.y / clothingSize.y,
-            avatarSize.z / clothingSize.z
-          );
-          clothing.scale.setScalar(scaleFactor);
-
-          // Attach clothing to bone
-          avatar.traverse((child)=>{
-            if(child.isBone && child.name.includes(targetBoneName)){
-              child.add(clothing);
-            }
-          });
+          avatar.add(clothing);
         }, undefined, console.error);
       }
     }, undefined, console.error);
 
+    // Handle window resize
     window.addEventListener('resize', ()=>{
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
