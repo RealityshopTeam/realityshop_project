@@ -54,7 +54,7 @@
     let avatar, clothing;
 
     // Load base avatar
-    loader.load("imgs/avatar.glb", (gltf) => {
+    loader.load("baseAvatar.glb", (gltf) => {
       avatar = gltf.scene;
       avatar.scale.set(1,1,1);
       scene.add(avatar);
@@ -89,3 +89,4 @@
   </script>
 </body>
 </html>
+
