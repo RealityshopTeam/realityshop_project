@@ -66,7 +66,7 @@ function animate() {
 // Load avatar
 function loadAvatar() {
   const loader = new GLTFLoader();
-  loader.load('basAevatar.glb', gltf => {
+  loader.load('baseAvatar.glb', gltf => {
     avatar = gltf.scene;
     avatar.scale.set(1,1,1);
     scene.add(avatar);
@@ -140,3 +140,4 @@ body { margin:0; overflow:hidden; }
 </head>
 <body></body>
 </html>
+
