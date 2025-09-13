@@ -95,7 +95,6 @@ async function loadClothing() {
     loader.load(selected.glb, gltf => {
         const clothing = gltf.scene;
 
-        // Remove previously added clothing if any
         if (previousClothing) {
             avatar.remove(previousClothing);
             previousClothing = null;
@@ -106,16 +105,9 @@ async function loadClothing() {
                 child.castShadow = true;
 
                 if (avatarSkeleton) {
-                    // Bind clothing SkinnedMesh to avatar skeleton exactly
                     child.bind(avatarSkeleton, child.bindMatrix);
-
-                    // Copy boneTexture for proper GPU skinning
                     child.skeleton.boneTexture = avatarSkeleton.boneTexture;
-
-                    // Reset pose to avatar's bind pose
                     child.pose();
-
-                    // Zero out transforms of SkinnedMesh for perfect alignment
                     child.position.set(0, 0, 0);
                     child.rotation.set(0, 0, 0);
                     child.scale.set(1, 1, 1);
@@ -125,11 +117,20 @@ async function loadClothing() {
             }
         });
 
-        // Add clothing as child of avatar for hierarchical transforms
+        // Position clothing root to avatar root bone
+        const rootBone = avatarSkeleton.bones.length ? avatarSkeleton.bones[0] : null;
+        if (rootBone) {
+            const rootPos = new THREE.Vector3();
+            rootBone.getWorldPosition(rootPos);
+            avatar.worldToLocal(rootPos);
+            clothing.position.copy(rootPos);
+
+            // Optional small offset tweak (if needed)
+            clothing.position.y -= 0.05;
+        }
+
         avatar.add(clothing);
 
-        // Reset clothing root transforms to align precisely with avatar model
-        clothing.position.set(0, 0, 0);
         clothing.rotation.set(0, 0, 0);
         clothing.scale.set(1, 1, 1);
 
