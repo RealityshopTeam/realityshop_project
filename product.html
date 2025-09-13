@@ -447,14 +447,20 @@
         const arBtn = document.getElementById('ar-btn');
         if (arBtn) arBtn.onclick = () => window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
 
-        const tryOnBtn = document.getElementById('tryon-btn');
-        if (tryOnBtn) tryOnBtn.onclick = () => {
-          let url = `avatar.html?name=${encodeURIComponent(product.name)}`;
-          if (product.img) url += `&img=${encodeURIComponent(product.img)}`;
-          if (product.glb) url += `&glb=${encodeURIComponent(product.glb)}`;
-          window.open(url, '_blank');
-        };
-      }
+       const tryOnBtn = document.getElementById('tryon-btn');
+if (tryOnBtn) tryOnBtn.onclick = () => {
+  // Store selected product in localStorage (so avatar.html can use it)
+  const selectedProduct = {
+    name: product.name,
+    img: product.img || null,
+    glb: product.glb || null,
+    category: product.category
+  };
+  localStorage.setItem("selectedClothing", JSON.stringify(selectedProduct));
+
+  // Redirect to avatar.html (no need to pass params anymore)
+  window.open("avatar.html", "_blank");
+};
 
       function displayRelated(product) {
         relatedList.innerHTML = '';
@@ -490,4 +496,5 @@
     </script>
   </body>
 </html>
+
 
