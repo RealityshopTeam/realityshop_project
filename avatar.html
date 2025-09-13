@@ -2,14 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Avatar Viewer</title>
+  <title>Avatar Try-On</title>
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
     canvas { display: block; }
   </style>
 </head>
 <body>
-  <!-- Import map -->
   <script type="importmap">
     {
       "imports": {
@@ -20,69 +19,74 @@
     }
   </script>
 
-  <!-- Your script -->
   <script type="module">
     import * as THREE from "three";
     import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
     import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-    // Scene
+    let avatar, clothingModel;
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x202020);
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(
-      45,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 3);
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
-    // Lights
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
 
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(5, 10, 7.5);
     scene.add(dirLight);
 
-    // Controls
     const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
     controls.target.set(0, 1.4, 0);
+    controls.enableDamping = true;
 
-    // Load Avatar
     const loader = new GLTFLoader();
-    loader.load(
-      "./baseAvatar.glb", // 👈 place your avatar file in same folder
-      (gltf) => {
-        const model = gltf.scene;
-        model.position.set(0, 0, 0);
-        model.scale.set(1, 1, 1);
-        scene.add(model);
-        console.log("✅ Avatar loaded:", model);
-      },
-      (xhr) => {
-        console.log(`Loading avatar: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
-      },
-      (error) => {
-        console.error("❌ Error loading avatar", error);
-      }
-    );
 
-    // Resize
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+    // Avatar
+    loader.load("./baseAvatar.glb", (gltf) => {
+      avatar = gltf.scene;
+      avatar.scale.set(1, 1, 1);
+      scene.add(avatar);
     });
+
+    // Clothing paths
+    const CLOTHES = {
+      tshirt: "./models/clothes_tshirt.glb",
+      jacket: "./models/clothes_jacket.glb"
+    };
+
+    // Get selected clothing
+    function getSelectedClothing() {
+      // Option A: from URL param
+      const params = new URLSearchParams(window.location.search);
+      let clothing = params.get("clothing");
+
+      // Option B: from localStorage (fallback)
+      if (!clothing) {
+        clothing = localStorage.getItem("selectedClothing");
+      }
+      return clothing;
+    }
+
+    // Load clothing
+    function loadClothing(type) {
+      if (!type || !CLOTHES[type]) return;
+      loader.load(CLOTHES[type], (gltf) => {
+        clothingModel = gltf.scene;
+        clothingModel.scale.set(1, 1, 1);
+        scene.add(clothingModel);
+      });
+    }
+
+    // Auto apply selected clothing
+    const selected = getSelectedClothing();
+    if (selected) loadClothing(selected);
 
     // Render loop
     function animate() {
@@ -91,6 +95,12 @@
       renderer.render(scene, camera);
     }
     animate();
+
+    window.addEventListener("resize", () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   </script>
 </body>
 </html>
