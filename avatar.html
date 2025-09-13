@@ -12,7 +12,6 @@
 </head>
 <body>
 <div id="canvas-container"></div>
-
 <script type="importmap">
 {
   "imports": {
@@ -21,7 +20,6 @@
   }
 }
 </script>
-
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
@@ -58,50 +56,74 @@ const floor = new THREE.Mesh(
     new THREE.PlaneGeometry(10,10),
     new THREE.ShadowMaterial({opacity:0.3})
 );
-floor.rotation.x=-Math.PI/2;
-floor.position.y=0;
-floor.receiveShadow=true;
+floor.rotation.x = -Math.PI/2;
+floor.position.y = 0;
+floor.receiveShadow = true;
 scene.add(floor);
 
 const loader = new GLTFLoader();
-let avatar, avatarSkeleton;
 
+let avatar;                // avatar scene object
+let avatarSkeleton;        // THREE.Skeleton of avatar (from SkinnedMesh)
+let previousClothing = null; // To remove old clothing if swapped
+
+// Load avatar and extract skeleton from its SkinnedMesh
 async function loadAvatar() {
-    return new Promise((resolve, reject)=>{
-        loader.load('baseAvatar.glb', gltf=>{
+    return new Promise((resolve, reject) => {
+        loader.load('baseAvatar.glb', gltf => {
             avatar = gltf.scene;
-            avatar.traverse(c=>{ if(c.isMesh) {c.castShadow=true; c.receiveShadow=true;} });
-            scene.add(avatar);
-
-            avatarSkeleton = {};
-            avatar.traverse(obj=>{
-                if(obj.isBone) avatarSkeleton[obj.name] = obj;
+            avatar.traverse(child => {
+                if (child.isMesh) {
+                    child.castShadow = true;
+                    child.receiveShadow = true;
+                    if (child.isSkinnedMesh && !avatarSkeleton) {
+                        avatarSkeleton = child.skeleton;
+                    }
+                }
             });
-
+            scene.add(avatar);
             resolve();
-        }, undefined, err=>reject(err));
+        }, undefined, err => reject(err));
     });
 }
 
+// Load clothing, bind its skeleton to avatar's skeleton, and add to avatar
 async function loadClothing() {
     const selected = JSON.parse(localStorage.getItem("selectedClothing") || null);
-    if(!selected || !selected.glb) return;
+    if (!selected || !selected.glb) return;
 
-    loader.load(selected.glb, gltf=>{
+    loader.load(selected.glb, gltf => {
         const clothing = gltf.scene;
-        clothing.traverse(c=>{ if(c.isMesh) c.castShadow=true; });
 
-        // --- Attach clothing to avatar ---
-        avatar.add(clothing); // parent to avatar root
-        clothing.position.set(0,0,0);
-        clothing.rotation.set(0,0,0);
-        clothing.scale.set(1,1,1);
-
-        // Optional: adjust Y-offset for shirts/jackets
-        if(selected.category === 'Clothing') {
-            clothing.position.y = 1.0; // move up slightly to torso
+        // Remove previous clothing from avatar if exists
+        if (previousClothing) {
+            avatar.remove(previousClothing);
+            previousClothing = null;
         }
-    }, undefined, err=>console.error(err));
+
+        clothing.traverse(child => {
+            if (child.isSkinnedMesh) {
+                child.castShadow = true;
+                // Bind clothing skeleton to avatar skeleton for exact fit
+                if (avatarSkeleton) {
+                    child.bind(avatarSkeleton, child.bindMatrix);
+                    child.pose();
+                }
+            } else if(child.isMesh) {
+                child.castShadow = true;
+            }
+        });
+
+        // Attach clothing as child of avatar for grouped transformations
+        avatar.add(clothing);
+
+        // Reset clothing transform to align with avatar
+        clothing.position.set(0, 0, 0);
+        clothing.rotation.set(0, 0, 0);
+        clothing.scale.set(1, 1, 1);
+
+        previousClothing = clothing;
+    }, undefined, err => console.error('Clothing load error:', err));
 }
 
 async function init() {
@@ -111,7 +133,7 @@ async function init() {
 
 init();
 
-window.addEventListener('resize', ()=>{
+window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth/window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -121,7 +143,9 @@ function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
+
 animate();
+
 </script>
 </body>
 </html>
