@@ -9,13 +9,12 @@
   </style>
 </head>
 <body>
-  <!-- Three.js core -->
-  <script src="libs/three.min.js"></script>
-  <!-- Loaders and controls (from examples/js) -->
-  <script src="libs/GLTFLoader.js"></script>
-  <script src="libs/OrbitControls.js"></script>
+  <!-- Use ES modules instead of old libs -->
+  <script type="module">
+    import * as THREE from "./libs/three.min.js";
+    import { OrbitControls } from "./libs/OrbitControls.js";
+    import { GLTFLoader } from "./libs/GLTFLoader.js";
 
-  <script>
     // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x202020);
@@ -42,14 +41,14 @@
     scene.add(dirLight);
 
     // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.target.set(0, 1.4, 0);
 
     // Load avatar
-    const loader = new THREE.GLTFLoader();
+    const loader = new GLTFLoader();
     loader.load(
-      './baseAvatar.glb', // 👈 make sure this file exists
+      "./baseAvatar.glb", // 👈 your avatar file must be in the same folder
       (gltf) => {
         const model = gltf.scene;
         model.position.set(0, 0, 0);
@@ -66,7 +65,7 @@
     );
 
     // Handle resize
-    window.addEventListener('resize', () => {
+    window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
