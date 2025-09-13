@@ -24,6 +24,7 @@
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
+    import { SkeletonUtils } from 'three/examples/jsm/utils/SkeletonUtils.js';
 
     const container = document.getElementById('canvas-container');
 
@@ -54,41 +55,38 @@
     let avatar, clothing;
 
     // Load base avatar
-    loader.load('baseAvatar.glb', (gltf)=>{
+    loader.load('avatar.glb', (gltf)=>{
       avatar = gltf.scene;
       avatar.scale.set(1,1,1);
       scene.add(avatar);
 
-      // After avatar is loaded, load selected clothing
       const selectedClothing = JSON.parse(localStorage.getItem('selectedClothing'));
       if(selectedClothing && selectedClothing.glb){
         loader.load(selectedClothing.glb, (gltf2)=>{
-          clothing = gltf2.scene;
+          clothing = SkeletonUtils.clone(gltf2.scene); // clone to keep skeleton intact
 
-          // Auto-position based on category
+          // Determine target bone for clothing
+          let targetBoneName;
           switch(selectedClothing.category.toLowerCase()){
-            case 'clothing': 
-              clothing.position.set(0,1.4,0); // torso
-              clothing.scale.set(1,1,1);
-              break;
-            case 'shoes': 
-              clothing.position.set(0,0,0); // feet
-              clothing.scale.set(1,1,1);
-              break;
-            case 'accessories':
-              clothing.position.set(0,1.7,0); // head/neck
-              clothing.scale.set(1,1,1);
-              break;
-            default:
-              clothing.position.set(0,1,0);
+            case 'clothing': targetBoneName = 'Spine'; break; // shirt/jacket attaches to spine
+            case 'shoes': targetBoneName = 'Foot_L'; break;  // attach to left foot, right foot handled automatically
+            case 'accessories': targetBoneName = 'Head'; break;
+            default: targetBoneName = 'Spine';
           }
 
-          avatar.add(clothing);
+          // Find the bone
+          avatar.traverse((child)=>{
+            if(child.isBone && child.name.includes(targetBoneName)){
+              child.add(clothing);
+            }
+          });
+
+          // Optional: scale clothing to fit avatar
+          clothing.scale.set(1,1,1);
         }, undefined, console.error);
       }
     }, undefined, console.error);
 
-    // Handle window resize
     window.addEventListener('resize', ()=>{
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
