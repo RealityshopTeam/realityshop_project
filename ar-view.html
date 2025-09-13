@@ -1,113 +1,60 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>Reality Shop - AR Room View</title>
-  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <meta charset="utf-8">
+  <title>Reality Shop - AR Furniture from Products</title>
   <style>
-    html, body {
-      margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden;
-      font-family: Arial, sans-serif; color: white; background: black;
-      display: flex; justify-content: center; align-items: center;
-    }
-    .ar-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      max-width: 700px;
-      max-height: 95vh;
-      background: #111;
-      border-radius: 12px;
-      box-shadow: 0 0 30px rgba(0,0,0,0.9);
-      overflow: hidden;
-    }
-    model-viewer {
-      width: 100%;
-      height: 100%;
-      cursor: pointer;
-      --poster-color: transparent; /* hide default poster */
-    }
-    .instructions {
-      position: absolute;
-      bottom: 12px;
-      width: 100%;
-      padding: 12px 10px;
-      font-weight: 600;
-      font-size: 1.2rem;
-      letter-spacing: 0.03em;
-      text-align: center;
-      background: rgba(0,0,0,0.5);
-      user-select: none;
-      pointer-events: none;
-      transition: opacity 0.3s ease;
-      color: #eee;
-    }
-    .hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
+    body { margin: 0; overflow: hidden; }
   </style>
+
+  <!-- Import maps -->
+  <script type="importmap">
+  {
+    "imports": {
+      "aframe": "https://aframe.io/releases/1.2.0/aframe.min.js",
+      "arjs": "https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"
+    }
+  }
+  </script>
+
+  <script type="module">
+    import "aframe";
+    import "arjs";
+
+    async function loadProducts() {
+      // Fetch your product list
+      const res = await fetch("products.html");
+      const text = await res.text();
+
+      // Parse HTML
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "text/html");
+
+      // Get product items
+      const items = doc.querySelectorAll("#product-list li");
+
+      // Insert models into AR scene
+      const marker = document.querySelector("a-marker");
+      items.forEach((item, index) => {
+        const modelUrl = item.dataset.model;
+        if (modelUrl) {
+          const entity = document.createElement("a-entity");
+          entity.setAttribute("gltf-model", modelUrl);
+          entity.setAttribute("scale", "0.5 0.5 0.5");
+          entity.setAttribute("position", `${index * 1.5} 0 0`); // spread out
+          marker.appendChild(entity);
+        }
+      });
+    }
+
+    window.addEventListener("DOMContentLoaded", loadProducts);
+  </script>
 </head>
 <body>
-  <div class="ar-container">
-    <model-viewer
-      id="arModelViewer"
-      src=""
-      alt="3D Furniture Model"
-      ar
-      ar-modes="scene-viewer quick-look webxr"
-      camera-controls
-      auto-rotate
-      shadow-intensity="1"
-      environment-image="neutral"
-      ar-scale="auto"
-      interaction-prompt="tap-to-place"
-      xr-environment
-      xr-standard-shadows
-    >
-    </model-viewer>
-    <div class="instructions" id="instructions">
-      Point your device to scan your room, tap to place furniture. Move and scale with gestures.
-    </div>
-  </div>
-
-  <script>
-    const modelViewer = document.getElementById('arModelViewer');
-    const instructions = document.getElementById('instructions');
-
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    window.onload = () => {
-      const modelPath = getQueryParam('model');
-      if (modelPath) {
-        modelViewer.src = decodeURIComponent(modelPath);
-      } else {
-        instructions.textContent = 'No model specified. Please open from product page.';
-        modelViewer.style.display = 'none';
-        return;
-      }
-    };
-
-    modelViewer.addEventListener('ar-status', event => {
-      if (event.detail.status === 'session-started') {
-        instructions.textContent = 'Move your device to scan your room surfaces.';
-      } else if(event.detail.status === 'session-ended') {
-        instructions.textContent = 'Point your device to scan room and tap to place furniture.';
-      }
-    });
-
-    modelViewer.addEventListener('model-visibility', event => {
-      if(event.detail.visible) {
-        instructions.textContent = 'Tap and drag to move or pinch to scale furniture.';
-        setTimeout(() => {
-          instructions.classList.add('hidden');
-        }, 4000);
-      }
-    });
-  </script>
+  <a-scene embedded arjs>
+    <!-- Marker (default Hiro) -->
+    <a-marker preset="hiro"></a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
 </body>
 </html>
-
