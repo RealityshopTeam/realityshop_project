@@ -55,7 +55,7 @@
 
     // Load avatar
     const loader = new GLTFLoader();
-    loader.load('./mixamo_avatar.glb', (gltf)=>{
+    loader.load('./baseAvatar.glb', (gltf)=>{
       avatar = gltf.scene;
       avatar.scale.set(1,1,1);
       avatar.position.set(0,0,0);
@@ -117,3 +117,4 @@
   </script>
 </body>
 </html>
+
