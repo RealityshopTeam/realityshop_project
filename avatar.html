@@ -25,8 +25,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';   // ❌ wrong
 // ✅ fix import (match importmap!)
-import { GLTFLoader as Loader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader as Loader } from 'three/examples/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
 
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
@@ -147,3 +147,4 @@ animate();
 </script>
 </body>
 </html>
+
