@@ -2,58 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Reality Shop — Advanced Avatar Try-On (Auto Pose)</title>
+<title>Reality Shop — Auto-Fit Avatar Try-On</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
-  :root{--panel-bg:#0f1724;--panel-fg:#e6eef8}
-  body{margin:0;height:100vh;background:#0b1220;color:var(--panel-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  body{margin:0;height:100vh;background:#0b1220;color:#e6eef8;font-family:sans-serif}
   #canvas-wrap{position:fixed;inset:0}
-  #ui{position:fixed;left:12px;top:12px;width:320px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
+  #ui{position:fixed;left:12px;top:12px;width:300px;background:#111b2a;border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:10}
   #ui h3{margin:0 0 8px;font-size:16px;color:#9be7ff}
-  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-  label{font-size:13px;color:#bcdcff}
-  select,input[type=color]{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:var(--panel-fg)}
-  button{background:#06b4d4;color:#06202a;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
-  button.secondary{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--panel-fg)}
-  small.hint{display:block;color:#7aa8bf;margin-top:6px;font-size:12px}
-  .slot-list{display:flex;gap:8px;flex-wrap:wrap}
-  .slot{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03);font-size:13px}
-  footer.note{position:fixed;right:12px;bottom:12px;font-size:13px;color:#9fbfce}
+  label{font-size:13px;color:#bcdcff;display:block;margin-bottom:4px}
+  select,input[type=color]{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0b1220;color:#fff;margin-bottom:8px}
+  button{background:#06b4d4;color:#fff;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;margin-right:6px}
+  button.secondary{background:transparent;border:1px solid rgba(255,255,255,.1)}
+  .slot{padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.08);font-size:13px;margin-top:4px}
 </style>
 </head>
 <body>
 <div id="ui">
-  <h3>Avatar Try-On — Controls</h3>
-  <div class="row">
-    <label style="flex:1">Avatar</label>
-    <select id="avatarSelect">
-      <option value="imgs/avatar.glb">avatar.glb (default)</option>
-    </select>
-  </div>
-  <div class="row">
-    <label style="flex:1">Auto-rotate</label>
-    <input id="autoRotate" type="checkbox" checked />
-  </div>
-  <div class="row">
-    <label style="flex:1">Clothing tint</label>
-    <input id="tint" type="color" value="#ffffff" />
-  </div>
-  <div style="margin-top:6px">
-    <div style="display:flex;gap:8px">
-      <button id="screenshotBtn">Download PNG</button>
-      <button id="resetBtn" class="secondary">Reset</button>
-    </div>
-    <small class="hint">Products come from <code>localStorage.selectedClothing</code></small>
-  </div>
-  <hr style="opacity:.06;margin:10px 0">
-  <div>
-    <label>Worn items</label>
-    <div id="slots" class="slot-list"></div>
-  </div>
+  <h3>Avatar Try-On</h3>
+  <label>Avatar</label>
+  <select id="avatarSelect">
+    <option value="imgs/avatar.glb">avatar.glb</option>
+  </select>
+  <label>Clothing Tint</label>
+  <input id="tint" type="color" value="#ffffff" />
+  <button id="screenshotBtn">📸 PNG</button>
+  <button id="resetBtn" class="secondary">Reset</button>
+  <h4>Worn Items</h4>
+  <div id="slots"></div>
 </div>
-
 <div id="canvas-wrap"></div>
-<footer class="note">Reality Shop — Auto Pose Demo</footer>
 
 <script type="importmap">
 {
@@ -68,11 +45,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
+import * as SkeletonUtils from 'three/examples/utils/SkeletonUtils.js';
 
 const canvasWrap = document.getElementById('canvas-wrap');
 const ui = {
   avatarSelect: document.getElementById('avatarSelect'),
-  autoRotate: document.getElementById('autoRotate'),
   tint: document.getElementById('tint'),
   screenshotBtn: document.getElementById('screenshotBtn'),
   resetBtn: document.getElementById('resetBtn'),
@@ -86,8 +63,8 @@ const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 200
 camera.position.set(0, 1.6, 3.2);
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 canvasWrap.appendChild(renderer.domElement);
 
@@ -97,141 +74,115 @@ controls.enableDamping = true;
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0x222233, 0.9));
 const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-dir.position.set(3, 10, 5);
+dir.position.set(3,10,5);
 dir.castShadow = true;
 scene.add(dir);
 
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(14,14),
-  new THREE.MeshStandardMaterial({ color: 0x0f1724 })
-);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
-
 const loader = new GLTFLoader();
 let avatar = null;
-let avatarSkel = null;
+let avatarSkeleton = null;
 let mixers = [];
-let clothingObjects = [];
-const slotMap = {};
+const worn = {};
 
-// ========== POSE SYSTEM ==========
-function poseAvatarForClothing(category) {
-  if (!avatar) return;
-  avatar.traverse(bone => {
-    if (!bone.isBone) return;
-    const lname = bone.name.toLowerCase();
-    if ((category === 'Clothing') && lname.includes("arm")) {
-      bone.rotation.z = THREE.MathUtils.degToRad(25);
-    }
-    if (category === 'pants' && lname.includes("leg")) {
-      bone.rotation.y = lname.includes("left") ? THREE.MathUtils.degToRad(10) : THREE.MathUtils.degToRad(-10);
-    }
-    if (category === 'shoes' && (lname.includes("foot")||lname.includes("ankle"))) {
-      bone.rotation.x = THREE.MathUtils.degToRad(5);
-    }
-    if (category === 'hat' && lname.includes("head")) {
-      bone.rotation.x = THREE.MathUtils.degToRad(-5);
-    }
-  });
-}
-
-// ========== CLOTHING LOAD ==========
-async function loadAndWear(item) {
-  if(!item || !item.glb) return;
-  return new Promise((resolve, reject) => {
-    loader.load(item.glb, gltf => {
-      const root = gltf.scene.clone();
-      root.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; } });
-
-      // Auto pose before fitting
-      poseAvatarForClothing(item.category);
-
-      scene.add(root);
-      clothingObjects.push(root);
-
-      const key = (item.slot || item.category || 'accessory').toLowerCase();
-      slotMap[key] = { mesh: root, info: item };
-      addSlotUI(key, item);
-
-      resolve(root);
-    }, undefined, err => reject(err));
-  });
-}
-
-function addSlotUI(name, info) {
-  const el = document.createElement('div');
-  el.className = 'slot';
-  el.textContent = `${name}: ${info.name||info.glb}`;
-  ui.slots.appendChild(el);
-}
-
-// ========== AVATAR LOAD ==========
-async function loadScene() {
-  if(avatar) scene.remove(avatar);
-
-  const avatarUrl = ui.avatarSelect.value;
-  avatar = await new Promise((res, rej) => {
-    loader.load(avatarUrl, gltf => {
-      const av = gltf.scene;
-      av.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; } });
+async function loadAvatar(url){
+  return new Promise((resolve, reject)=>{
+    loader.load(url, gltf=>{
+      const av = SkeletonUtils.clone(gltf.scene);
+      av.traverse(n=>{ if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; } });
       scene.add(av);
 
-      avatarSkel = null;
-      av.traverse(n => { if(!avatarSkel && n.isSkinnedMesh) avatarSkel = n.skeleton; });
+      // Skeleton reference
+      av.traverse(n=>{
+        if(n.isSkinnedMesh && !avatarSkeleton){
+          avatarSkeleton = n.skeleton;
+        }
+      });
 
-      mixers = [];
+      // Animation if present
       if(gltf.animations.length){
         const mix = new THREE.AnimationMixer(av);
         mix.clipAction(gltf.animations[0]).play();
         mixers.push(mix);
       }
-      res(av);
-    }, undefined, err => rej(err));
+      resolve(av);
+    },undefined,reject);
   });
-
-  let selected = null;
-  try { selected = JSON.parse(localStorage.getItem('selectedClothing')); } catch(e){}
-  if(selected){
-    const items = Array.isArray(selected)?selected:[selected];
-    for(const it of items){ await loadAndWear(it); }
-  }
 }
 
-// ========== UI ==========
-ui.screenshotBtn.onclick = ()=> {
+async function loadClothing(item){
+  return new Promise((resolve,reject)=>{
+    loader.load(item.glb, gltf=>{
+      const cloth = SkeletonUtils.clone(gltf.scene);
+      cloth.traverse(n=>{
+        if(n.isSkinnedMesh && avatarSkeleton){
+          // Bind clothing to avatar skeleton
+          n.skeleton = avatarSkeleton;
+          n.bind(avatarSkeleton, n.bindMatrix);
+        }
+        if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; }
+      });
+      scene.add(cloth);
+      worn[item.name] = cloth;
+      addSlotUI(item);
+      resolve(cloth);
+    },undefined,reject);
+  });
+}
+
+function addSlotUI(item){
+  const el = document.createElement('div');
+  el.className='slot';
+  el.textContent=item.name;
+  ui.slots.appendChild(el);
+}
+
+// ==== UI actions ====
+ui.screenshotBtn.onclick=()=>{
   renderer.domElement.toBlob(b=>{
     const a=document.createElement('a');
     a.href=URL.createObjectURL(b);a.download='avatar.png';a.click();
   });
 };
-ui.resetBtn.onclick = ()=> { localStorage.removeItem('selectedClothing'); loadScene(); };
-ui.avatarSelect.onchange = ()=> loadScene();
 
-// Start
-await loadScene();
+ui.resetBtn.onclick=()=>{
+  localStorage.removeItem("selectedClothing");
+  location.reload();
+};
 
-// ========== LOOP ==========
-let last = performance.now();
+ui.avatarSelect.onchange=async ()=>{
+  if(avatar) scene.remove(avatar);
+  avatar = await loadAvatar(ui.avatarSelect.value);
+};
+
+// ==== INIT ====
+avatar = await loadAvatar(ui.avatarSelect.value);
+
+// Demo clothing (replace with products.html data)
+const demoClothes = [
+  { name:"T-Shirt", glb:"imgs/tshirt.glb" },
+  { name:"Pants", glb:"imgs/pants.glb" }
+];
+
+// Auto load demo clothes
+for(const c of demoClothes){ await loadClothing(c); }
+
+// ==== LOOP ====
+let last=performance.now();
 function tick(){
   requestAnimationFrame(tick);
-  const now = performance.now();
-  const dt = (now-last)/1000; last = now;
-  if(ui.autoRotate.checked && avatar){ avatar.rotation.y += dt*0.25; }
+  const now=performance.now();
+  const dt=(now-last)/1000;last=now;
   mixers.forEach(m=>m.update(dt));
   controls.update();
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 tick();
 
-addEventListener('resize', ()=>{
-  camera.aspect = innerWidth/innerHeight;
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(innerWidth,innerHeight);
 });
 </script>
 </body>
 </html>
-
-
