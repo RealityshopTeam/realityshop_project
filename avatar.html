@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Avatar Try-On - Reality Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { margin:0; overflow:hidden; background:#121212; }
-    #canvas-container { width:100%; height:100vh; }
-  </style>
+<meta charset="UTF-8" />
+<title>Avatar Try-On - Reality Shop</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css">
+<style>
+  body { margin:0; overflow:hidden; background:#121212; color:white; }
+  #canvas-container { width:100%; height:100vh; display:block; }
+</style>
 </head>
 <body>
 <div id="canvas-container"></div>
@@ -35,81 +36,92 @@ camera.position.set(0,1.6,2);
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1.5,0);
+controls.target.set(0,1,0);
 controls.update();
 
 // Lights
-scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1.2));
+const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
+hemiLight.position.set(0,2,0);
+scene.add(hemiLight);
+
 const dirLight = new THREE.DirectionalLight(0xffffff,1);
-dirLight.position.set(2,3,5);
+dirLight.position.set(0,2,2);
+dirLight.castShadow = true;
 scene.add(dirLight);
+
+// Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10,10),
+    new THREE.ShadowMaterial({opacity:0.3})
+);
+floor.rotation.x=-Math.PI/2;
+floor.position.y=0;
+floor.receiveShadow=true;
+scene.add(floor);
 
 const loader = new GLTFLoader();
 let avatar, avatarSkeleton;
 
-// --- Load Ready Player Me avatar ---
 async function loadAvatar() {
-  return new Promise((resolve, reject)=>{
-    loader.load("baseAvatar.glb", gltf=>{ // replace with your avatar URL
-      avatar = gltf.scene;
-      avatar.traverse(c=>{
-        if(c.isSkinnedMesh && c.skeleton){
-          avatarSkeleton = c.skeleton; // Capture skeleton for clothing
-        }
-      });
-      scene.add(avatar);
-      resolve();
-    }, undefined, err=>reject(err));
-  });
-}
+    return new Promise((resolve, reject)=>{
+        loader.load('baseAvatar.glb', gltf=>{
+            avatar = gltf.scene;
+            avatar.traverse(c=>{ if(c.isMesh) {c.castShadow=true; c.receiveShadow=true;} });
+            scene.add(avatar);
 
-// --- Load clothing from products.html ---
-async function loadClothing() {
-  const selected = JSON.parse(localStorage.getItem("selectedClothing"));
-  if(!selected) return;
+            avatarSkeleton = {};
+            avatar.traverse(obj=>{
+                if(obj.isBone) avatarSkeleton[obj.name] = obj;
+            });
 
-  loader.load(selected.glb, gltf=>{
-    const clothing = gltf.scene;
-
-    // Bind clothing meshes to avatar skeleton
-    clothing.traverse(c=>{
-      if(c.isSkinnedMesh && avatarSkeleton){
-        try {
-          c.bind(avatarSkeleton);
-        } catch(e){
-          console.warn("⚠️ Binding failed", e);
-        }
-      }
+            resolve();
+        }, undefined, err=>reject(err));
     });
-
-    scene.add(clothing);
-    console.log("✅ Wearing:", selected.category);
-  });
 }
 
-// Init
-(async ()=>{
-  await loadAvatar();
-  await loadClothing();
-})();
+async function loadClothing() {
+    const selected = JSON.parse(localStorage.getItem("selectedClothing") || null);
+    if(!selected || !selected.glb) return;
 
-window.addEventListener("resize", ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    loader.load(selected.glb, gltf=>{
+        const clothing = gltf.scene;
+        clothing.traverse(c=>{ if(c.isMesh) c.castShadow=true; });
+
+        // --- Attach clothing to avatar ---
+        avatar.add(clothing); // parent to avatar root
+        clothing.position.set(0,0,0);
+        clothing.rotation.set(0,0,0);
+        clothing.scale.set(1,1,1);
+
+        // Optional: adjust Y-offset for shirts/jackets
+        if(selected.category === 'Clothing') {
+            clothing.position.y = 1.0; // move up slightly to torso
+        }
+    }, undefined, err=>console.error(err));
+}
+
+async function init() {
+    await loadAvatar();
+    await loadClothing();
+}
+
+init();
+
+window.addEventListener('resize', ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-function animate(){
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
 }
 animate();
 </script>
-  dfads
 </body>
 </html>
-
-
