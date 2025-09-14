@@ -2,147 +2,129 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Reality Shop — Avatar Try-On</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Avatar Try-On - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin:0; overflow:hidden; background:#121212; }
-    #canvas-container { width:100%; height:100vh; }
+    body { margin:0; overflow:hidden; background:#111; color:white; font-family:Arial; }
+    #info { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; }
+    #controls { position:absolute; top:10px; right:10px; display:flex; gap:8px; }
+    button {
+      padding:6px 12px; border:none; border-radius:6px;
+      background:#0072ff; color:#fff; font-weight:bold; cursor:pointer;
+    }
+    button:hover { background:#0055cc; }
   </style>
+
+  <!-- Import Map -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+      "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
-<div id="canvas-container"></div>
+  <div id="info">👕 Avatar Clothing Try-On</div>
+  <div id="controls">
+    <button id="idleBtn">Idle</button>
+    <button id="tposeBtn">T-Pose</button>
+    <button id="walkBtn">Walk</button>
+  </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-    "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
-  }
-}
-</script>
+  <script type="module">
+    import * as THREE from "three";
+    import { OrbitControls } from "three/examples/controls/OrbitControls.js";
+    import { GLTFLoader } from "three/examples/loaders/GLTFLoader.js";
 
-<script type="module">
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
-import * as SkeletonUtils from 'three/examples/utils/SkeletonUtils.js';
+    let scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x111111);
 
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x121212);
+    let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 1.6, 3);
 
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 100);
-camera.position.set(0, 1.6, 3);
+    let renderer = new THREE.WebGLRenderer({antialias:true});
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-container.appendChild(renderer.domElement);
+    let controls = new OrbitControls(camera, renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1.2,0);
-controls.update();
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
+    scene.add(new THREE.DirectionalLight(0xffffff, 1));
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1.2));
-const dirLight = new THREE.DirectionalLight(0xffffff,1);
-dirLight.position.set(2,4,2);
-dirLight.castShadow = true;
-scene.add(dirLight);
+    let loader = new GLTFLoader();
+    let mixer, avatar, avatarSkeleton;
+    let actions = {};
 
-// Ground
-const floor = new THREE.Mesh(
-  new THREE.PlaneGeometry(10,10),
-  new THREE.ShadowMaterial({opacity:0.3})
-);
-floor.rotation.x = -Math.PI/2;
-floor.position.y = 0;
-floor.receiveShadow = true;
-scene.add(floor);
-
-const loader = new GLTFLoader();
-let avatar, avatarSkeleton, mixer;
-
-// ✅ Load Avatar + Animations
-async function loadAvatar() {
-  return new Promise((resolve, reject) => {
+    // === Load Avatar ===
     loader.load("imgs/avatar.glb", (gltf) => {
-      avatar = SkeletonUtils.clone(gltf.scene);
-      avatar.traverse(o => { if(o.isMesh){ o.castShadow = true; o.receiveShadow = true; } });
+      avatar = gltf.scene;
+      avatar.position.set(0,-1,0);
       scene.add(avatar);
 
-      // Get skeleton
-      avatar.traverse(obj => {
-        if (obj.isSkinnedMesh && !avatarSkeleton) {
+      // Skeleton
+      avatar.traverse(obj=>{
+        if(obj.isSkinnedMesh){
           avatarSkeleton = obj.skeleton;
         }
       });
 
-      // Play animation (if available)
-      if (gltf.animations && gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(avatar);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
-      }
-
-      resolve();
-    }, undefined, reject);
-  });
-}
-
-// ✅ Load Clothing & Retarget to Avatar Skeleton
-async function loadClothing(item) {
-  if (!item || !item.glb) return;
-  return new Promise((resolve, reject) => {
-    loader.load(item.glb, (gltf) => {
-      const clothing = SkeletonUtils.clone(gltf.scene);
-
-      clothing.traverse(n => {
-        if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
-        if (n.isSkinnedMesh && avatarSkeleton) {
-          // Bind clothing skin to avatar skeleton
-          n.bind(avatarSkeleton);
-        }
+      // Animations
+      mixer = new THREE.AnimationMixer(avatar);
+      gltf.animations.forEach((clip)=>{
+        actions[clip.name] = mixer.clipAction(clip);
       });
 
-      avatar.add(clothing);
-      clothing.position.set(0,0,0);
-      clothing.scale.set(1,1,1);
+      // Play Idle by default
+      if(actions["Idle"]) actions["Idle"].play();
+      else if(gltf.animations[0]) mixer.clipAction(gltf.animations[0]).play();
 
-      resolve(clothing);
-    }, undefined, reject);
-  });
-}
+      // === Load Clothing from localStorage ===
+      let selected = localStorage.getItem("selectedClothing");
+      if(selected){
+        let product = JSON.parse(selected);
+        if(product.glb){
+          loader.load(product.glb, (clothGltf)=>{
+            let clothing = clothGltf.scene;
+            clothing.traverse(obj=>{
+              if(obj.isSkinnedMesh && avatarSkeleton){
+                obj.skeleton = avatarSkeleton;
+                obj.bind(avatarSkeleton);
+              }
+            });
+            avatar.add(clothing);
+          });
+        }
+      }
+    });
 
-// ✅ Init
-async function init() {
-  await loadAvatar();
+    // === Animation Controls ===
+    function playAction(name){
+      for(let key in actions){
+        actions[key].stop();
+      }
+      if(actions[name]) actions[name].reset().play();
+    }
+    document.getElementById("idleBtn").onclick = ()=> playAction("Idle");
+    document.getElementById("tposeBtn").onclick = ()=> playAction("T-Pose");
+    document.getElementById("walkBtn").onclick = ()=> playAction("Walk");
 
-  const selected = JSON.parse(localStorage.getItem("selectedClothing"));
-  if (selected) {
-    await loadClothing(selected);
-  } else {
-    console.warn("⚠️ No clothing found in localStorage!");
-  }
-}
+    // Animate
+    let clock = new THREE.Clock();
+    function animate(){
+      requestAnimationFrame(animate);
+      let delta = clock.getDelta();
+      if(mixer) mixer.update(delta);
+      renderer.render(scene,camera);
+    }
+    animate();
 
-init();
-
-// ✅ Animate
-let clock = new THREE.Clock();
-function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  if (mixer) mixer.update(delta);
-  renderer.render(scene, camera);
-}
-animate();
-
-// Responsive
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-</script>
+    window.addEventListener("resize", ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+  </script>
 </body>
 </html>
