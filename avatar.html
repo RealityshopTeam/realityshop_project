@@ -4,14 +4,14 @@
 <meta charset="UTF-8" />
 <title>Avatar Try-On - Reality Shop</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="styles.css">
 <style>
-  body { margin:0; overflow:hidden; background:#121212; }
+  body { margin:0; overflow:hidden; background:#121212; color:white; }
   #canvas-container { width:100%; height:100vh; display:block; }
 </style>
 </head>
 <body>
 <div id="canvas-container"></div>
-
 <script type="importmap">
 {
   "imports": {
@@ -20,7 +20,6 @@
   }
 }
 </script>
-
 <script type="module">
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
@@ -39,114 +38,112 @@ renderer.shadowMap.enabled = true;
 container.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1.2,0);
+controls.target.set(0,1,0);
 controls.update();
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x444444,1.2));
+// Lights
+const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
+hemiLight.position.set(0,2,0);
+scene.add(hemiLight);
 const dirLight = new THREE.DirectionalLight(0xffffff,1);
-dirLight.position.set(2,4,2);
+dirLight.position.set(0,2,2);
 dirLight.castShadow = true;
 scene.add(dirLight);
+// Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10,10),
+    new THREE.ShadowMaterial({opacity:0.3})
+);
+floor.rotation.x=-Math.PI/2;
+floor.position.y=0;
+floor.receiveShadow=true;
+scene.add(floor);
 
 const loader = new GLTFLoader();
-let avatar, mixer, avatarSkeleton, bones = {};
+let avatar, avatarSkeleton, avatarMixer, defaultAction;
 
-// Load avatar
 async function loadAvatar() {
-  return new Promise((resolve, reject)=>{
-    loader.load("baseAvatar.glb", gltf=>{
-      avatar = gltf.scene;
-      scene.add(avatar);
+    return new Promise((resolve, reject)=>{
+        loader.load('baseAvatar.glb', gltf=>{
+            avatar = gltf.scene;
+            avatar.traverse(c=>{ 
+                if(c.isMesh) {c.castShadow=true; c.receiveShadow=true;}
+            });
+            scene.add(avatar);
 
-      if (gltf.animations && gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(avatar);
-        mixer.clipAction(gltf.animations[0]).play();
-      }
+            // Build skeleton map
+            avatarSkeleton = {};
+            avatar.traverse(obj=>{
+                if(obj.isBone) avatarSkeleton[obj.name] = obj;
+            });
 
-      avatar.traverse(obj=>{
-        if(obj.isBone){
-          bones[obj.name.toLowerCase()] = obj; // store bone refs in lowercase
-        }
-        if(obj.isSkinnedMesh && obj.skeleton){
-          avatarSkeleton = obj.skeleton;
-        }
-      });
-
-      resolve();
-    }, undefined, err=>reject(err));
-  });
-}
-
-// Attach clothing to correct bone
-function attachClothingToBone(clothing, category) {
-  let targetBone = null;
-
-  if(category === "shirt" || category === "jacket") {
-    targetBone = bones["spine"] || bones["spine1"] || bones["chest"];
-  } else if(category === "pants") {
-    targetBone = bones["hips"];
-  } else if(category === "shoes") {
-    targetBone = bones["foot_l"] || bones["foot_r"] || bones["leftfoot"] || bones["rightfoot"];
-  } else {
-    targetBone = avatar; // fallback: attach to avatar root
-  }
-
-  if(targetBone) {
-    targetBone.add(clothing);
-    clothing.position.set(0,0,0);
-    clothing.rotation.set(0,0,0);
-    clothing.scale.set(1,1,1);
-  }
-}
-
-// Load clothing dynamically
-async function loadClothing() {
-  const selected = JSON.parse(localStorage.getItem("selectedClothing") || null);
-  if(!selected || !selected.glb) return;
-
-  loader.load(selected.glb, gltf=>{
-    const clothing = gltf.scene;
-
-    let bound = false;
-    clothing.traverse(c=>{
-      if(c.isSkinnedMesh && avatarSkeleton){
-        try {
-          c.bind(avatarSkeleton);
-          bound = true;
-        } catch(e){
-          console.warn("⚠️ Binding failed", e);
-        }
-      }
+            resolve(gltf);
+        }, undefined, err=>reject(err));
     });
-
-    if(bound){
-      scene.add(clothing); // skinned clothing
-    } else {
-      attachClothingToBone(clothing, selected.category?.toLowerCase());
-    }
-
-    console.log("✅ Clothing loaded:", selected.name);
-  }, undefined, err=>console.error(err));
 }
 
-// Init
-(async ()=>{
-  await loadAvatar();
-  await loadClothing();
-})();
+function poseAvatarForTryon() {
+    // Example: raise arms for T-Pose
+    if(avatarSkeleton["mixamorigLeftArm"] && avatarSkeleton["mixamorigRightArm"]) {
+        avatarSkeleton["mixamorigLeftArm"].rotation.z = Math.PI/2;
+        avatarSkeleton["mixamorigRightArm"].rotation.z = -Math.PI/2;
+    }
+    // Slight spread for legs if needed
+    if(avatarSkeleton["mixamorigLeftUpLeg"] && avatarSkeleton["mixamorigRightUpLeg"]) {
+        avatarSkeleton["mixamorigLeftUpLeg"].rotation.y = 0.1;
+        avatarSkeleton["mixamorigRightUpLeg"].rotation.y = -0.1;
+    }
+}
+
+function fitClothingToAvatar(clothing) {
+    clothing.traverse(mesh=>{
+        if(mesh.isSkinnedMesh && mesh.skeleton && avatarSkeleton) {
+            // Try to retarget clothing to avatar skeleton (requiring Bone Name Match)
+            mesh.skeleton.bones.forEach((bone, i)=>{
+                if (avatarSkeleton[bone.name]) {
+                    mesh.skeleton.bones[i] = avatarSkeleton[bone.name];
+                }
+            });
+            mesh.bind(new THREE.Skeleton(Object.values(avatarSkeleton)), mesh.bindMatrix);
+        } else if(mesh.isMesh) {
+            // If not skinned, try to align with body
+            // E.g., shirts: move up to torso, pants move down, etc.
+            mesh.position.set(0, 1, 0); // Y offset to fit torso (adjust category if needed)
+            mesh.scale.set(1, 1, 1);   // Optionally scale
+        }
+    });
+    avatar.add(clothing); // Parent to avatar root
+}
+
+async function loadClothing() {
+    const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
+    if(!selected || !selected.glb) return;
+
+    loader.load(selected.glb, gltf=>{
+        const clothing = gltf.scene;
+        clothing.traverse(c=>{ 
+            if(c.isMesh || c.isSkinnedMesh) c.castShadow=true; 
+        });
+        fitClothingToAvatar(clothing);
+    }, undefined, err=>console.error(err));
+}
+
+async function init() {
+    await loadAvatar();
+    poseAvatarForTryon(); // Default T-pose
+    await loadClothing();
+}
+init();
 
 window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-const clock = new THREE.Clock();
 function animate() {
-  requestAnimationFrame(animate);
-  const delta = clock.getDelta();
-  if(mixer) mixer.update(delta);
-  renderer.render(scene, camera);
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
 }
 animate();
 </script>
