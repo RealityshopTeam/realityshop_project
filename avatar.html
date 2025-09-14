@@ -160,7 +160,7 @@ avatar = await loadAvatar(ui.avatarSelect.value);
 // ==== Load products from products.html ====
 async function loadProductsFromPage(){
   try{
-    const res = await fetch("products.html");
+    const res = await fetch("product.html");
     const text = await res.text();
     const doc = new DOMParser().parseFromString(text,"text/html");
 
@@ -197,3 +197,4 @@ addEventListener('resize',()=>{
 </script>
 </body>
 </html>
+
