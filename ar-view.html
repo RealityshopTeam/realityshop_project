@@ -6,38 +6,23 @@
   <style>
     body { margin: 0; overflow: hidden; }
   </style>
-
-  <!-- Importmap -->
-  <script type="importmap">
-  {
-    "imports": {
-      "aframe": "https://unpkg.com/aframe@1.4.2/dist/aframe.min.js",
-      "arjs-aframe": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"
-    }
-  }
-  </script>
-
-  <!-- Load A-Frame -->
-  <script type="module">
-    import * as AFRAME from "aframe";
-    window.AFRAME = AFRAME; // expose as global
-  </script>
-
-  <!-- Load AR.js -->
-  <script type="module">
-    import "arjs-aframe";
-  </script>
+<script src="https://aframe.io/releases/0.8.2/aframe.min.js"></script>
+<script src="https://cdn.rawgit.com/jeromeetienne/AR.js/1.6.2/aframe/build/aframe-ar.js"></srcipt>
 </head>
 <body style="margin:0; overflow:hidden;">
   <a-scene embedded arjs>
     <a-marker preset="hiro">
-      <a-entity
-        position="0 0 0"
-        scale="0.05 0.05 0.05"
-        gltf-model="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/scene.gltf">
-      </a-entity>
+      <a-box position="0 0.5 0" material="color:red">
+        <a-animation attribute="rotation"
+          dur="3000"
+          to="360 360 0"
+          repeat="indefinite"
+          easing="linear">
+          </a-animation>
+      </a-box>
     </a-marker>
     <a-entity camera></a-entity>
   </a-scene>
 </body>
 </html>
+
