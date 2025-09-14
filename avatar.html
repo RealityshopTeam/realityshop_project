@@ -4,22 +4,23 @@
   <meta charset="UTF-8" />
   <title>Avatar Try-On - Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="styles.css">
   <style>
     body { margin:0; overflow:hidden; background:#121212; color:white; }
-    #canvas-container { width:100%; height:100vh; display:block; }
+    #canvas-container { width:100%; height:100vh; }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
+
   <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-        "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
-      }
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+      "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
     }
+  }
   </script>
+
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
@@ -45,6 +46,7 @@
     const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
     hemiLight.position.set(0,2,0);
     scene.add(hemiLight);
+
     const dirLight = new THREE.DirectionalLight(0xffffff,1);
     dirLight.position.set(0,2,2);
     dirLight.castShadow = true;
@@ -52,45 +54,76 @@
 
     // Floor
     const floor = new THREE.Mesh(
-        new THREE.PlaneGeometry(10,10),
-        new THREE.ShadowMaterial({opacity:0.3})
+      new THREE.PlaneGeometry(10,10),
+      new THREE.ShadowMaterial({opacity:0.3})
     );
-    floor.rotation.x=-Math.PI/2;
-    floor.position.y=0;
-    floor.receiveShadow=true;
+    floor.rotation.x = -Math.PI/2;
+    floor.position.y = 0;
+    floor.receiveShadow = true;
     scene.add(floor);
 
     const loader = new GLTFLoader();
     let avatar, avatarSkeleton;
 
-    // Load base avatar model
+    // Example "auto-fit" body morph values that could come from clothing metadata
+    // Adjust these values dynamically if you have real user data or clothing sizes
+    let morphFit = {
+      chest: 0.4,
+      waist: 0.5,
+      hips: 0.3
+    };
+
+    // Utility to build a bone name to bone object map
+    function buildSkeletonMap(model) {
+      const map = {};
+      model.traverse(obj => {
+        if(obj.isBone) map[obj.name] = obj;
+      });
+      return map;
+    }
+
+    // Apply morph targets to avatar mesh for auto-fitting
+    function applyMorphTargets(mesh, morphValues) {
+      if(mesh.morphTargetDictionary) {
+        if(morphValues.chest && mesh.morphTargetDictionary["chest"] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary["chest"]] = morphValues.chest;
+        if(morphValues.waist && mesh.morphTargetDictionary["waist"] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary["waist"]] = morphValues.waist;
+        if(morphValues.hips && mesh.morphTargetDictionary["hips"] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary["hips"]] = morphValues.hips;
+      }
+    }
+
     async function loadAvatar() {
-      return new Promise((resolve, reject)=> {
+      return new Promise((resolve, reject) => {
         loader.load('baseAvatar.glb', gltf => {
           avatar = gltf.scene;
-          avatar.traverse(obj => {
-            if(obj.isMesh) {obj.castShadow = true; obj.receiveShadow = true;}
-          });
           scene.add(avatar);
 
-          // Build skeleton map from avatar
-          avatarSkeleton = {};
+          // Setup skeleton map
+          avatarSkeleton = buildSkeletonMap(avatar);
+
+          // Apply morph targets to avatar's meshes
           avatar.traverse(obj => {
-            if(obj.isBone) avatarSkeleton[obj.name] = obj;
+            if(obj.isMesh) {
+              applyMorphTargets(obj, morphFit);
+              obj.castShadow = true;
+              obj.receiveShadow = true;
+            }
           });
+
           resolve();
-        }, undefined, err => reject(err));
+        }, undefined, reject);
       });
     }
 
-    // Retarget clothing skeleton to match avatar
-    function retargetClothingSkeleton(clothing, avatarSkeleton) {
+    // Retarget clothing skeleton to avatar's skeleton by matching bone names
+    function retargetClothingSkeleton(clothing) {
       clothing.traverse(obj => {
         if(obj.isSkinnedMesh && obj.skeleton) {
-          // For every bone in clothing skeleton, swap with avatar bone if name matches
-          obj.skeleton.bones.forEach((bone, idx)=>{
-            if(avatarSkeleton[bone.name]) {
-              obj.skeleton.bones[idx] = avatarSkeleton[bone.name];
+          obj.skeleton.bones.forEach((bone, i) => {
+            if (avatarSkeleton[bone.name]) {
+              obj.skeleton.bones[i] = avatarSkeleton[bone.name];
             }
           });
           obj.bind(new THREE.Skeleton(Object.values(avatarSkeleton)), obj.bindMatrix);
@@ -98,38 +131,58 @@
       });
     }
 
-    // Attach clothing
-    async function loadClothing(clothingUrl) {
-      loader.load(clothingUrl, gltf => {
-        const clothing = gltf.scene;
-        clothing.traverse(obj => {
-          if(obj.isMesh || obj.isSkinnedMesh) obj.castShadow = true;
-        });
-        // Try to retarget clothing to the avatar's skeleton
-        retargetClothingSkeleton(clothing, avatarSkeleton);
+    async function loadClothing() {
+      const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
+      if(!selected || !selected.glb) {
+        console.warn("No selected clothing found in localStorage.");
+        return;
+      }
+      
+      return new Promise((resolve, reject) => {
+        loader.load(selected.glb, gltf => {
+          const clothing = gltf.scene;
 
-        // Add to avatar (so it follows all animations/poses)
-        avatar.add(clothing);
-      }, undefined, err => console.error(err));
+          // Set shadows on clothing
+          clothing.traverse(obj => {
+            if(obj.isMesh || obj.isSkinnedMesh) {
+              obj.castShadow = true;
+              obj.receiveShadow = true;
+
+              // Apply morph targets to clothing if present (sync with avatar morphFit)
+              applyMorphTargets(obj, morphFit);
+            }
+          });
+
+          // Retarget clothing skeleton to avatar skeleton for perfect fit and animation
+          retargetClothingSkeleton(clothing);
+
+          // Add clothing as child of avatar so it moves with avatar.animation
+          avatar.add(clothing);
+
+          resolve();
+        }, undefined, reject);
+      });
     }
 
     async function init() {
       await loadAvatar();
-      // EXAMPLE: load a clothing glb, update the link for your test clothing!
-      await loadClothing('shirt.glb'); // <-- replace with actual clothing file name
+      await loadClothing();
     }
+
     init();
 
-    window.addEventListener('resize', ()=>{
-      camera.aspect = window.innerWidth/window.innerHeight;
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
+
     function animate() {
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
     }
     animate();
+
   </script>
 </body>
 </html>
