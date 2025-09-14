@@ -1,151 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Avatar Try-On - Reality Shop</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link rel="stylesheet" href="styles.css">
-<style>
-  body { margin:0; overflow:hidden; background:#121212; color:white; }
-  #canvas-container { width:100%; height:100vh; display:block; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Avatar Try-On - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { margin:0; overflow:hidden; background:#121212; color:white; }
+    #canvas-container { width:100%; height:100vh; display:block; }
+  </style>
 </head>
 <body>
-<div id="canvas-container"></div>
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-    "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
-  }
-}
-</script>
-<script type="module">
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
-
-const container = document.getElementById('canvas-container');
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x121212);
-
-const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0,1.6,2);
-
-const renderer = new THREE.WebGLRenderer({ antialias:true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.shadowMap.enabled = true;
-container.appendChild(renderer.domElement);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1,0);
-controls.update();
-
-// Lights
-const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
-hemiLight.position.set(0,2,0);
-scene.add(hemiLight);
-const dirLight = new THREE.DirectionalLight(0xffffff,1);
-dirLight.position.set(0,2,2);
-dirLight.castShadow = true;
-scene.add(dirLight);
-// Floor
-const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(10,10),
-    new THREE.ShadowMaterial({opacity:0.3})
-);
-floor.rotation.x=-Math.PI/2;
-floor.position.y=0;
-floor.receiveShadow=true;
-scene.add(floor);
-
-const loader = new GLTFLoader();
-let avatar, avatarSkeleton, avatarMixer, defaultAction;
-
-async function loadAvatar() {
-    return new Promise((resolve, reject)=>{
-        loader.load('baseAvatar.glb', gltf=>{
-            avatar = gltf.scene;
-            avatar.traverse(c=>{ 
-                if(c.isMesh) {c.castShadow=true; c.receiveShadow=true;}
-            });
-            scene.add(avatar);
-
-            // Build skeleton map
-            avatarSkeleton = {};
-            avatar.traverse(obj=>{
-                if(obj.isBone) avatarSkeleton[obj.name] = obj;
-            });
-
-            resolve(gltf);
-        }, undefined, err=>reject(err));
-    });
-}
-
-function poseAvatarForTryon() {
-    // Example: raise arms for T-Pose
-    if(avatarSkeleton["mixamorigLeftArm"] && avatarSkeleton["mixamorigRightArm"]) {
-        avatarSkeleton["mixamorigLeftArm"].rotation.z = Math.PI/2;
-        avatarSkeleton["mixamorigRightArm"].rotation.z = -Math.PI/2;
+  <div id="canvas-container"></div>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+        "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+      }
     }
-    // Slight spread for legs if needed
-    if(avatarSkeleton["mixamorigLeftUpLeg"] && avatarSkeleton["mixamorigRightUpLeg"]) {
-        avatarSkeleton["mixamorigLeftUpLeg"].rotation.y = 0.1;
-        avatarSkeleton["mixamorigRightUpLeg"].rotation.y = -0.1;
-    }
-}
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
+    import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
 
-function fitClothingToAvatar(clothing) {
-    clothing.traverse(mesh=>{
-        if(mesh.isSkinnedMesh && mesh.skeleton && avatarSkeleton) {
-            // Try to retarget clothing to avatar skeleton (requiring Bone Name Match)
-            mesh.skeleton.bones.forEach((bone, i)=>{
-                if (avatarSkeleton[bone.name]) {
-                    mesh.skeleton.bones[i] = avatarSkeleton[bone.name];
-                }
-            });
-            mesh.bind(new THREE.Skeleton(Object.values(avatarSkeleton)), mesh.bindMatrix);
-        } else if(mesh.isMesh) {
-            // If not skinned, try to align with body
-            // E.g., shirts: move up to torso, pants move down, etc.
-            mesh.position.set(0, 1, 0); // Y offset to fit torso (adjust category if needed)
-            mesh.scale.set(1, 1, 1);   // Optionally scale
-        }
-    });
-    avatar.add(clothing); // Parent to avatar root
-}
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x121212);
 
-async function loadClothing() {
-    const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
-    if(!selected || !selected.glb) return;
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+    camera.position.set(0,1.6,2);
 
-    loader.load(selected.glb, gltf=>{
-        const clothing = gltf.scene;
-        clothing.traverse(c=>{ 
-            if(c.isMesh || c.isSkinnedMesh) c.castShadow=true; 
-        });
-        fitClothingToAvatar(clothing);
-    }, undefined, err=>console.error(err));
-}
-
-async function init() {
-    await loadAvatar();
-    poseAvatarForTryon(); // Default T-pose
-    await loadClothing();
-}
-init();
-
-window.addEventListener('resize', ()=>{
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-});
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
 
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
-animate();
-</script>
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0,1,0);
+    controls.update();
+
+    // Lights
+    const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
+    hemiLight.position.set(0,2,0);
+    scene.add(hemiLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff,1);
+    dirLight.position.set(0,2,2);
+    dirLight.castShadow = true;
+    scene.add(dirLight);
+
+    // Floor
+    const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(10,10),
+        new THREE.ShadowMaterial({opacity:0.3})
+    );
+    floor.rotation.x=-Math.PI/2;
+    floor.position.y=0;
+    floor.receiveShadow=true;
+    scene.add(floor);
+
+    const loader = new GLTFLoader();
+    let avatar, avatarSkeleton;
+    // Example body profile: Adjust for custom fitting as needed
+    let bodyShape = { chest: 0.3, waist: 0.5, hips: 0.6 };
+
+    // Build skeleton mapping for bone retargeting
+    function buildSkeletonMap(model) {
+      const map = {};
+      model.traverse(obj => {
+        if(obj.isBone) map[obj.name] = obj;
+      });
+      return map;
+    }
+
+    // Retarget clothing skeleton to avatar skeleton
+    function retargetClothingSkeleton(skinnedMesh, skeletonMap) {
+      if(skinnedMesh.isSkinnedMesh && skinnedMesh.skeleton) {
+        skinnedMesh.skeleton.bones.forEach((bone, i) => {
+          if (skeletonMap[bone.name]) {
+            skinnedMesh.skeleton.bones[i] = skeletonMap[bone.name];
+          }
+        });
+        skinnedMesh.bind(new THREE.Skeleton(Object.values(skeletonMap)), skinnedMesh.bindMatrix);
+      }
+    }
+
+    // Load avatar with optional morph targets (shape keys)
+    async function loadAvatar() {
+      return new Promise((resolve, reject) => {
+        loader.load('baseAvatar.glb', gltf => {
+          avatar = gltf.scene;
+          avatarSkeleton = buildSkeletonMap(avatar);
+          scene.add(avatar);
+
+          // Morph targets support (body shaping)
+          avatar.traverse(obj => {
+            if(obj.isMesh && obj.morphTargetDictionary) {
+              // Set shape to desired fit
+              if(obj.morphTargetDictionary["chest"]) obj.morphTargetInfluences[obj.morphTargetDictionary["chest"]] = bodyShape.chest;
+              if(obj.morphTargetDictionary["waist"]) obj.morphTargetInfluences[obj.morphTargetDictionary["waist"]] = bodyShape.waist;
+              if(obj.morphTargetDictionary["hips"]) obj.morphTargetInfluences[obj.morphTargetDictionary["hips"]] = bodyShape.hips;
+            }
+          });
+          resolve();
+        }, undefined, reject);
+      });
+    }
+
+    // Position avatar for try-on (T-pose)
+    function poseTPose(skeleton) {
+      if(skeleton["mixamorigLeftArm"] && skeleton["mixamorigRightArm"]) {
+        skeleton["mixamorigLeftArm"].rotation.z = Math.PI/2;
+        skeleton["mixamorigRightArm"].rotation.z = -Math.PI/2;
+      }
+      if(skeleton["mixamorigLeftUpLeg"] && skeleton["mixamorigRightUpLeg"]) {
+        skeleton["mixamorigLeftUpLeg"].rotation.y = 0.1;
+        skeleton["mixamorigRightUpLeg"].rotation.y = -0.1;
+      }
+    }
+
+    // Load, retarget, and morph-fit clothing
+    async function loadClothing() {
+      const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
+      if(!selected || !selected.glb) return;
+      loader.load(selected.glb, gltf => {
+        const clothing = gltf.scene;
+        clothing.traverse(obj => {
+          if(obj.isMesh || obj.isSkinnedMesh) obj.castShadow = true;
+          // Morph targets for clothing mesh
+          if(obj.morphTargetDictionary) {
+            if(obj.morphTargetDictionary["chest"]) obj.morphTargetInfluences[obj.morphTargetDictionary["chest"]] = bodyShape.chest;
+            if(obj.morphTargetDictionary["waist"]) obj.morphTargetInfluences[obj.morphTargetDictionary["waist"]] = bodyShape.waist;
+            if(obj.morphTargetDictionary["hips"]) obj.morphTargetInfluences[obj.morphTargetDictionary["hips"]] = bodyShape.hips;
+          }
+          // Retarget skeleton for skinned meshes
+          retargetClothingSkeleton(obj, avatarSkeleton);
+        });
+        avatar.add(clothing);
+      }, undefined, err => console.error(err));
+    }
+
+    async function init() {
+      await loadAvatar();
+      poseTPose(avatarSkeleton);
+      await loadClothing();
+    }
+    init();
+
+    window.addEventListener('resize', ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
 </body>
 </html>
