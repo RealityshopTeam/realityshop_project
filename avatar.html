@@ -23,7 +23,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { SkeletonUtils } from 'three/addons/utils/SkeletonUtils.js';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { AnimationMixer } from 'three';
 
 let scene, camera, renderer, controls;
@@ -163,3 +163,4 @@ window.addEventListener('resize', ()=>{
 </script>
 </body>
 </html>
+
