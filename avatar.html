@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Reality Shop — Advanced Avatar Try-On</title>
+<title>Reality Shop — Advanced Avatar Try-On (Auto Pose)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   :root{--panel-bg:#0f1724;--panel-fg:#e6eef8}
   body{margin:0;height:100vh;background:#0b1220;color:var(--panel-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
   #canvas-wrap{position:fixed;inset:0}
-  #ui{position:fixed;left:12px;top:12px;width:340px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
+  #ui{position:fixed;left:12px;top:12px;width:320px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
   #ui h3{margin:0 0 8px;font-size:16px;color:#9be7ff}
   .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
   label{font-size:13px;color:#bcdcff}
@@ -22,52 +22,38 @@
 </style>
 </head>
 <body>
-<div id="ui" aria-hidden="false">
+<div id="ui">
   <h3>Avatar Try-On — Controls</h3>
-
   <div class="row">
     <label style="flex:1">Avatar</label>
     <select id="avatarSelect">
       <option value="baseAvatar.glb">baseAvatar.glb (default)</option>
     </select>
   </div>
-
   <div class="row">
     <label style="flex:1">Auto-rotate</label>
     <input id="autoRotate" type="checkbox" checked />
   </div>
-
   <div class="row">
     <label style="flex:1">Clothing tint</label>
     <input id="tint" type="color" value="#ffffff" />
   </div>
-
-  <div class="row">
-    <label style="flex:1">Animations</label>
-    <select id="animSelect">
-      <option value="Idle">Idle</option>
-      <option value="Walk">Walk</option>
-      <option value="Wave">Wave</option>
-    </select>
-  </div>
-
   <div style="margin-top:6px">
     <div style="display:flex;gap:8px">
       <button id="screenshotBtn">Download PNG</button>
-      <button id="resetBtn" class="secondary">Reset Scene</button>
+      <button id="resetBtn" class="secondary">Reset</button>
     </div>
-    <small class="hint">Selected products come from <code>localStorage.selectedClothing</code>. Use products.html TryOn to set it.</small>
+    <small class="hint">Products come from <code>localStorage.selectedClothing</code></small>
   </div>
-
   <hr style="opacity:.06;margin:10px 0">
   <div>
     <label>Worn items</label>
-    <div id="slots" class="slot-list" aria-live="polite"></div>
+    <div id="slots" class="slot-list"></div>
   </div>
 </div>
 
 <div id="canvas-wrap"></div>
-<footer class="note">Reality Shop — Client-only demo</footer>
+<footer class="note">Reality Shop — Auto Pose Demo</footer>
 
 <script type="importmap">
 {
@@ -83,11 +69,11 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
 
+const canvasWrap = document.getElementById('canvas-wrap');
 const ui = {
   avatarSelect: document.getElementById('avatarSelect'),
   autoRotate: document.getElementById('autoRotate'),
   tint: document.getElementById('tint'),
-  animSelect: document.getElementById('animSelect'),
   screenshotBtn: document.getElementById('screenshotBtn'),
   resetBtn: document.getElementById('resetBtn'),
   slots: document.getElementById('slots')
@@ -100,8 +86,10 @@ const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 200
 camera.position.set(0, 1.6, 3.2);
 
 const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
-document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+renderer.shadowMap.enabled = true;
+canvasWrap.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0,1.2,0);
@@ -110,109 +98,138 @@ controls.enableDamping = true;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x222233, 0.9));
 const dir = new THREE.DirectionalLight(0xffffff, 1.0);
 dir.position.set(3, 10, 5);
+dir.castShadow = true;
 scene.add(dir);
 
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(14,14),
+  new THREE.MeshStandardMaterial({ color: 0x0f1724 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
 const loader = new GLTFLoader();
-let avatar, avatarSkel, mixer, actions = {}, activeAction;
+let avatar = null;
+let avatarSkel = null;
+let mixers = [];
+let clothingObjects = [];
+const slotMap = {};
 
-// --- Load Avatar ---
-async function loadAvatar(url) {
-  return new Promise((resolve,reject)=>{
-    loader.load(url, gltf=>{
-      if(avatar) scene.remove(avatar);
-      avatar = gltf.scene;
-      scene.add(avatar);
-
-      // skeleton
-      avatarSkel = null;
-      avatar.traverse(o=>{ if(o.isSkinnedMesh && o.skeleton) avatarSkel = o.skeleton; });
-
-      // animations
-      mixer = new THREE.AnimationMixer(avatar);
-      actions = {};
-      gltf.animations.forEach(clip=>{
-        actions[clip.name] = mixer.clipAction(clip);
-      });
-      playAnim("Idle");
-      resolve();
-    },undefined,reject);
+// ========== POSE SYSTEM ==========
+function poseAvatarForClothing(category) {
+  if (!avatar) return;
+  avatar.traverse(bone => {
+    if (!bone.isBone) return;
+    const lname = bone.name.toLowerCase();
+    if ((category === 'shirt' || category === 'jacket') && lname.includes("arm")) {
+      bone.rotation.z = THREE.MathUtils.degToRad(25);
+    }
+    if (category === 'pants' && lname.includes("leg")) {
+      bone.rotation.y = lname.includes("left") ? THREE.MathUtils.degToRad(10) : THREE.MathUtils.degToRad(-10);
+    }
+    if (category === 'shoes' && (lname.includes("foot")||lname.includes("ankle"))) {
+      bone.rotation.x = THREE.MathUtils.degToRad(5);
+    }
+    if (category === 'hat' && lname.includes("head")) {
+      bone.rotation.x = THREE.MathUtils.degToRad(-5);
+    }
   });
 }
 
-// --- Play Animations ---
-function playAnim(name) {
-  if(!actions[name]) return;
-  if(activeAction) activeAction.fadeOut(0.3);
-  activeAction = actions[name];
-  activeAction.reset().fadeIn(0.3).play();
-}
+// ========== CLOTHING LOAD ==========
+async function loadAndWear(item) {
+  if(!item || !item.glb) return;
+  return new Promise((resolve, reject) => {
+    loader.load(item.glb, gltf => {
+      const root = gltf.scene.clone();
+      root.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; } });
 
-// --- Load Clothing ---
-async function loadClothing(item) {
-  return new Promise((resolve,reject)=>{
-    loader.load(item.glb,gltf=>{
-      const clothing = gltf.scene;
-      let bound = false;
+      // Auto pose before fitting
+      poseAvatarForClothing(item.category);
 
-      clothing.traverse(o=>{
-        if(o.isSkinnedMesh && avatarSkel) {
-          try{ o.bind(avatarSkel); bound=true; }catch(e){}
-        }
-      });
+      scene.add(root);
+      clothingObjects.push(root);
 
-      if(!bound) {
-        // simple auto-fit to torso height
-        const box = new THREE.Box3().setFromObject(clothing);
-        const size = box.getSize(new THREE.Vector3());
-        const scale = 1.2 / size.y;
-        clothing.scale.setScalar(scale);
-        clothing.position.y = 1.0; // move near chest
-      }
+      const key = (item.slot || item.category || 'accessory').toLowerCase();
+      slotMap[key] = { mesh: root, info: item };
+      addSlotUI(key, item);
 
-      avatar.add(clothing);
-      resolve();
-    },undefined,reject);
+      resolve(root);
+    }, undefined, err => reject(err));
   });
 }
 
-// --- Scene Loader ---
+function addSlotUI(name, info) {
+  const el = document.createElement('div');
+  el.className = 'slot';
+  el.textContent = `${name}: ${info.name||info.glb}`;
+  ui.slots.appendChild(el);
+}
+
+// ========== AVATAR LOAD ==========
 async function loadScene() {
-  await loadAvatar(ui.avatarSelect.value);
-  const selected = JSON.parse(localStorage.getItem("selectedClothing")||"null");
-  if(selected) await loadClothing(selected);
-}
+  if(avatar) scene.remove(avatar);
 
-// --- UI Events ---
-ui.animSelect.addEventListener("change",()=>playAnim(ui.animSelect.value));
-ui.screenshotBtn.addEventListener("click",()=>{
-  renderer.domElement.toBlob(b=>{
-    const a=document.createElement("a");
-    a.href=URL.createObjectURL(b);
-    a.download="avatar.png";a.click();
+  const avatarUrl = ui.avatarSelect.value;
+  avatar = await new Promise((res, rej) => {
+    loader.load(avatarUrl, gltf => {
+      const av = gltf.scene;
+      av.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; } });
+      scene.add(av);
+
+      avatarSkel = null;
+      av.traverse(n => { if(!avatarSkel && n.isSkinnedMesh) avatarSkel = n.skeleton; });
+
+      mixers = [];
+      if(gltf.animations.length){
+        const mix = new THREE.AnimationMixer(av);
+        mix.clipAction(gltf.animations[0]).play();
+        mixers.push(mix);
+      }
+      res(av);
+    }, undefined, err => rej(err));
   });
-});
-ui.resetBtn.addEventListener("click",()=>{
-  localStorage.removeItem("selectedClothing");
-  loadScene();
-});
 
-// --- Init ---
-async function init() {
-  await loadScene();
-  animate();
+  let selected = null;
+  try { selected = JSON.parse(localStorage.getItem('selectedClothing')); } catch(e){}
+  if(selected){
+    const items = Array.isArray(selected)?selected:[selected];
+    for(const it of items){ await loadAndWear(it); }
+  }
 }
-init();
 
-// --- Loop ---
-const clock = new THREE.Clock();
-function animate(){
-  requestAnimationFrame(animate);
-  const dt=clock.getDelta();
-  if(mixer) mixer.update(dt);
-  if(ui.autoRotate.checked && avatar) avatar.rotation.y += dt*0.3;
+// ========== UI ==========
+ui.screenshotBtn.onclick = ()=> {
+  renderer.domElement.toBlob(b=>{
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download='avatar.png';a.click();
+  });
+};
+ui.resetBtn.onclick = ()=> { localStorage.removeItem('selectedClothing'); loadScene(); };
+ui.avatarSelect.onchange = ()=> loadScene();
+
+// Start
+await loadScene();
+
+// ========== LOOP ==========
+let last = performance.now();
+function tick(){
+  requestAnimationFrame(tick);
+  const now = performance.now();
+  const dt = (now-last)/1000; last = now;
+  if(ui.autoRotate.checked && avatar){ avatar.rotation.y += dt*0.25; }
+  mixers.forEach(m=>m.update(dt));
   controls.update();
-  renderer.render(scene,camera);
+  renderer.render(scene, camera);
 }
+tick();
+
+addEventListener('resize', ()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
 </script>
 </body>
 </html>
