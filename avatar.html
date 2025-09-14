@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<title>Reality Shop — Auto-Fit Avatar Try-On</title>
+<title>Reality Shop — Avatar Try-On (Products)</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
   body{margin:0;height:100vh;background:#0b1220;color:#e6eef8;font-family:sans-serif}
   #canvas-wrap{position:fixed;inset:0}
-  #ui{position:fixed;left:12px;top:12px;width:300px;background:#111b2a;border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:10}
+  #ui{position:fixed;left:12px;top:12px;width:320px;background:#111b2a;border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);z-index:10}
   #ui h3{margin:0 0 8px;font-size:16px;color:#9be7ff}
   label{font-size:13px;color:#bcdcff;display:block;margin-bottom:4px}
   select,input[type=color]{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:#0b1220;color:#fff;margin-bottom:8px}
@@ -157,14 +157,25 @@ ui.avatarSelect.onchange=async ()=>{
 // ==== INIT ====
 avatar = await loadAvatar(ui.avatarSelect.value);
 
-// Demo clothing (replace with products.html data)
-const demoClothes = [
-  { name:"T-Shirt", glb:"imgs/Tshort.glb" },
-  { name:"Pants", glb:"imgs/realistic_dress_shirt.glb" }
-];
+// ==== Load products from products.html ====
+async function loadProductsFromPage(){
+  try{
+    const res = await fetch("products.html");
+    const text = await res.text();
+    const doc = new DOMParser().parseFromString(text,"text/html");
 
-// Auto load demo clothes
-for(const c of demoClothes){ await loadClothing(c); }
+    // Example: clothing items in products.html with data attributes
+    const items = [...doc.querySelectorAll("[data-glb]")].map(el=>({
+      name: el.getAttribute("data-name") || "Item",
+      glb: el.getAttribute("data-glb")
+    }));
+
+    for(const c of items){ await loadClothing(c); }
+
+  }catch(e){ console.error("Failed to load products:", e); }
+}
+
+await loadProductsFromPage();
 
 // ==== LOOP ====
 let last=performance.now();
@@ -186,5 +197,3 @@ addEventListener('resize',()=>{
 </script>
 </body>
 </html>
-
-
