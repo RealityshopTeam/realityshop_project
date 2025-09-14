@@ -249,6 +249,18 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
     }
   }
 });
+    const { data, error } = await supabase.auth.signUp({
+  email,
+  password
+});
+
+if (data.user) {
+  // Insert a profile row with the same user ID
+  await supabase.from('profiles').insert([
+    { id: data.user.id, username: 'NewUser' }
+  ]);
+}
+
 </script>
 
   <footer>
@@ -257,5 +269,6 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
 
 </body>
 </html>
+
 
 
