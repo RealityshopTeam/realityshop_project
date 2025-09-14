@@ -167,7 +167,7 @@
       }
 
       const canAR = ['Furniture'].includes(product.category);
-      const canTryOn = ['Clothing'].includes(product.category);
+      const canTryOn = ['Clothing','Shoes'].includes(product.category);
 
       productDetails.innerHTML = `
         ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1"></model-viewer>` :
@@ -263,3 +263,4 @@
   </script>
 </body>
 </html>
+
