@@ -206,7 +206,7 @@
           retargetClothingSkeleton(clothing, avatarSkeleton);
 
           // Scale clothing dynamically according to average morph fit
-          const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 4;
+          const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 5;
           const baseScale = 0.02;
           clothing.scale.set(baseScale * avgMorph, baseScale * avgMorph, baseScale * avgMorph);
 
@@ -238,6 +238,7 @@
   </script>
 </body>
 </html>
+
 
 
 
