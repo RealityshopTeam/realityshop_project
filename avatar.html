@@ -98,7 +98,7 @@ async function loadClothing() {
         // scale clothing to fit width of avatar torso/legs
         let targetHeight;
         if(selected.category === "Clothing") {
-            targetHeight = avatarSize.y * 0.35; // torso region
+            targetHeight = avatarSize.y * 0.2; // torso region
         } else if(selected.category === "Pants") {
             targetHeight = avatarSize.y * 0.5;  // legs region
         } else if(selected.category === "Shoes") {
@@ -154,4 +154,5 @@ animate();
 </script>
 </body>
 </html>
+
 
