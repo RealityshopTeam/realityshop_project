@@ -1,60 +1,116 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Reality Shop - AR Furniture from Products</title>
+  <meta charset="UTF-8">
+  <title>Reality Shop - AR View (Universal)</title>
   <style>
-    body { margin: 0; overflow: hidden; }
+    body { margin: 0; overflow: hidden; background: black; }
+    video, canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
   </style>
 
-  <!-- Import maps -->
+  <!-- Importmap for modules -->
   <script type="importmap">
   {
     "imports": {
-      "aframe": "https://aframe.io/releases/1.2.0/aframe.min.js",
-      "arjs": "https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"
+      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+      "three/examples/": "https://unpkg.com/three@0.160.0/examples/jsm/"
     }
   }
   </script>
-
-  <script type="module">
-    import "aframe";
-    import "arjs";
-
-    async function loadProducts() {
-      // Fetch your product list
-      const res = await fetch("products.html");
-      const text = await res.text();
-
-      // Parse HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(text, "text/html");
-
-      // Get product items
-      const items = doc.querySelectorAll("#product-list li");
-
-      // Insert models into AR scene
-      const marker = document.querySelector("a-marker");
-      items.forEach((item, index) => {
-        const modelUrl = item.dataset.model;
-        if (modelUrl) {
-          const entity = document.createElement("a-entity");
-          entity.setAttribute("gltf-model", modelUrl);
-          entity.setAttribute("scale", "0.5 0.5 0.5");
-          entity.setAttribute("position", `${index * 1.5} 0 0`); // spread out
-          marker.appendChild(entity);
-        }
-      });
-    }
-
-    window.addEventListener("DOMContentLoaded", loadProducts);
-  </script>
 </head>
 <body>
-  <a-scene embedded arjs>
-    <!-- Marker (default Hiro) -->
-    <a-marker preset="hiro"></a-marker>
+  <!-- AR.js marker scene (hidden if marker not found) -->
+  <a-scene 
+    id="markerScene"
+    embedded 
+    vr-mode-ui="enabled: false" 
+    arjs="sourceType: webcam; debugUIEnabled: false;">
+    
+    <!-- Hiro marker (can replace with custom marker) -->
+    <a-marker preset="hiro">
+      <a-entity 
+        gltf-model="https://modelviewer.dev/shared-assets/models/Chair.glb"
+        scale="0.5 0.5 0.5"
+        rotation="0 -90 0">
+      </a-entity>
+    </a-marker>
+
     <a-entity camera></a-entity>
   </a-scene>
+
+  <!-- Fallback: Camera overlay with Three.js -->
+  <video id="camera" autoplay playsinline style="display:none;"></video>
+  <canvas id="overlay" style="display:none;"></canvas>
+
+  <script type="module">
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/examples/loaders/GLTFLoader.js";
+
+    const markerScene = document.getElementById("markerScene");
+    const video = document.getElementById("camera");
+    const overlay = document.getElementById("overlay");
+
+    // Detect if AR.js marker is working
+    let markerDetected = false;
+    markerScene.addEventListener("markerFound", () => {
+      markerDetected = true;
+      video.style.display = "none";
+      overlay.style.display = "none";
+    });
+
+    markerScene.addEventListener("markerLost", () => {
+      markerDetected = false;
+      startFallback();
+    });
+
+    // Fallback function
+    function startFallback() {
+      if (markerDetected) return; // skip if marker is active
+      markerScene.style.display = "none"; // hide AR.js
+      video.style.display = "block";
+      overlay.style.display = "block";
+
+      // Start camera
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => video.srcObject = stream);
+
+      // Three.js overlay
+      const renderer = new THREE.WebGLRenderer({ canvas: overlay, alpha: true });
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+      camera.position.z = 2;
+
+      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+      scene.add(light);
+
+      const loader = new GLTFLoader();
+      loader.load("https://modelviewer.dev/shared-assets/models/Chair.glb", (gltf) => {
+        const model = gltf.scene;
+        model.scale.set(0.5, 0.5, 0.5);
+        scene.add(model);
+        animate();
+      });
+
+      function animate() {
+        requestAnimationFrame(animate);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.render(scene, camera);
+      }
+    }
+
+    // Safety: if no marker after 5s, fallback
+    setTimeout(() => {
+      if (!markerDetected) startFallback();
+    }, 5000);
+  </script>
+
+  <!-- Load A-Frame + AR.js (non-module scripts, required by AR.js) -->
+  <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </body>
 </html>
