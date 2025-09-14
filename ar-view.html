@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Reality Shop - AR View (Universal)</title>
+  <title>Reality Shop - AR View</title>
   <style>
     body { margin: 0; overflow: hidden; background: black; }
     video, canvas {
@@ -13,7 +13,7 @@
     }
   </style>
 
-  <!-- Importmap for modules -->
+  <!-- Importmap -->
   <script type="importmap">
   {
     "imports": {
@@ -24,26 +24,16 @@
   </script>
 </head>
 <body>
-  <!-- AR.js marker scene (hidden if marker not found) -->
-  <a-scene 
-    id="markerScene"
-    embedded 
-    vr-mode-ui="enabled: false" 
-    arjs="sourceType: webcam; debugUIEnabled: false;">
-    
-    <!-- Hiro marker (can replace with custom marker) -->
+  <!-- Marker-based AR (AR.js) -->
+  <a-scene id="markerScene" embedded vr-mode-ui="enabled: false"
+           arjs="sourceType: webcam; debugUIEnabled: false;">
     <a-marker preset="hiro">
-      <a-entity 
-        gltf-model="imgs/chair.glb"
-        scale="0.5 0.5 0.5"
-        rotation="0 -90 0">
-      </a-entity>
+      <a-entity id="markerModel"></a-entity>
     </a-marker>
-
     <a-entity camera></a-entity>
   </a-scene>
 
-  <!-- Fallback: Camera overlay with Three.js -->
+  <!-- Fallback camera overlay -->
   <video id="camera" autoplay playsinline style="display:none;"></video>
   <canvas id="overlay" style="display:none;"></canvas>
 
@@ -51,45 +41,48 @@
     import * as THREE from "three";
     import { GLTFLoader } from "three/examples/loaders/GLTFLoader.js";
 
+    // Get product model from URL (ex: arview.html?product=models/chair.glb)
+    const urlParams = new URLSearchParams(window.location.search);
+    const modelUrl = urlParams.get("product") || "models/chair.glb";
+
     const markerScene = document.getElementById("markerScene");
     const video = document.getElementById("camera");
     const overlay = document.getElementById("overlay");
 
-    // Detect if AR.js marker is working
+    // Load model into AR.js marker
+    const markerModel = document.getElementById("markerModel");
+    markerModel.setAttribute("gltf-model", modelUrl);
+    markerModel.setAttribute("scale", "0.5 0.5 0.5");
+    markerModel.setAttribute("rotation", "0 -90 0");
+
     let markerDetected = false;
     markerScene.addEventListener("markerFound", () => {
       markerDetected = true;
       video.style.display = "none";
       overlay.style.display = "none";
     });
-
     markerScene.addEventListener("markerLost", () => {
       markerDetected = false;
-      startFallback();
+      startFallback(modelUrl);
     });
 
-    // Fallback function
-    function startFallback() {
-      if (markerDetected) return; // skip if marker is active
-      markerScene.style.display = "none"; // hide AR.js
+    function startFallback(modelUrl) {
+      if (markerDetected) return;
+      markerScene.style.display = "none";
       video.style.display = "block";
       overlay.style.display = "block";
 
-      // Start camera
       navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
         .then(stream => video.srcObject = stream);
 
-      // Three.js overlay
       const renderer = new THREE.WebGLRenderer({ canvas: overlay, alpha: true });
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
       camera.position.z = 2;
-
-      const light = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-      scene.add(light);
+      scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1));
 
       const loader = new GLTFLoader();
-      loader.load("https://modelviewer.dev/shared-assets/models/Chair.glb", (gltf) => {
+      loader.load(modelUrl, (gltf) => {
         const model = gltf.scene;
         model.scale.set(0.5, 0.5, 0.5);
         scene.add(model);
@@ -103,15 +96,14 @@
       }
     }
 
-    // Safety: if no marker after 5s, fallback
+    // If no marker after 5s, fallback
     setTimeout(() => {
-      if (!markerDetected) startFallback();
+      if (!markerDetected) startFallback(modelUrl);
     }, 5000);
   </script>
 
-  <!-- Load A-Frame + AR.js (non-module scripts, required by AR.js) -->
+  <!-- AR.js + A-Frame -->
   <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
   <script src="https://cdn.rawgit.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
 </body>
 </html>
-
