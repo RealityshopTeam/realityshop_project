@@ -11,7 +11,6 @@
 </head>
 <body>
   <div id="canvas-container"></div>
-
   <script type="importmap">
   {
     "imports": {
@@ -20,7 +19,6 @@
     }
   }
   </script>
-
   <script type="module">
     import * as THREE from 'three';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
@@ -65,6 +63,7 @@
     const loader = new GLTFLoader();
     let avatar, avatarSkeleton;
 
+    // Morph target values to auto-fit avatar shape (can be dynamic)
     let morphFit = { chest: 0.4, waist: 0.5, hips: 0.3 };
 
     function buildSkeletonMap(model) {
@@ -77,12 +76,12 @@
 
     function applyMorphTargets(mesh, morphValues) {
       if(mesh.morphTargetDictionary) {
-        if(morphValues.chest !== undefined && mesh.morphTargetDictionary["chest"] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary["chest"]] = morphValues.chest;
-        if(morphValues.waist !== undefined && mesh.morphTargetDictionary["waist"] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary["waist"]] = morphValues.waist;
-        if(morphValues.hips !== undefined && mesh.morphTargetDictionary["hips"] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary["hips"]] = morphValues.hips;
+        if(morphValues.chest !== undefined && mesh.morphTargetDictionary['chest'] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary['chest']] = morphValues.chest;
+        if(morphValues.waist !== undefined && mesh.morphTargetDictionary['waist'] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary['waist']] = morphValues.waist;
+        if(morphValues.hips !== undefined && mesh.morphTargetDictionary['hips'] !== undefined)
+          mesh.morphTargetInfluences[mesh.morphTargetDictionary['hips']] = morphValues.hips;
       }
     }
 
@@ -91,10 +90,9 @@
         loader.load('baseAvatar.glb', gltf => {
           avatar = gltf.scene;
           scene.add(avatar);
-
           avatarSkeleton = buildSkeletonMap(avatar);
 
-          // Baseline transforms: neutral pose, scale, reset morphs
+          // Baseline: neutral pose, scale, reset morph targets
           avatar.position.set(0, 0, 0);
           avatar.rotation.set(0, 0, 0);
           avatar.scale.set(1, 1, 1);
@@ -102,25 +100,25 @@
           avatar.traverse(obj => {
             if(obj.isMesh && obj.morphTargetInfluences) {
               for(let i = 0; i < obj.morphTargetInfluences.length; i++) {
-                obj.morphTargetInfluences[i] = 0; // Reset all morphs to baseline
+                obj.morphTargetInfluences[i] = 0; // baseline morph reset
               }
             }
           });
 
-          // Set T-Pose baseline
+          // Default T-pose function
           function poseTPose(skeleton) {
-            if(skeleton["mixamorigLeftArm"] && skeleton["mixamorigRightArm"]) {
-              skeleton["mixamorigLeftArm"].rotation.z = Math.PI/2;
-              skeleton["mixamorigRightArm"].rotation.z = -Math.PI/2;
+            if(skeleton['mixamorigLeftArm'] && skeleton['mixamorigRightArm']) {
+              skeleton['mixamorigLeftArm'].rotation.z = Math.PI/2;
+              skeleton['mixamorigRightArm'].rotation.z = -Math.PI/2;
             }
-            if(skeleton["mixamorigLeftUpLeg"] && skeleton["mixamorigRightUpLeg"]) {
-              skeleton["mixamorigLeftUpLeg"].rotation.y = 0.1;
-              skeleton["mixamorigRightUpLeg"].rotation.y = -0.1;
+            if(skeleton['mixamorigLeftUpLeg'] && skeleton['mixamorigRightUpLeg']) {
+              skeleton['mixamorigLeftUpLeg'].rotation.y = 0.1;
+              skeleton['mixamorigRightUpLeg'].rotation.y = -0.1;
             }
           }
           poseTPose(avatarSkeleton);
 
-          // Apply morph fit after baseline pose
+          // Apply morph-fit values after baseline
           avatar.traverse(obj => {
             if(obj.isMesh) {
               applyMorphTargets(obj, morphFit);
@@ -147,42 +145,43 @@
       });
     }
 
-    function attachClothingToRelevantBone(clothing, avatarSkeleton, category) {
-      let boneName;
-      switch((category || '').toLowerCase()) {
-        case 'shirt':
-        case 'jacket':
-        case 'clothing':
-          boneName = 'Spine';
-          break;
-        case 'pants':
-        case 'skirt':
-          boneName = 'Hips';
-          break;
-        case 'shoes':
-          boneName = 'LeftFoot';
-          break;
-        default:
-          boneName = 'Hips';
-      }
-      if(!avatarSkeleton[boneName]) {
-        console.warn("Bone not found for clothing attach:", boneName);
-        avatar.add(clothing);
+    // Get bounding box for avatar part based on mesh name substring (e.g. 'spine' or 'hips')
+    function getBoundingBoxForAvatarPart(partName) {
+      const bbox = new THREE.Box3();
+      let found = false;
+      avatar.traverse(obj => {
+        if(obj.isMesh && obj.name.toLowerCase().includes(partName.toLowerCase())) {
+          if(!found) {
+            bbox.copy(new THREE.Box3().setFromObject(obj));
+            found = true;
+          } else {
+            bbox.union(new THREE.Box3().setFromObject(obj));
+          }
+        }
+      });
+      return found ? bbox : null;
+    }
+
+    // Scale and position clothing to fit avatar bounding box dynamically
+    function fitClothingToAvatarPart(clothing, avatarBBox) {
+      if(!avatarBBox) {
+        console.warn('No bounding box found to fit clothing.');
         return;
       }
-      const parentBone = avatarSkeleton[boneName];
+      const clothingBBox = new THREE.Box3().setFromObject(clothing);
+      const avatarHeight = avatarBBox.max.y - avatarBBox.min.y;
+      const clothingHeight = clothingBBox.max.y - clothingBBox.min.y;
 
-      // Reset clothing transform before attaching
-      clothing.position.set(0,0,0);
-      clothing.rotation.set(0,0,0);
-      clothing.scale.set(1,1,1);
+      // Scale uniformly for height match
+      const scaleFactor = avatarHeight / clothingHeight;
+      clothing.scale.setScalar(scaleFactor);
 
-      parentBone.add(clothing);
+      clothing.updateMatrixWorld();
+      const scaledClothingBBox = new THREE.Box3().setFromObject(clothing);
 
-      // Optional Y-offset tweaks
-      if(boneName === 'Spine') clothing.position.y += 0;
-      else if(boneName === 'Hips') clothing.position.y += -0.9;
-      else if(boneName === 'LeftFoot') clothing.position.y += -1.8;
+      // Align bottom of clothing with bottom of avatar bbox on y-axis
+      const offsetY = avatarBBox.min.y - scaledClothingBBox.min.y;
+      clothing.position.set(0, offsetY, 0);
     }
 
     async function loadClothing() {
@@ -205,12 +204,14 @@
 
           retargetClothingSkeleton(clothing, avatarSkeleton);
 
-          // Scale clothing dynamically according to average morph fit
-          const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 5;
-          const baseScale = 0.01;
-          clothing.scale.set(baseScale * avgMorph, baseScale * avgMorph, baseScale * avgMorph);
+          // Determine avatar part for fitting dynamically
+          const avatarPart = (selected.category === 'pants' || selected.category === 'skirt') ? 'hips' : 'spine';
+          const avatarBBox = getBoundingBoxForAvatarPart(avatarPart);
 
-          attachClothingToRelevantBone(clothing, avatarSkeleton, selected.category);
+          fitClothingToAvatarPart(clothing, avatarBBox);
+
+          // Parent clothing to avatar root to follow animations/movements
+          avatar.add(clothing);
 
           resolve();
         }, undefined, reject);
@@ -234,14 +235,6 @@
       renderer.render(scene, camera);
     }
     animate();
-
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
