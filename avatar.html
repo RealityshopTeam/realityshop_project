@@ -54,7 +54,7 @@ dirLight.position.set(0,10,10);
 scene.add(dirLight);
 
 // === Load Avatar ===
-loader.load('avatar.glb', gltf => {
+loader.load('imgs/avatar.glb', gltf => {
   avatar = SkeletonUtils.clone(gltf.scene);
   scene.add(avatar);
 
@@ -163,4 +163,5 @@ window.addEventListener('resize', ()=>{
 </script>
 </body>
 </html>
+
 
