@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Avatar Try-On - Reality Shop</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  body { margin:0; overflow:hidden; background:#121212; }
-  #canvas-container { width:100%; height:100vh; display:block; }
-</style>
+  <meta charset="UTF-8" />
+  <title>Avatar Try-On - Reality Shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin:0; overflow:hidden; background:#121212; color:white; }
+    #canvas-container { width:100%; height:100vh; display:block; }
+  </style>
 </head>
 <body>
 <div id="canvas-container"></div>
@@ -64,37 +64,54 @@ async function loadAvatar() {
       });
       scene.add(avatar);
 
-      // find skeleton
+      // find skeleton (if skinned mesh exists)
       avatar.traverse(obj=>{
         if(obj.isSkinnedMesh){
           skeleton = obj.skeleton;
         }
       });
 
-      console.log("✅ Avatar loaded with skeleton:", skeleton);
+      console.log("✅ Avatar loaded");
       resolve();
     }, undefined, err=>reject(err));
   });
 }
 
-// --- Load Clothing and bind to skeleton ---
+// --- Load Clothing from products.html selection ---
 async function loadClothing() {
-  const selected = JSON.parse(localStorage.getItem("selectedClothing") || null);
-  if(!selected || !selected.glb) return;
+  const selected = JSON.parse(localStorage.getItem("selectedClothing") || "null");
+  if(!selected || !selected.glb) {
+    console.warn("⚠️ No clothing selected in products.html");
+    return;
+  }
 
   loader.load(selected.glb, (gltf)=>{
     const clothing = gltf.scene;
 
-    clothing.traverse(c=>{
-      if(c.isSkinnedMesh){
-        // Bind clothing to avatar skeleton
-        c.skeleton = skeleton;
-        c.bind(skeleton);
-      }
-    });
+    if(skeleton) {
+      // if avatar has skeleton and clothing is skinned
+      clothing.traverse(c=>{
+        if(c.isSkinnedMesh){
+          c.skeleton = skeleton;
+          c.bind(skeleton);
+        }
+      });
+    } else {
+      // fallback → scale and position with bounding boxes
+      const avatarBox = new THREE.Box3().setFromObject(avatar);
+      const clothingBox = new THREE.Box3().setFromObject(clothing);
+
+      const avatarSize = avatarBox.getSize(new THREE.Vector3());
+      const clothingSize = clothingBox.getSize(new THREE.Vector3());
+
+      const scale = avatarSize.y * 0.4 / clothingSize.y;
+      clothing.scale.set(scale, scale, scale);
+
+      clothing.position.set(0, avatarBox.min.y + avatarSize.y*0.5, 0);
+    }
 
     scene.add(clothing);
-    console.log("👕 Clothing loaded & bound:", selected.name);
+    console.log("👕 Clothing loaded:", selected.name);
   }, undefined, err=>console.error("❌ Clothing load failed", err));
 }
 
