@@ -1,33 +1,43 @@
 <!DOCTYPE html>
-<html>
-    // Example importing ar-threex.mjs
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.164.0/build/three.module.js",
-    "threex": "./path/to/ar-threex.mjs",
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Marker Based AR (A-Frame + Importmap)</title>
+  <style>
+    body { margin: 0; overflow: hidden; }
+  </style>
+
+  <!-- Importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "aframe": "https://unpkg.com/aframe@1.4.2/dist/aframe.min.js",
+      "arjs-aframe": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"
+    }
   }
-}
-</script>
+  </script>
 
-<script type="module">
-import * as THREE from 'three';
-import { ArToolkitSource, ArToolkitContext, ArMarkerControls }  from 'threex'
+  <!-- Load A-Frame -->
+  <script type="module">
+    import * as AFRAME from "aframe";
+    window.AFRAME = AFRAME; // expose as global
+  </script>
 
-// Your AR.js code here
-</script>
-    <body style="margin : 0px; overflow: hidden;">
-        <a-scene embedded arjs>
-        <a-marker preset="hiro">
-            <!-- we use cors proxy to avoid cross-origin problems ATTENTION! you need to set up your server -->
-            <a-entity
-            position="0 0 0"
-            scale="0.05 0.05 0.05"
-            gltf-model="your-server/https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/scene.gltf"
-            ></a-entity>
-        </a-marker>
-        <a-entity camera></a-entity>
-        </a-scene>
-    </body>
+  <!-- Load AR.js -->
+  <script type="module">
+    import "arjs-aframe";
+  </script>
+</head>
+<body style="margin:0; overflow:hidden;">
+  <a-scene embedded arjs>
+    <a-marker preset="hiro">
+      <a-entity
+        position="0 0 0"
+        scale="0.05 0.05 0.05"
+        gltf-model="https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/scene.gltf">
+      </a-entity>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
+</body>
 </html>
-
