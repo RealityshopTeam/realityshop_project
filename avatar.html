@@ -65,7 +65,6 @@
     const loader = new GLTFLoader();
     let avatar, avatarSkeleton;
 
-    // Morph target values to auto-fit avatar shape (can be made dynamic)
     let morphFit = { chest: 0.4, waist: 0.5, hips: 0.3 };
 
     function buildSkeletonMap(model) {
@@ -95,6 +94,33 @@
 
           avatarSkeleton = buildSkeletonMap(avatar);
 
+          // Baseline transforms: neutral pose, scale, reset morphs
+          avatar.position.set(0, 0, 0);
+          avatar.rotation.set(0, 0, 0);
+          avatar.scale.set(1, 1, 1);
+
+          avatar.traverse(obj => {
+            if(obj.isMesh && obj.morphTargetInfluences) {
+              for(let i = 0; i < obj.morphTargetInfluences.length; i++) {
+                obj.morphTargetInfluences[i] = 0; // Reset all morphs to baseline
+              }
+            }
+          });
+
+          // Set T-Pose baseline
+          function poseTPose(skeleton) {
+            if(skeleton["mixamorigLeftArm"] && skeleton["mixamorigRightArm"]) {
+              skeleton["mixamorigLeftArm"].rotation.z = Math.PI/2;
+              skeleton["mixamorigRightArm"].rotation.z = -Math.PI/2;
+            }
+            if(skeleton["mixamorigLeftUpLeg"] && skeleton["mixamorigRightUpLeg"]) {
+              skeleton["mixamorigLeftUpLeg"].rotation.y = 0.1;
+              skeleton["mixamorigRightUpLeg"].rotation.y = -0.1;
+            }
+          }
+          poseTPose(avatarSkeleton);
+
+          // Apply morph fit after baseline pose
           avatar.traverse(obj => {
             if(obj.isMesh) {
               applyMorphTargets(obj, morphFit);
@@ -146,15 +172,14 @@
       }
       const parentBone = avatarSkeleton[boneName];
 
-      // Reset transforms before parenting
+      // Reset clothing transform before attaching
       clothing.position.set(0,0,0);
       clothing.rotation.set(0,0,0);
       clothing.scale.set(1,1,1);
 
-      // Attach to correct bone
       parentBone.add(clothing);
 
-      // Optional Y offset tweaks
+      // Optional Y-offset tweaks
       if(boneName === 'Spine') clothing.position.y += 0;
       else if(boneName === 'Hips') clothing.position.y += -0.9;
       else if(boneName === 'LeftFoot') clothing.position.y += -1.8;
@@ -180,9 +205,9 @@
 
           retargetClothingSkeleton(clothing, avatarSkeleton);
 
-          // Dynamic scaling based on avatar morph target average
+          // Scale clothing dynamically according to average morph fit
           const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 3;
-          const baseScale = 0.1; // Adjust if your clothing model needs resizing baseline
+          const baseScale = 1.0;
           clothing.scale.set(baseScale * avgMorph, baseScale * avgMorph, baseScale * avgMorph);
 
           attachClothingToRelevantBone(clothing, avatarSkeleton, selected.category);
@@ -196,7 +221,6 @@
       await loadAvatar();
       await loadClothing();
     }
-
     init();
 
     window.addEventListener('resize', () => {
@@ -214,4 +238,3 @@
   </script>
 </body>
 </html>
-
