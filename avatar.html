@@ -55,12 +55,12 @@ scene.add(dirLight);
 
 // Floor
 const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(10,10),
-    new THREE.ShadowMaterial({opacity:0.3})
+  new THREE.PlaneGeometry(10,10),
+  new THREE.ShadowMaterial({opacity:0.3})
 );
-floor.rotation.x=-Math.PI/2;
-floor.position.y=0;
-floor.receiveShadow=true;
+floor.rotation.x = -Math.PI/2;
+floor.position.y = 0;
+floor.receiveShadow = true;
 scene.add(floor);
 
 const loader = new GLTFLoader();
@@ -74,10 +74,11 @@ async function loadAvatar() {
       avatar.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
       scene.add(avatar);
 
-      // extract skeleton
-      avatarSkeleton = null;
+      // Save skeleton from avatar
       avatar.traverse(obj => {
-        if (obj.isSkinnedMesh) avatarSkeleton = obj.skeleton;
+        if (obj.isSkinnedMesh) {
+          avatarSkeleton = obj.skeleton;
+        }
       });
 
       resolve();
@@ -85,9 +86,10 @@ async function loadAvatar() {
   });
 }
 
-// ✅ Load and Fit Clothing
+// ✅ Load Clothing and Auto-Fit
 async function loadClothing(item) {
   if (!item || !item.glb) return;
+
   return new Promise((resolve, reject) => {
     loader.load(item.glb, (gltf) => {
       const clothing = SkeletonUtils.clone(gltf.scene);
@@ -95,7 +97,7 @@ async function loadClothing(item) {
       clothing.traverse(n => {
         if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; }
         if (n.isSkinnedMesh && avatarSkeleton) {
-          n.bind(avatarSkeleton, n.matrixWorld); // attach clothing to avatar skeleton
+          n.bind(avatarSkeleton, n.matrixWorld); // attach to avatar skeleton
         }
       });
 
@@ -114,7 +116,10 @@ async function init() {
 
   const selected = JSON.parse(localStorage.getItem("selectedClothing"));
   if (selected) {
+    console.log("👕 Selected clothing:", selected);
     await loadClothing(selected);
+  } else {
+    console.warn("⚠️ No clothing selected in localStorage!");
   }
 }
 
