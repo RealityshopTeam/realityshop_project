@@ -1,43 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Marker Based AR (Fixed Importmap)</title>
-    <style>
-      body { margin: 0; overflow: hidden; }
-    </style>
-
-    <!-- Importmap -->
-    <script type="importmap">
-    {
-      "imports": {
-        "aframe": "https://unpkg.com/aframe@1.4.2/dist/aframe.min.js",
-        "arjs-aframe": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"
-      }
-    }
-    </script>
-
-    <!-- Load A-Frame as global first -->
-    <script type="module">
-      import * as AFRAME from "aframe";
-      window.AFRAME = AFRAME; // 👈 expose to global
-    </script>
-
-    <!-- Then load AR.js -->
-    <script type="module">
-      import "arjs-aframe";
-    </script>
-  </head>
-  <body>
-    <!-- AR Scene -->
-    <a-scene embedded arjs>
-      <!-- Marker -->
-      <a-marker preset="hiro">
-        <a-box position="0 0.5 0" material="color: green;"></a-box>
-      </a-marker>
-
-      <!-- Camera -->
-      <a-entity camera></a-entity>
-    </a-scene>
-  </body>
+<html>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <!-- we import arjs version without NFT but with marker + location based support -->
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <body style="margin : 0px; overflow: hidden;">
+        <a-scene embedded arjs>
+        <a-marker preset="hiro">
+            <!-- we use cors proxy to avoid cross-origin problems ATTENTION! you need to set up your server -->
+            <a-entity
+            position="0 0 0"
+            scale="0.05 0.05 0.05"
+            gltf-model="your-server/https://raw.githack.com/AR-js-org/AR.js/master/aframe/examples/image-tracking/nft/trex/scene.gltf"
+            ></a-entity>
+        </a-marker>
+        <a-entity camera></a-entity>
+        </a-scene>
+    </body>
 </html>
