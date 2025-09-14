@@ -98,7 +98,7 @@ async function loadClothing() {
         // scale clothing to fit width of avatar torso/legs
         let targetHeight;
         if(selected.category === "Clothing") {
-            targetHeight = avatarSize.y * 0.2; // torso region
+            targetHeight = avatarSize.y * 0.45; // torso region
         } else if(selected.category === "Pants") {
             targetHeight = avatarSize.y * 0.5;  // legs region
         } else if(selected.category === "Shoes") {
@@ -116,7 +116,7 @@ async function loadClothing() {
 
         // position clothing on avatar
         if(selected.category === "Clothing") {
-            clothing.position.y = avatarBox.min.y + avatarSize.y * 0.4- newSize.y/2;
+            clothing.position.y = avatarBox.min.y + avatarSize.y * 0.6- newSize.y/2;
         } else if(selected.category === "Pants") {
             clothing.position.y = avatarBox.min.y + avatarSize.y * 0.35 - newSize.y/2;
         } else if(selected.category === "Shoes") {
@@ -154,6 +154,7 @@ animate();
 </script>
 </body>
 </html>
+
 
 
 
