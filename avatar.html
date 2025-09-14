@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Avatar Try-On - Reality Shop</title>
+  <title>Reality Shop — Avatar Try-On</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { margin:0; overflow:hidden; background:#111; color:white; font-family:Arial; }
-    #controls { position:absolute; top:10px; left:10px; display:flex; gap:10px; }
+    #controls { position:absolute; top:10px; left:10px; }
     button {
       padding:6px 12px; border:none; border-radius:6px;
       background:#0072ff; color:#fff; font-weight:bold; cursor:pointer;
@@ -14,7 +14,7 @@
     button:hover { background:#0055cc; }
   </style>
 
-  <!-- Import Map -->
+  <!-- ImportMap -->
   <script type="importmap">
   {
     "imports": {
@@ -26,10 +26,7 @@
 </head>
 <body>
   <div id="controls">
-    <button data-action="Idle">Idle</button>
-    <button data-action="T-Pose">T-Pose</button>
-    <button data-action="Walk">Walk</button>
-    <button data-action="Run">Run</button>
+    <button id="reset">Reset Avatar</button>
   </div>
 
   <script type="module">
@@ -57,40 +54,36 @@
 
     let loader = new GLTFLoader();
     let mixer, avatar, avatarSkeleton;
-    let actions = {};
-    let activeAction;
 
     // === Load Avatar ===
-    loader.load("imgs/avatar.glb", (gltf) => {
-      avatar = gltf.scene;
-      avatar.position.set(0,-1,0);
-      scene.add(avatar);
+    async function loadAvatar(){
+      return new Promise((resolve, reject)=>{
+        loader.load("imgs/avatar.glb", (gltf)=>{
+          avatar = gltf.scene;
+          avatar.position.set(0,-1,0);
+          scene.add(avatar);
 
-      // Get skeleton
-      avatar.traverse(obj=>{
-        if(obj.isSkinnedMesh && !avatarSkeleton){
-          avatarSkeleton = obj.skeleton;
-        }
+          // Capture skeleton
+          avatar.traverse(obj=>{
+            if(obj.isSkinnedMesh && !avatarSkeleton){
+              avatarSkeleton = obj.skeleton;
+            }
+          });
+
+          // Default animation (if available)
+          if(gltf.animations.length){
+            mixer = new THREE.AnimationMixer(avatar);
+            let action = mixer.clipAction(gltf.animations[0]);
+            action.play();
+          }
+
+          resolve();
+        }, undefined, reject);
       });
+    }
 
-      // Animations
-      mixer = new THREE.AnimationMixer(avatar);
-      gltf.animations.forEach((clip)=>{
-        actions[clip.name] = mixer.clipAction(clip);
-      });
-
-      // Start with Idle if available
-      if(actions["Idle"]) {
-        activeAction = actions["Idle"];
-        activeAction.play();
-      }
-
-      // Load clothing after avatar
-      loadClothing();
-    });
-
-    // === Load Clothing ===
-    function loadClothing(){
+    // === Load Clothing from localStorage (set in product.html) ===
+    async function loadClothing(){
       let selected = localStorage.getItem("selectedClothing");
       if(!selected) return;
 
@@ -111,25 +104,19 @@
       });
     }
 
-    // === Switch Animation ===
-    function fadeToAction(name){
-      if(!actions[name]) return;
-      if(activeAction === actions[name]) return;
+    // === Reset button ===
+    document.getElementById("reset").onclick = ()=>{
+      scene.remove(avatar);
+      avatar = null;
+      avatarSkeleton = null;
+      loadAvatar().then(loadClothing);
+    };
 
-      if(activeAction){
-        activeAction.fadeOut(0.3);
-      }
-      activeAction = actions[name];
-      activeAction.reset().fadeIn(0.3).play();
-    }
+    // Start
+    await loadAvatar();
+    await loadClothing();
 
-    document.querySelectorAll("button[data-action]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        fadeToAction(btn.dataset.action);
-      });
-    });
-
-    // Animate
+    // Animate loop
     let clock = new THREE.Clock();
     function animate(){
       requestAnimationFrame(animate);
@@ -139,6 +126,7 @@
     }
     animate();
 
+    // Resize
     window.addEventListener("resize", ()=>{
       camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
