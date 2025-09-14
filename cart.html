@@ -190,6 +190,127 @@
   <div class="actions">
     <button class="btn-main" onclick="clearCart()">Clear Cart</button>
     <button class="btn-main">Proceed to Checkout</button>
+    import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyShoppingApp());
+}
+
+class MyShoppingApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Online Shopping App',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: CartScreen(),
+    );
+  }
+}
+
+class CartScreen extends StatelessWidget {
+  final List<String> cartItems = ["Shoes", "T-Shirt", "Jeans"]; // Dummy items
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Your Cart'),
+      ),
+      body: ListView.builder(
+        itemCount: cartItems.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+            leading: Icon(Icons.shopping_cart),
+            title: Text(cartItems[index]),
+          );
+        },
+      ),
+      bottomNavigationBar: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          child: Text("Proceed to Checkout"),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CheckoutScreen()),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class CheckoutScreen extends StatefulWidget {
+  @override
+  _CheckoutScreenState createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  final _formKey = GlobalKey<FormState>();
+  String name = '';
+  String address = '';
+
+  void _submitOrder() {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text("Order Confirmed"),
+          content: Text("Thank you, $name!\nYour order will be delivered to:\n$address"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // close dialog
+                Navigator.pop(context); // go back to cart
+              },
+              child: Text("OK"),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Checkout'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Full Name'),
+                onSaved: (value) => name = value ?? '',
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter your name' : null,
+              ),
+              TextFormField(
+                decoration: InputDecoration(labelText: 'Address'),
+                onSaved: (value) => address = value ?? '',
+                validator: (value) =>
+                    value!.isEmpty ? 'Please enter your address' : null,
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                child: Text("Place Order"),
+                onPressed: _submitOrder,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
   </div>
 
   <script>
@@ -243,3 +364,4 @@
 
 </body>
 </html>
+
