@@ -65,15 +65,8 @@
     const loader = new GLTFLoader();
     let avatar, avatarSkeleton;
 
-    // Example "auto-fit" body morph values that could come from clothing metadata
-    // Adjust these values dynamically if you have real user data or clothing sizes
-    let morphFit = {
-      chest: 0.4,
-      waist: 0.5,
-      hips: 0.3
-    };
+    let morphFit = { chest: 0.4, waist: 0.5, hips: 0.3 };
 
-    // Utility to build a bone name to bone object map
     function buildSkeletonMap(model) {
       const map = {};
       model.traverse(obj => {
@@ -82,14 +75,13 @@
       return map;
     }
 
-    // Apply morph targets to avatar mesh for auto-fitting
     function applyMorphTargets(mesh, morphValues) {
       if(mesh.morphTargetDictionary) {
-        if(morphValues.chest && mesh.morphTargetDictionary["chest"] !== undefined)
+        if(morphValues.chest !== undefined && mesh.morphTargetDictionary["chest"] !== undefined)
           mesh.morphTargetInfluences[mesh.morphTargetDictionary["chest"]] = morphValues.chest;
-        if(morphValues.waist && mesh.morphTargetDictionary["waist"] !== undefined)
+        if(morphValues.waist !== undefined && mesh.morphTargetDictionary["waist"] !== undefined)
           mesh.morphTargetInfluences[mesh.morphTargetDictionary["waist"]] = morphValues.waist;
-        if(morphValues.hips && mesh.morphTargetDictionary["hips"] !== undefined)
+        if(morphValues.hips !== undefined && mesh.morphTargetDictionary["hips"] !== undefined)
           mesh.morphTargetInfluences[mesh.morphTargetDictionary["hips"]] = morphValues.hips;
       }
     }
@@ -100,10 +92,8 @@
           avatar = gltf.scene;
           scene.add(avatar);
 
-          // Setup skeleton map
           avatarSkeleton = buildSkeletonMap(avatar);
 
-          // Apply morph targets to avatar's meshes
           avatar.traverse(obj => {
             if(obj.isMesh) {
               applyMorphTargets(obj, morphFit);
@@ -117,12 +107,11 @@
       });
     }
 
-    // Retarget clothing skeleton to avatar's skeleton by matching bone names
-    function retargetClothingSkeleton(clothing) {
+    function retargetClothingSkeleton(clothing, avatarSkeleton) {
       clothing.traverse(obj => {
         if(obj.isSkinnedMesh && obj.skeleton) {
           obj.skeleton.bones.forEach((bone, i) => {
-            if (avatarSkeleton[bone.name]) {
+            if(avatarSkeleton[bone.name]) {
               obj.skeleton.bones[i] = avatarSkeleton[bone.name];
             }
           });
@@ -131,33 +120,66 @@
       });
     }
 
+    function attachClothingToRelevantBone(clothing, avatarSkeleton, category) {
+      let boneName;
+      switch((category || '').toLowerCase()) {
+        case 'shirt':
+        case 'jacket':
+        case 'clothing':
+          boneName = 'Spine'; // adjust to your exact bone names from baseAvatar.glb
+          break;
+        case 'pants':
+        case 'skirt':
+          boneName = 'Hips';
+          break;
+        case 'shoes':
+          boneName = 'LeftFoot'; // or RightFoot for Right shoe
+          break;
+        default:
+          boneName = 'Hips';
+      }
+      if(!avatarSkeleton[boneName]) {
+        console.warn("Attachment bone not found:", boneName);
+        avatar.add(clothing);
+        return;
+      }
+      const parentBone = avatarSkeleton[boneName];
+
+      // Reset clothing transform before attaching
+      clothing.position.set(0,0,0);
+      clothing.rotation.set(0,0,0);
+      clothing.scale.set(1,1,1);
+
+      parentBone.add(clothing);
+
+      // Optional fine adjustment offsets (tweak as needed)
+      if(boneName === 'Spine') clothing.position.y += 0;  // shirt/jacket y-offset
+      else if(boneName === 'Hips') clothing.position.y += -0.9; // pants/skirt y-offset
+      else if(boneName === 'LeftFoot') clothing.position.y += -1.8; // shoes y-offset
+    }
+
     async function loadClothing() {
       const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
       if(!selected || !selected.glb) {
-        console.warn("No selected clothing found in localStorage.");
+        console.warn("No selected clothing found.");
         return;
       }
-      
+
       return new Promise((resolve, reject) => {
         loader.load(selected.glb, gltf => {
           const clothing = gltf.scene;
 
-          // Set shadows on clothing
           clothing.traverse(obj => {
             if(obj.isMesh || obj.isSkinnedMesh) {
               obj.castShadow = true;
               obj.receiveShadow = true;
-
-              // Apply morph targets to clothing if present (sync with avatar morphFit)
               applyMorphTargets(obj, morphFit);
             }
           });
 
-          // Retarget clothing skeleton to avatar skeleton for perfect fit and animation
-          retargetClothingSkeleton(clothing);
+          retargetClothingSkeleton(clothing, avatarSkeleton);
 
-          // Add clothing as child of avatar so it moves with avatar.animation
-          avatar.add(clothing);
+          attachClothingToRelevantBone(clothing, avatarSkeleton, selected.category);
 
           resolve();
         }, undefined, reject);
@@ -168,11 +190,10 @@
       await loadAvatar();
       await loadClothing();
     }
-
     init();
 
     window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
