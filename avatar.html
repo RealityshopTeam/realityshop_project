@@ -65,6 +65,7 @@
     const loader = new GLTFLoader();
     let avatar, avatarSkeleton;
 
+    // Morph target values to auto-fit avatar shape (can be made dynamic)
     let morphFit = { chest: 0.4, waist: 0.5, hips: 0.3 };
 
     function buildSkeletonMap(model) {
@@ -126,36 +127,37 @@
         case 'shirt':
         case 'jacket':
         case 'clothing':
-          boneName = 'Spine'; // adjust to your exact bone names from baseAvatar.glb
+          boneName = 'Spine';
           break;
         case 'pants':
         case 'skirt':
           boneName = 'Hips';
           break;
         case 'shoes':
-          boneName = 'LeftFoot'; // or RightFoot for Right shoe
+          boneName = 'LeftFoot';
           break;
         default:
           boneName = 'Hips';
       }
       if(!avatarSkeleton[boneName]) {
-        console.warn("Attachment bone not found:", boneName);
+        console.warn("Bone not found for clothing attach:", boneName);
         avatar.add(clothing);
         return;
       }
       const parentBone = avatarSkeleton[boneName];
 
-      // Reset clothing transform before attaching
+      // Reset transforms before parenting
       clothing.position.set(0,0,0);
       clothing.rotation.set(0,0,0);
       clothing.scale.set(1,1,1);
 
+      // Attach to correct bone
       parentBone.add(clothing);
 
-      // Optional fine adjustment offsets (tweak as needed)
-      if(boneName === 'Spine') clothing.position.y += 0;  // shirt/jacket y-offset
-      else if(boneName === 'Hips') clothing.position.y += -0.9; // pants/skirt y-offset
-      else if(boneName === 'LeftFoot') clothing.position.y += -1.8; // shoes y-offset
+      // Optional Y offset tweaks
+      if(boneName === 'Spine') clothing.position.y += 0;
+      else if(boneName === 'Hips') clothing.position.y += -0.9;
+      else if(boneName === 'LeftFoot') clothing.position.y += -1.8;
     }
 
     async function loadClothing() {
@@ -164,7 +166,6 @@
         console.warn("No selected clothing found.");
         return;
       }
-
       return new Promise((resolve, reject) => {
         loader.load(selected.glb, gltf => {
           const clothing = gltf.scene;
@@ -179,6 +180,11 @@
 
           retargetClothingSkeleton(clothing, avatarSkeleton);
 
+          // Dynamic scaling based on avatar morph target average
+          const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 3;
+          const baseScale = 1.0; // Adjust if your clothing model needs resizing baseline
+          clothing.scale.set(baseScale * avgMorph, baseScale * avgMorph, baseScale * avgMorph);
+
           attachClothingToRelevantBone(clothing, avatarSkeleton, selected.category);
 
           resolve();
@@ -190,6 +196,7 @@
       await loadAvatar();
       await loadClothing();
     }
+
     init();
 
     window.addEventListener('resize', () => {
