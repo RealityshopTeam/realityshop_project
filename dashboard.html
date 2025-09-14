@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard - Reality Shop</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // Supabase initialization
+    const SUPABASE_URL = 'https://seqrvhozvpzndqutrjte.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcXJ2aG96dnB6bmRxdXRyanRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4ODY0MzQsImV4cCI6MjA3MzQ2MjQzNH0.y6yFwZlCk4sJhfYcdXEKv0WSUbYQrbCFDz6vTuXhPkg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  </script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(to right, #a8edea, #fed6e3);
+      color: #222;
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #111827;
+      padding: 15px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .navbar .logo {
+      font-size: 22px;
+      font-weight: bold;
+      color: #06b6d4;
+      text-decoration: none;
+    }
+
+    .navbar ul {
+      list-style: none;
+      display: flex;
+      gap: 25px;
+    }
+
+    .navbar ul li a {
+      text-decoration: none;
+      color: #f3f4f6;
+      font-weight: 500;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    .navbar ul li a:hover {
+      color: #06b6d4;
+    }
+
+    .dashboard {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 50px 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 20px;
+      color: #111827;
+    }
+
+    p {
+      font-size: 1.1em;
+      margin-bottom: 10px;
+    }
+
+    .logout-btn {
+      margin-top: 30px;
+      background: linear-gradient(135deg, #ff416c, #ff4b2b);
+      color: white;
+      border: none;
+      padding: 12px 25px;
+      font-size: 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.3s;
+    }
+
+    .logout-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(255,65,108,0.4);
+    }
+
+    footer {
+      background: #f9f9f9;
+      color: #666;
+      text-align: center;
+      padding: 20px;
+      margin-top: auto;
+      border-top: 1px solid #eee;
+    }
+
+    @media (max-width: 768px) {
+      .navbar ul { gap: 15px; }
+      .container { margin: 20px 15px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <a href="index.html" class="logo">Reality Shop</a>
+    <ul>
+      <li><a href="index.html">Home</a></li>
+      <li><a href="shop.html">Shop</a></li>
+      <li><a href="cart.html">Cart</a></li>
+      <li><a href="wishlist.html">Wishlist</a></li>
+      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+    </ul>
+  </nav>
+
+  <div class="dashboard">
+    <div class="container">
+      <h2>Welcome to Your Dashboard</h2>
+      <p><strong>Name:</strong> <span id="usernameDisplay"></span></p>
+      <p><strong>Email:</strong> <span id="emailDisplay"></span></p>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2025 Reality Shop. All rights reserved.</p>
+  </footer>
+
+  <script>
+    // On page load, check if user is signed in
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        // If not logged in, redirect to login page
+        window.location.href = '/login.html';
+        return;
+      }
+
+      // Show email
+      document.getElementById('emailDisplay').textContent = user.email;
+
+      // Fetch profile (username) from your profiles table
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.warn('Error fetching profile', error);
+        document.getElementById('usernameDisplay').textContent = '(No username found)';
+      } else {
+        document.getElementById('usernameDisplay').textContent = profile.username || '(No username)';
+      }
+    })();
+
+    // Logout function
+    async function logout() {
+      await supabase.auth.signOut();
+      window.location.href = '/login.html';
+    }
+  </script>
+</body>
+</html>
+
