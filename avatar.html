@@ -1,240 +1,450 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Avatar Try-On - Reality Shop</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    body { margin:0; overflow:hidden; background:#121212; color:white; }
-    #canvas-container { width:100%; height:100vh; }
-  </style>
+<meta charset="utf-8" />
+<title>Reality Shop — Advanced Avatar Try-On</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{--panel-bg:#0f1724;--panel-fg:#e6eef8}
+  body{margin:0;height:100vh;background:#0b1220;color:var(--panel-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  #canvas-wrap{position:fixed;inset:0}
+  #ui{position:fixed;left:12px;top:12px;width:320px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
+  #ui h3{margin:0 0 8px;font-size:16px;color:#9be7ff}
+  .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+  label{font-size:13px;color:#bcdcff}
+  select,input[type=color]{width:100%;padding:6px;border-radius:8px;border:1px solid rgba(255,255,255,.06);background:transparent;color:var(--panel-fg)}
+  button{background:#06b4d4;color:#06202a;border:0;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  button.secondary{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--panel-fg)}
+  small.hint{display:block;color:#7aa8bf;margin-top:6px;font-size:12px}
+  .slot-list{display:flex;gap:8px;flex-wrap:wrap}
+  .slot{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.03);font-size:13px}
+  footer.note{position:fixed;right:12px;bottom:12px;font-size:13px;color:#9fbfce}
+</style>
 </head>
 <body>
-  <div id="canvas-container"></div>
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
-      "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+<div id="ui" aria-hidden="false">
+  <h3>Avatar Try-On — Controls</h3>
+
+  <div class="row">
+    <label style="flex:1">Avatar</label>
+    <select id="avatarSelect">
+      <option value="baseAvatar.glb">baseAvatar.glb (default)</option>
+      <!-- add other avatar options here if you host them -->
+    </select>
+  </div>
+
+  <div class="row">
+    <label style="flex:1">Auto-rotate</label>
+    <input id="autoRotate" type="checkbox" checked />
+  </div>
+
+  <div class="row">
+    <label style="flex:1">Clothing tint</label>
+    <input id="tint" type="color" value="#ffffff" title="Color tint applied to clothing (best on simple material)" />
+  </div>
+
+  <div style="margin-top:6px">
+    <div style="display:flex;gap:8px">
+      <button id="screenshotBtn">Download PNG</button>
+      <button id="resetBtn" class="secondary">Reset Scene</button>
+    </div>
+    <small class="hint">Selected products come from <code>localStorage.selectedClothing</code>. Use products.html TryOn to set it.</small>
+  </div>
+
+  <hr style="opacity:.06;margin:10px 0">
+
+  <div>
+    <label>Worn items</label>
+    <div id="slots" class="slot-list" aria-live="polite"></div>
+  </div>
+</div>
+
+<div id="canvas-wrap"></div>
+<footer class="note">Reality Shop — Client-only demo</footer>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.module.js",
+    "three/examples/": "https://cdn.jsdelivr.net/npm/three@0.152.2/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+/* Advanced avatar try-on
+   - Reads selectedClothing from localStorage (object or array)
+   - Loads avatar, loads clothing items, tries to bind to skeleton
+   - Fallback auto-fit when not rigged
+   - Supports multiple slots (shirt, pants, shoes, accessory)
+*/
+
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+const canvasWrap = document.getElementById('canvas-wrap');
+const ui = {
+  avatarSelect: document.getElementById('avatarSelect'),
+  autoRotate: document.getElementById('autoRotate'),
+  tint: document.getElementById('tint'),
+  screenshotBtn: document.getElementById('screenshotBtn'),
+  resetBtn: document.getElementById('resetBtn'),
+  slots: document.getElementById('slots')
+};
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0c1720);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 200);
+camera.position.set(0, 1.6, 3.2);
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+canvasWrap.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0,1.2,0);
+controls.enableDamping = true;
+
+const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 0.9);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+dir.position.set(3, 10, 5);
+dir.castShadow = true;
+dir.shadow.camera.near = 0.5;
+dir.shadow.camera.far = 50;
+scene.add(dir);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(14,14),
+  new THREE.MeshStandardMaterial({ color: 0x0f1724, roughness:1, metalness:0 })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+ground.position.y = 0;
+scene.add(ground);
+
+const loader = new GLTFLoader();
+let avatar = null;
+let avatarSkel = null;         // THREE.Skeleton (if avatar provided skinned meshes)
+let avatarBox = null;
+let mixers = [];               // to update animations
+let clothingObjects = [];      // currently worn clothing meshes
+const slotMap = {};            // key -> {mesh, info}
+
+const SLOT_NAMES = ['shirt','jacket','pants','shoes','hat','accessory'];
+
+// helper: clear existing clothing
+function clearClothing() {
+  clothingObjects.forEach(o => scene.remove(o));
+  clothingObjects = [];
+  for (const k in slotMap) delete slotMap[k];
+  ui.slots.innerHTML = '';
+}
+
+// helper: show worn slots
+function addSlotUI(name, info) {
+  const el = document.createElement('div');
+  el.className = 'slot';
+  el.textContent = `${name}: ${info.name||info.glb||'unknown'}`;
+  const btn = document.createElement('button');
+  btn.textContent = 'remove';
+  btn.style.marginLeft = '8px';
+  btn.onclick = () => {
+    // remove slot
+    if(slotMap[name] && slotMap[name].mesh){ scene.remove(slotMap[name].mesh); }
+    delete slotMap[name];
+    el.remove();
+  };
+  el.appendChild(btn);
+  ui.slots.appendChild(el);
+}
+
+// compute bounding box of object (including children)
+function computeBox(obj) {
+  const box = new THREE.Box3().setFromObject(obj);
+  return { box, size: box.getSize(new THREE.Vector3()), center: box.getCenter(new THREE.Vector3()) };
+}
+
+// try to find avatar skeleton (first skinned mesh)
+function findAvatarSkeleton(root) {
+  let skel = null;
+  root.traverse(n => {
+    if(!skel && n.isSkinnedMesh && n.skeleton) skel = n.skeleton;
+  });
+  return skel;
+}
+
+// find bone by candidate names (case-insensitive)
+function findBoneByNames(root, names = []) {
+  let found = null;
+  root.traverse(n => {
+    if(found) return;
+    if(n.isBone || n.type === 'Bone') {
+      const lname = String(n.name || '').toLowerCase();
+      for(const nm of names){
+        if(!nm) continue;
+        if(lname.includes(nm.toLowerCase())) { found = n; break; }
+      }
+    }
+  });
+  return found;
+}
+
+// smart attach: bind skinned clothing to avatar skeleton or attach to bone parent
+function smartAttachClothing(clothRoot, info={}) {
+  // try to bind skinned meshes to avatar skeleton
+  let anySkinnedMesh = false;
+  let bound = false;
+  clothRoot.traverse(c => {
+    if(c.isSkinnedMesh) anySkinnedMesh = true;
+  });
+
+  if(anySkinnedMesh && avatarSkel) {
+    // attempt to bind each skinned mesh to avatar skeleton
+    clothRoot.traverse(c => {
+      if(c.isSkinnedMesh) {
+        try {
+          c.bind(avatarSkel);
+          bound = true;
+        } catch(e){
+          console.warn('Bind attempt failed for mesh', c, e);
+        }
+      }
+    });
+    if(bound) {
+      clothRoot.traverse(c => { if(c.isMesh) { c.frustumCulled=false; } });
+      scene.add(clothRoot);
+      clothingObjects.push(clothRoot);
+      return { success: true, method: 'bind' };
     }
   }
-  </script>
-  <script type="module">
-    import * as THREE from 'three';
-    import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-    import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
 
-    const container = document.getElementById('canvas-container');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x121212);
+  // if not skinned or binding failed, fallback to bone attach or bbox fit
+  // 1) attach to appropriate bone (pants -> hips, shirt -> chest/spine, shoes -> foot)
+  const category = (info.category || '').toLowerCase();
+  let targetBone = null;
+  if(category === 'pants') {
+    targetBone = findBoneByNames(avatar, ['hip','hips','pelvis']);
+  } else if(category === 'shoes') {
+    targetBone = findBoneByNames(avatar, ['foot','ankle']);
+  } else if(category === 'hat') {
+    targetBone = findBoneByNames(avatar, ['head','neck','neck1']);
+  } else { // shirt/jacket/accessory
+    targetBone = findBoneByNames(avatar, ['chest','spine','torso']);
+  }
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
-    camera.position.set(0,1.6,2);
+  if(targetBone) {
+    // center clothing and re-position relative to bone:
+    // compute clothing center and avatar box
+    const { box: cbox, size: csize, center: ccenter } = computeBox(clothRoot);
+    const { box: abox, size: asize, center: acenter } = computeBox(avatar);
 
-    const renderer = new THREE.WebGLRenderer({ antialias:true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+    // normalize clothing pivot to center
+    clothRoot.position.sub(ccenter);
+    // attach to bone (preserves world transform? so set local pos aligned to bone)
+    targetBone.add(clothRoot);
+    // relative positioning: move cloth approx to chest/hip height
+    let yOffset = 0;
+    if(category === 'pants') yOffset = -asize.y*0.2;
+    else if(category === 'shoes') yOffset = -asize.y*0.45;
+    else if(category === 'hat') yOffset = asize.y*0.42;
+    else yOffset = asize.y*0.12;
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0,1,0);
-    controls.update();
+    clothRoot.position.set(0, yOffset, 0);
+    clothingObjects.push(clothRoot);
+    return { success: true, method: 'bone-attach', bone: targetBone.name };
+  }
 
-    // Lights
-    const hemiLight = new THREE.HemisphereLight(0xffffff,0x444444,1.2);
-    hemiLight.position.set(0,2,0);
-    scene.add(hemiLight);
+  // last fallback: bounding-box scale + translate to torso center
+  {
+    const { box: cbox, size: csize, center: ccenter } = computeBox(clothRoot);
+    const { box: abox, size: asize, center: acenter } = computeBox(avatar);
 
-    const dirLight = new THREE.DirectionalLight(0xffffff,1);
-    dirLight.position.set(0,2,2);
-    dirLight.castShadow = true;
-    scene.add(dirLight);
+    // choose scale factor using torso width heuristic
+    const targetWidth = asize.x * 0.5;
+    const s = (csize.x > 0.001) ? (targetWidth / csize.x) : 1.0;
+    clothRoot.scale.setScalar(s);
 
-    // Floor
-    const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(10,10),
-      new THREE.ShadowMaterial({opacity:0.3})
-    );
-    floor.rotation.x = -Math.PI/2;
-    floor.position.y = 0;
-    floor.receiveShadow = true;
-    scene.add(floor);
+    // center clothing and set to torso area
+    clothRoot.position.sub(ccenter);
+    clothRoot.position.add(new THREE.Vector3(acenter.x, abox.min.y + asize.y*0.55, acenter.z));
 
-    const loader = new GLTFLoader();
-    let avatar, avatarSkeleton;
+    scene.add(clothRoot);
+    clothingObjects.push(clothRoot);
+    return { success: true, method: 'bbox-fit' };
+  }
+}
 
-    // Morph target values to auto-fit avatar shape (can be dynamic)
-    let morphFit = { chest: 0.4, waist: 0.5, hips: 0.3 };
-
-    function buildSkeletonMap(model) {
-      const map = {};
-      model.traverse(obj => {
-        if(obj.isBone) map[obj.name] = obj;
-      });
-      return map;
+// apply tint to clothing materials (simple approach)
+function applyTintToCloth(clothRoot, hex) {
+  clothRoot.traverse(m => {
+    if(m.isMesh && m.material) {
+      // clone material to avoid mutating shared materials across models
+      m.material = m.material.clone();
+      try {
+        // try to tint baseColor / color if present
+        if(m.material.color) m.material.color.set(hex);
+        // if material uses map, we reduce intensity by mixing color with map using onBeforeCompile would be needed -
+        // keep simple: adjust material.emissive to tint slightly
+        if(m.material.emissive) m.material.emissive.set(hex).multiplyScalar(0.08);
+      } catch(e){}
     }
+  });
+}
 
-    function applyMorphTargets(mesh, morphValues) {
-      if(mesh.morphTargetDictionary) {
-        if(morphValues.chest !== undefined && mesh.morphTargetDictionary['chest'] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary['chest']] = morphValues.chest;
-        if(morphValues.waist !== undefined && mesh.morphTargetDictionary['waist'] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary['waist']] = morphValues.waist;
-        if(morphValues.hips !== undefined && mesh.morphTargetDictionary['hips'] !== undefined)
-          mesh.morphTargetInfluences[mesh.morphTargetDictionary['hips']] = morphValues.hips;
+// load a clothing GLB and attach/fit it
+async function loadAndWear(item) {
+  if(!item || !item.glb) return;
+  return new Promise((resolve, reject) => {
+    loader.load(item.glb, gltf => {
+      const root = gltf.scene.clone();
+      // ensure not culled
+      root.traverse(n => { if(n.isMesh) { n.castShadow=true; n.receiveShadow=true; n.frustumCulled=false; } });
+
+      // attempt smart attach
+      const result = smartAttachClothing(root, item);
+      if(result.success) {
+        // store in slot map by category (fallback to generic 'accessory' index if no category)
+        const key = (item.slot || item.category || 'accessory').toLowerCase();
+        slotMap[key] = { mesh: root, info: item, attachMethod: result.method };
+        addSlotUI(key, item);
+      } else {
+        console.warn('Clothing attach failed for', item);
       }
-    }
 
-    async function loadAvatar() {
-      return new Promise((resolve, reject) => {
-        loader.load('baseAvatar.glb', gltf => {
-          avatar = gltf.scene;
-          scene.add(avatar);
-          avatarSkeleton = buildSkeletonMap(avatar);
+      // apply tint if user selected non-white (hex)
+      if(ui.tint.value && ui.tint.value !== '#ffffff') applyTintToCloth(root, ui.tint.value);
 
-          // Baseline: neutral pose, scale, reset morph targets
-          avatar.position.set(0, 0, 0);
-          avatar.rotation.set(0, 0, 0);
-          avatar.scale.set(1, 1, 1);
-
-          avatar.traverse(obj => {
-            if(obj.isMesh && obj.morphTargetInfluences) {
-              for(let i = 0; i < obj.morphTargetInfluences.length; i++) {
-                obj.morphTargetInfluences[i] = 0; // baseline morph reset
-              }
-            }
-          });
-
-          // Default T-pose function
-          function poseTPose(skeleton) {
-            if(skeleton['mixamorigLeftArm'] && skeleton['mixamorigRightArm']) {
-              skeleton['mixamorigLeftArm'].rotation.z = Math.PI/2;
-              skeleton['mixamorigRightArm'].rotation.z = -Math.PI/2;
-            }
-            if(skeleton['mixamorigLeftUpLeg'] && skeleton['mixamorigRightUpLeg']) {
-              skeleton['mixamorigLeftUpLeg'].rotation.y = 0.1;
-              skeleton['mixamorigRightUpLeg'].rotation.y = -0.1;
-            }
-          }
-          poseTPose(avatarSkeleton);
-
-          // Apply morph-fit values after baseline
-          avatar.traverse(obj => {
-            if(obj.isMesh) {
-              applyMorphTargets(obj, morphFit);
-              obj.castShadow = true;
-              obj.receiveShadow = true;
-            }
-          });
-
-          resolve();
-        }, undefined, reject);
-      });
-    }
-
-    function retargetClothingSkeleton(clothing, avatarSkeleton) {
-      clothing.traverse(obj => {
-        if(obj.isSkinnedMesh && obj.skeleton) {
-          obj.skeleton.bones.forEach((bone, i) => {
-            if(avatarSkeleton[bone.name]) {
-              obj.skeleton.bones[i] = avatarSkeleton[bone.name];
-            }
-          });
-          obj.bind(new THREE.Skeleton(Object.values(avatarSkeleton)), obj.bindMatrix);
-        }
-      });
-    }
-
-    // Get bounding box for avatar part based on mesh name substring (e.g. 'spine' or 'hips')
-    function getBoundingBoxForAvatarPart(partName) {
-      const bbox = new THREE.Box3();
-      let found = false;
-      avatar.traverse(obj => {
-        if(obj.isMesh && obj.name.toLowerCase().includes(partName.toLowerCase())) {
-          if(!found) {
-            bbox.copy(new THREE.Box3().setFromObject(obj));
-            found = true;
-          } else {
-            bbox.union(new THREE.Box3().setFromObject(obj));
-          }
-        }
-      });
-      return found ? bbox : null;
-    }
-
-    // Scale and position clothing to fit avatar bounding box dynamically
-    function fitClothingToAvatarPart(clothing, avatarBBox) {
-      if(!avatarBBox) {
-        console.warn('No bounding box found to fit clothing.');
-        return;
-      }
-      const clothingBBox = new THREE.Box3().setFromObject(clothing);
-      const avatarHeight = avatarBBox.max.y - avatarBBox.min.y;
-      const clothingHeight = clothingBBox.max.y - clothingBBox.min.y;
-
-      // Scale uniformly for height match
-      const scaleFactor = avatarHeight / clothingHeight;
-      clothing.scale.setScalar(scaleFactor);
-
-      clothing.updateMatrixWorld();
-      const scaledClothingBBox = new THREE.Box3().setFromObject(clothing);
-
-      // Align bottom of clothing with bottom of avatar bbox on y-axis
-      const offsetY = avatarBBox.min.y - scaledClothingBBox.min.y;
-      clothing.position.set(0, offsetY, 0);
-    }
-
-    async function loadClothing() {
-      const selected = JSON.parse(localStorage.getItem("selectedClothing") || 'null');
-      if(!selected || !selected.glb) {
-        console.warn("No selected clothing found.");
-        return;
-      }
-      return new Promise((resolve, reject) => {
-        loader.load(selected.glb, gltf => {
-          const clothing = gltf.scene;
-
-          clothing.traverse(obj => {
-            if(obj.isMesh || obj.isSkinnedMesh) {
-              obj.castShadow = true;
-              obj.receiveShadow = true;
-              applyMorphTargets(obj, morphFit);
-            }
-          });
-
-          retargetClothingSkeleton(clothing, avatarSkeleton);
-
-          // Determine avatar part for fitting dynamically
-          const avatarPart = (selected.category === 'pants' || selected.category === 'skirt') ? 'hips' : 'spine';
-          const avatarBBox = getBoundingBoxForAvatarPart(avatarPart);
-
-          fitClothingToAvatarPart(clothing, avatarBBox);
-
-          // Parent clothing to avatar root to follow animations/movements
-          avatar.add(clothing);
-
-          resolve();
-        }, undefined, reject);
-      });
-    }
-
-    async function init() {
-      await loadAvatar();
-      await loadClothing();
-    }
-    init();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      resolve(root);
+    }, xhr => {
+      // progress (optional)
+    }, err => {
+      console.error('Failed to load clothing', item.glb, err);
+      reject(err);
     });
+  });
+}
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
+// load avatar and all selected clothing (array or single)
+async function loadScene() {
+  clearClothing();
+  // load avatar file chosen in UI
+  const avatarUrl = ui.avatarSelect.value || 'baseAvatar.glb';
+
+  // load avatar
+  await new Promise((res, rej) => {
+    loader.load(avatarUrl, gltf => {
+      if(avatar) scene.remove(avatar);
+      avatar = gltf.scene;
+      avatar.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; n.frustumCulled=false; } });
+      scene.add(avatar);
+
+      // find skeleton of first skinned mesh
+      avatarSkel = findAvatarSkeleton(avatar);
+      avatarBox = computeBox(avatar).box;
+
+      // animations
+      mixers = [];
+      if(gltf.animations && gltf.animations.length) {
+        const mixer = new THREE.AnimationMixer(avatar);
+        mixers.push(mixer);
+        // play first animation loop
+        mixer.clipAction(gltf.animations[0]).play();
+      }
+
+      res();
+    }, undefined, err => rej(err));
+  });
+
+  // read selectedClothing from localStorage
+  let selected = null;
+  try {
+    selected = JSON.parse(localStorage.getItem('selectedClothing') || 'null');
+  } catch(e){ selected = null; }
+
+  if(!selected) {
+    // nothing to wear
+    ui.slots.innerHTML = '<div class="slot">No item selected — use products page to Try On</div>';
+    return;
+  }
+
+  // selected may be array or single object
+  let items = Array.isArray(selected) ? selected : [selected];
+
+  // ensure each item has a category/slot (if products.html didn't set it)
+  items = items.map((it, idx) => {
+    const copy = Object.assign({}, it);
+    copy.slot = copy.slot || (copy.category ? copy.category.toLowerCase() : `item${idx}`);
+    return copy;
+  });
+
+  // load each clothing (await sequential to minimize spikes; could parallelize)
+  for(const it of items) {
+    try {
+      await loadAndWear(it);
+    } catch(e){
+      console.warn('Error loading/wearing', it, e);
     }
-    animate();
-  </script>
+  }
+}
+
+// UI events
+ui.screenshotBtn.addEventListener('click', () => {
+  renderer.domElement.toBlob(blob => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'avatar.png'; a.click();
+    URL.revokeObjectURL(url);
+  });
+});
+ui.resetBtn.addEventListener('click', () => {
+  localStorage.removeItem('selectedClothing');
+  clearClothing();
+  // reload avatar only
+  loadScene();
+});
+ui.avatarSelect.addEventListener('change', () => loadScene());
+ui.tint.addEventListener('input', () => {
+  // reapply tint to all clothing
+  for(const k in slotMap) {
+    const node = slotMap[k].mesh;
+    if(node) applyTintToCloth(node, ui.tint.value);
+  }
+});
+
+// initial load
+await loadScene();
+
+// animation & render loop
+let last = performance.now();
+function update() {
+  requestAnimationFrame(update);
+  const now = performance.now();
+  const dt = (now-last)/1000; last = now;
+
+  // auto-rotate
+  if(ui.autoRotate.checked && avatar) {
+    avatar.rotation.y += dt*0.25;
+  }
+
+  // update mixers
+  if(mixers && mixers.length) mixers.forEach(m => m.update(dt));
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+update();
+
+// handle resize
+addEventListener('resize', ()=> {
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+</script>
 </body>
 </html>
