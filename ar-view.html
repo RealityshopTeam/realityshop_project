@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Marker Based AR (Importmap)</title>
+    <title>Marker Based AR (Fixed Importmap)</title>
     <style>
       body { margin: 0; overflow: hidden; }
     </style>
@@ -12,15 +12,20 @@
     {
       "imports": {
         "aframe": "https://unpkg.com/aframe@1.4.2/dist/aframe.min.js",
-        "aframe-ar": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"
+        "arjs-aframe": "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"
       }
     }
     </script>
 
-    <!-- Load A-Frame -->
+    <!-- Load A-Frame as global first -->
     <script type="module">
-      import "aframe";
-      import "aframe-ar";
+      import * as AFRAME from "aframe";
+      window.AFRAME = AFRAME; // 👈 expose to global
+    </script>
+
+    <!-- Then load AR.js -->
+    <script type="module">
+      import "arjs-aframe";
     </script>
   </head>
   <body>
@@ -28,8 +33,7 @@
     <a-scene embedded arjs>
       <!-- Marker -->
       <a-marker preset="hiro">
-        <!-- 3D object on marker -->
-        <a-box position="0 0.5 0" material="color: blue;"></a-box>
+        <a-box position="0 0.5 0" material="color: green;"></a-box>
       </a-marker>
 
       <!-- Camera -->
