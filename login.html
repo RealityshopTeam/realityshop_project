@@ -4,11 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Reality Shop</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Put these in <head> (or before any code that uses `supabase`) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+  // initialize supabase (strings required)
   const SUPABASE_URL = 'https://seqrvhozvpzndqutrjte.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcXJ2aG96dnB6bmRxdXRyanRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4ODY0MzQsImV4cCI6MjA3MzQ2MjQzNH0.y6yFwZlCk4sJhfYcdXEKv0WSUbYQrbCFDz6vTuXhPkg';
-  const supabase = window.supabase.createClient(https://seqrvhozvpzndqutrjte.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcXJ2aG96dnB6bmRxdXRyanRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4ODY0MzQsImV4cCI6MjA3MzQ2MjQzNH0.y6yFwZlCk4sJhfYcdXEKv0WSUbYQrbCFDz6vTuXhPkg);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
 
@@ -210,6 +212,56 @@
       </div>
     </div>
   </div>
+  <script>
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('loginForm');
+  const btn = form.querySelector('button[type="submit"]');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      alert('Please enter email and password.');
+      return;
+    }
+
+    // UI: disable button while logging in
+    btn.disabled = true;
+    const prevText = btn.textContent;
+    btn.textContent = 'Logging in...';
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        // auth error (wrong password, no user, etc.)
+        alert('Login error: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = prevText;
+        return;
+      }
+
+      // Successful login: data contains session & user
+      // Optionally check email confirmation:
+      // if (!data.user?.confirmed_at) { ... }
+
+      // Redirect to a protected page (dashboard)
+      window.location.href = '/Home.html';
+    } catch (err) {
+      console.error(err);
+      alert('An unexpected error occurred. Check console.');
+      btn.disabled = false;
+      btn.textContent = prevText;
+    }
+  });
+});
+</script>
+
 
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
@@ -217,4 +269,5 @@
 
 </body>
 </html>
+
 
