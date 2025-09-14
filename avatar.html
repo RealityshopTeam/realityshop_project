@@ -23,8 +23,10 @@
 
 <script type="module">
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
+import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';   // ❌ wrong
+// ✅ fix import (match importmap!)
+import { GLTFLoader as Loader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 const container = document.getElementById('canvas-container');
 const scene = new THREE.Scene();
@@ -58,7 +60,7 @@ floor.rotation.x=-Math.PI/2;
 floor.receiveShadow=true;
 scene.add(floor);
 
-const loader = new GLTFLoader();
+const loader = new Loader();
 let avatar, avatarSkeleton, avatarBox;
 
 // --- Load avatar ---
@@ -101,15 +103,22 @@ async function loadClothing() {
         });
 
         if(!boundToSkeleton){
-            // Fallback → bounding box scaling
+            // --- Fallback: scale + align ---
             const avatarSize = avatarBox.getSize(new THREE.Vector3());
+            const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+
             const clothingBox = new THREE.Box3().setFromObject(clothing);
             const clothingSize = clothingBox.getSize(new THREE.Vector3());
+            const clothingCenter = clothingBox.getCenter(new THREE.Vector3());
 
-            const scale = (avatarSize.x * 0.5) / clothingSize.x;
-            clothing.scale.set(scale, scale, scale);
+            // scale clothing height to ~ upper body height
+            const targetHeight = avatarSize.y * 0.45; // torso ~45%
+            const scale = targetHeight / clothingSize.y;
+            clothing.scale.setScalar(scale);
 
-            clothing.position.set(0, avatarBox.min.y + avatarSize.y*0.5, 0);
+            // move clothing to chest level
+            clothing.position.sub(clothingCenter); // center clothing
+            clothing.position.add(new THREE.Vector3(0, avatarCenter.y + avatarSize.y*0.2, 0));
         }
 
         scene.add(clothing);
