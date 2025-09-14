@@ -207,7 +207,7 @@
 
           // Scale clothing dynamically according to average morph fit
           const avgMorph = (morphFit.chest + morphFit.waist + morphFit.hips) / 3;
-          const baseScale = 1.0;
+          const baseScale = 0.1;
           clothing.scale.set(baseScale * avgMorph, baseScale * avgMorph, baseScale * avgMorph);
 
           attachClothingToRelevantBone(clothing, avatarSkeleton, selected.category);
@@ -238,3 +238,4 @@
   </script>
 </body>
 </html>
+
