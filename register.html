@@ -8,7 +8,7 @@
 <script>
   const SUPABASE_URL = "https://seqrvhozvpzndqutrjte.supabase.co";
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcXJ2aG96dnB6bmRxdXRyanRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4ODY0MzQsImV4cCI6MjA3MzQ2MjQzNH0.y6yFwZlCk4sJhfYcdXEKv0WSUbYQrbCFDz6vTuXhPkg';
-  const supabase = window.supabase.createClient(https://seqrvhozvpzndqutrjte.supabase.co, eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNlcXJ2aG96dnB6bmRxdXRyanRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4ODY0MzQsImV4cCI6MjA3MzQ2MjQzNH0.y6yFwZlCk4sJhfYcdXEKv0WSUbYQrbCFDz6vTuXhPkg);
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 </script>
 
 
@@ -209,6 +209,47 @@
       </div>
     </div>
   </div>
+  <script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value.trim();
+  const confirmPassword = document.getElementById('confirm-password').value.trim();
+
+  if (password !== confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
+
+  // 1. Sign up user in Supabase Auth
+  const { data, error } = await supabase.auth.signUp({
+    email: email,
+    password: password
+  });
+
+  if (error) {
+    alert("Error creating account: " + error.message);
+    return;
+  }
+
+  // 2. Insert into profiles table (link to the new user's id)
+  if (data.user) {
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: data.user.id,
+      username: name
+    });
+
+    if (profileError) {
+      alert("User created but error saving profile: " + profileError.message);
+    } else {
+      alert("Registration successful! Please check your email to confirm your account.");
+      window.location.href = 'login.html'; // redirect to login page
+    }
+  }
+});
+</script>
 
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
@@ -216,4 +257,5 @@
 
 </body>
 </html>
+
 
