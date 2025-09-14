@@ -53,7 +53,7 @@ let avatar, avatarSkeleton;
 // --- Load Ready Player Me avatar ---
 async function loadAvatar() {
   return new Promise((resolve, reject)=>{
-    loader.load("https://models.readyplayer.me/64f24d234567890abcdef.glb", gltf=>{ // replace with your avatar URL
+    loader.load("baseAvatar.glb", gltf=>{ // replace with your avatar URL
       avatar = gltf.scene;
       avatar.traverse(c=>{
         if(c.isSkinnedMesh && c.skeleton){
@@ -111,4 +111,5 @@ animate();
   dfads
 </body>
 </html>
+
 
