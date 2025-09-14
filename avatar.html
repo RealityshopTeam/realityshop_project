@@ -6,8 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     body { margin:0; overflow:hidden; background:#111; color:white; font-family:Arial; }
-    #info { position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.6); padding:10px; border-radius:8px; }
-    #controls { position:absolute; top:10px; right:10px; display:flex; gap:8px; }
+    #controls { position:absolute; top:10px; left:10px; display:flex; gap:10px; }
     button {
       padding:6px 12px; border:none; border-radius:6px;
       background:#0072ff; color:#fff; font-weight:bold; cursor:pointer;
@@ -26,11 +25,11 @@
   </script>
 </head>
 <body>
-  <div id="info">👕 Avatar Clothing Try-On</div>
   <div id="controls">
-    <button id="idleBtn">Idle</button>
-    <button id="tposeBtn">T-Pose</button>
-    <button id="walkBtn">Walk</button>
+    <button data-action="Idle">Idle</button>
+    <button data-action="T-Pose">T-Pose</button>
+    <button data-action="Walk">Walk</button>
+    <button data-action="Run">Run</button>
   </div>
 
   <script type="module">
@@ -41,7 +40,7 @@
     let scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
-    let camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+    let camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
     camera.position.set(0, 1.6, 3);
 
     let renderer = new THREE.WebGLRenderer({antialias:true});
@@ -50,12 +49,16 @@
 
     let controls = new OrbitControls(camera, renderer.domElement);
 
+    // Lights
     scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
-    scene.add(new THREE.DirectionalLight(0xffffff, 1));
+    let dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(3, 5, 2);
+    scene.add(dirLight);
 
     let loader = new GLTFLoader();
     let mixer, avatar, avatarSkeleton;
     let actions = {};
+    let activeAction;
 
     // === Load Avatar ===
     loader.load("imgs/avatar.glb", (gltf) => {
@@ -63,9 +66,9 @@
       avatar.position.set(0,-1,0);
       scene.add(avatar);
 
-      // Skeleton
+      // Get skeleton
       avatar.traverse(obj=>{
-        if(obj.isSkinnedMesh){
+        if(obj.isSkinnedMesh && !avatarSkeleton){
           avatarSkeleton = obj.skeleton;
         }
       });
@@ -76,39 +79,55 @@
         actions[clip.name] = mixer.clipAction(clip);
       });
 
-      // Play Idle by default
-      if(actions["Idle"]) actions["Idle"].play();
-      else if(gltf.animations[0]) mixer.clipAction(gltf.animations[0]).play();
-
-      // === Load Clothing from localStorage ===
-      let selected = localStorage.getItem("selectedClothing");
-      if(selected){
-        let product = JSON.parse(selected);
-        if(product.glb){
-          loader.load(product.glb, (clothGltf)=>{
-            let clothing = clothGltf.scene;
-            clothing.traverse(obj=>{
-              if(obj.isSkinnedMesh && avatarSkeleton){
-                obj.skeleton = avatarSkeleton;
-                obj.bind(avatarSkeleton);
-              }
-            });
-            avatar.add(clothing);
-          });
-        }
+      // Start with Idle if available
+      if(actions["Idle"]) {
+        activeAction = actions["Idle"];
+        activeAction.play();
       }
+
+      // Load clothing after avatar
+      loadClothing();
     });
 
-    // === Animation Controls ===
-    function playAction(name){
-      for(let key in actions){
-        actions[key].stop();
-      }
-      if(actions[name]) actions[name].reset().play();
+    // === Load Clothing ===
+    function loadClothing(){
+      let selected = localStorage.getItem("selectedClothing");
+      if(!selected) return;
+
+      let product = JSON.parse(selected);
+      if(!product.glb) return;
+
+      loader.load(product.glb, (clothGltf)=>{
+        let clothing = clothGltf.scene;
+
+        clothing.traverse(obj=>{
+          if(obj.isSkinnedMesh && avatarSkeleton){
+            obj.skeleton = avatarSkeleton;
+            obj.bind(avatarSkeleton);
+          }
+        });
+
+        avatar.add(clothing);
+      });
     }
-    document.getElementById("idleBtn").onclick = ()=> playAction("Idle");
-    document.getElementById("tposeBtn").onclick = ()=> playAction("T-Pose");
-    document.getElementById("walkBtn").onclick = ()=> playAction("Walk");
+
+    // === Switch Animation ===
+    function fadeToAction(name){
+      if(!actions[name]) return;
+      if(activeAction === actions[name]) return;
+
+      if(activeAction){
+        activeAction.fadeOut(0.3);
+      }
+      activeAction = actions[name];
+      activeAction.reset().fadeIn(0.3).play();
+    }
+
+    document.querySelectorAll("button[data-action]").forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        fadeToAction(btn.dataset.action);
+      });
+    });
 
     // Animate
     let clock = new THREE.Clock();
@@ -116,7 +135,7 @@
       requestAnimationFrame(animate);
       let delta = clock.getDelta();
       if(mixer) mixer.update(delta);
-      renderer.render(scene,camera);
+      renderer.render(scene, camera);
     }
     animate();
 
