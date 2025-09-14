@@ -8,7 +8,7 @@
   :root{--panel-bg:#0f1724;--panel-fg:#e6eef8}
   body{margin:0;height:100vh;background:#0b1220;color:var(--panel-fg);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
   #canvas-wrap{position:fixed;inset:0}
-  #ui{position:fixed;left:12px;top:12px;width:320px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
+  #ui{position:fixed;left:12px;top:12px;width:340px;background:linear-gradient(180deg,#0b1220,#07101a);border-radius:12px;padding:12px;box-shadow:0 8px 30px rgba(2,6,23,.6);z-index:10}
   #ui h3{margin:0 0 8px;font-size:16px;color:#9be7ff}
   .row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
   label{font-size:13px;color:#bcdcff}
@@ -29,7 +29,6 @@
     <label style="flex:1">Avatar</label>
     <select id="avatarSelect">
       <option value="baseAvatar.glb">baseAvatar.glb (default)</option>
-      <!-- add other avatar options here if you host them -->
     </select>
   </div>
 
@@ -40,7 +39,16 @@
 
   <div class="row">
     <label style="flex:1">Clothing tint</label>
-    <input id="tint" type="color" value="#ffffff" title="Color tint applied to clothing (best on simple material)" />
+    <input id="tint" type="color" value="#ffffff" />
+  </div>
+
+  <div class="row">
+    <label style="flex:1">Animations</label>
+    <select id="animSelect">
+      <option value="Idle">Idle</option>
+      <option value="Walk">Walk</option>
+      <option value="Wave">Wave</option>
+    </select>
   </div>
 
   <div style="margin-top:6px">
@@ -52,7 +60,6 @@
   </div>
 
   <hr style="opacity:.06;margin:10px 0">
-
   <div>
     <label>Worn items</label>
     <div id="slots" class="slot-list" aria-live="polite"></div>
@@ -72,22 +79,15 @@
 </script>
 
 <script type="module">
-/* Advanced avatar try-on
-   - Reads selectedClothing from localStorage (object or array)
-   - Loads avatar, loads clothing items, tries to bind to skeleton
-   - Fallback auto-fit when not rigged
-   - Supports multiple slots (shirt, pants, shoes, accessory)
-*/
-
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
 
-const canvasWrap = document.getElementById('canvas-wrap');
 const ui = {
   avatarSelect: document.getElementById('avatarSelect'),
   autoRotate: document.getElementById('autoRotate'),
   tint: document.getElementById('tint'),
+  animSelect: document.getElementById('animSelect'),
   screenshotBtn: document.getElementById('screenshotBtn'),
   resetBtn: document.getElementById('resetBtn'),
   slots: document.getElementById('slots')
@@ -99,353 +99,120 @@ scene.background = new THREE.Color(0x0c1720);
 const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.05, 200);
 camera.position.set(0, 1.6, 3.2);
 
-const renderer = new THREE.WebGLRenderer({ antialias:true, alpha:false });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+const renderer = new THREE.WebGLRenderer({ antialias:true });
 renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-canvasWrap.appendChild(renderer.domElement);
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0,1.2,0);
 controls.enableDamping = true;
 
-const hemi = new THREE.HemisphereLight(0xffffff, 0x222233, 0.9);
-scene.add(hemi);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x222233, 0.9));
 const dir = new THREE.DirectionalLight(0xffffff, 1.0);
 dir.position.set(3, 10, 5);
-dir.castShadow = true;
-dir.shadow.camera.near = 0.5;
-dir.shadow.camera.far = 50;
 scene.add(dir);
 
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(14,14),
-  new THREE.MeshStandardMaterial({ color: 0x0f1724, roughness:1, metalness:0 })
-);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-ground.position.y = 0;
-scene.add(ground);
-
 const loader = new GLTFLoader();
-let avatar = null;
-let avatarSkel = null;         // THREE.Skeleton (if avatar provided skinned meshes)
-let avatarBox = null;
-let mixers = [];               // to update animations
-let clothingObjects = [];      // currently worn clothing meshes
-const slotMap = {};            // key -> {mesh, info}
+let avatar, avatarSkel, mixer, actions = {}, activeAction;
 
-const SLOT_NAMES = ['shirt','jacket','pants','shoes','hat','accessory'];
-
-// helper: clear existing clothing
-function clearClothing() {
-  clothingObjects.forEach(o => scene.remove(o));
-  clothingObjects = [];
-  for (const k in slotMap) delete slotMap[k];
-  ui.slots.innerHTML = '';
-}
-
-// helper: show worn slots
-function addSlotUI(name, info) {
-  const el = document.createElement('div');
-  el.className = 'slot';
-  el.textContent = `${name}: ${info.name||info.glb||'unknown'}`;
-  const btn = document.createElement('button');
-  btn.textContent = 'remove';
-  btn.style.marginLeft = '8px';
-  btn.onclick = () => {
-    // remove slot
-    if(slotMap[name] && slotMap[name].mesh){ scene.remove(slotMap[name].mesh); }
-    delete slotMap[name];
-    el.remove();
-  };
-  el.appendChild(btn);
-  ui.slots.appendChild(el);
-}
-
-// compute bounding box of object (including children)
-function computeBox(obj) {
-  const box = new THREE.Box3().setFromObject(obj);
-  return { box, size: box.getSize(new THREE.Vector3()), center: box.getCenter(new THREE.Vector3()) };
-}
-
-// try to find avatar skeleton (first skinned mesh)
-function findAvatarSkeleton(root) {
-  let skel = null;
-  root.traverse(n => {
-    if(!skel && n.isSkinnedMesh && n.skeleton) skel = n.skeleton;
-  });
-  return skel;
-}
-
-// find bone by candidate names (case-insensitive)
-function findBoneByNames(root, names = []) {
-  let found = null;
-  root.traverse(n => {
-    if(found) return;
-    if(n.isBone || n.type === 'Bone') {
-      const lname = String(n.name || '').toLowerCase();
-      for(const nm of names){
-        if(!nm) continue;
-        if(lname.includes(nm.toLowerCase())) { found = n; break; }
-      }
-    }
-  });
-  return found;
-}
-
-// smart attach: bind skinned clothing to avatar skeleton or attach to bone parent
-function smartAttachClothing(clothRoot, info={}) {
-  // try to bind skinned meshes to avatar skeleton
-  let anySkinnedMesh = false;
-  let bound = false;
-  clothRoot.traverse(c => {
-    if(c.isSkinnedMesh) anySkinnedMesh = true;
-  });
-
-  if(anySkinnedMesh && avatarSkel) {
-    // attempt to bind each skinned mesh to avatar skeleton
-    clothRoot.traverse(c => {
-      if(c.isSkinnedMesh) {
-        try {
-          c.bind(avatarSkel);
-          bound = true;
-        } catch(e){
-          console.warn('Bind attempt failed for mesh', c, e);
-        }
-      }
-    });
-    if(bound) {
-      clothRoot.traverse(c => { if(c.isMesh) { c.frustumCulled=false; } });
-      scene.add(clothRoot);
-      clothingObjects.push(clothRoot);
-      return { success: true, method: 'bind' };
-    }
-  }
-
-  // if not skinned or binding failed, fallback to bone attach or bbox fit
-  // 1) attach to appropriate bone (pants -> hips, shirt -> chest/spine, shoes -> foot)
-  const category = (info.category || '').toLowerCase();
-  let targetBone = null;
-  if(category === 'pants') {
-    targetBone = findBoneByNames(avatar, ['hip','hips','pelvis']);
-  } else if(category === 'shoes') {
-    targetBone = findBoneByNames(avatar, ['foot','ankle']);
-  } else if(category === 'hat') {
-    targetBone = findBoneByNames(avatar, ['head','neck','neck1']);
-  } else { // shirt/jacket/accessory
-    targetBone = findBoneByNames(avatar, ['chest','spine','torso']);
-  }
-
-  if(targetBone) {
-    // center clothing and re-position relative to bone:
-    // compute clothing center and avatar box
-    const { box: cbox, size: csize, center: ccenter } = computeBox(clothRoot);
-    const { box: abox, size: asize, center: acenter } = computeBox(avatar);
-
-    // normalize clothing pivot to center
-    clothRoot.position.sub(ccenter);
-    // attach to bone (preserves world transform? so set local pos aligned to bone)
-    targetBone.add(clothRoot);
-    // relative positioning: move cloth approx to chest/hip height
-    let yOffset = 0;
-    if(category === 'pants') yOffset = -asize.y*0.2;
-    else if(category === 'shoes') yOffset = -asize.y*0.45;
-    else if(category === 'hat') yOffset = asize.y*0.42;
-    else yOffset = asize.y*0.12;
-
-    clothRoot.position.set(0, yOffset, 0);
-    clothingObjects.push(clothRoot);
-    return { success: true, method: 'bone-attach', bone: targetBone.name };
-  }
-
-  // last fallback: bounding-box scale + translate to torso center
-  {
-    const { box: cbox, size: csize, center: ccenter } = computeBox(clothRoot);
-    const { box: abox, size: asize, center: acenter } = computeBox(avatar);
-
-    // choose scale factor using torso width heuristic
-    const targetWidth = asize.x * 0.5;
-    const s = (csize.x > 0.001) ? (targetWidth / csize.x) : 1.0;
-    clothRoot.scale.setScalar(s);
-
-    // center clothing and set to torso area
-    clothRoot.position.sub(ccenter);
-    clothRoot.position.add(new THREE.Vector3(acenter.x, abox.min.y + asize.y*0.55, acenter.z));
-
-    scene.add(clothRoot);
-    clothingObjects.push(clothRoot);
-    return { success: true, method: 'bbox-fit' };
-  }
-}
-
-// apply tint to clothing materials (simple approach)
-function applyTintToCloth(clothRoot, hex) {
-  clothRoot.traverse(m => {
-    if(m.isMesh && m.material) {
-      // clone material to avoid mutating shared materials across models
-      m.material = m.material.clone();
-      try {
-        // try to tint baseColor / color if present
-        if(m.material.color) m.material.color.set(hex);
-        // if material uses map, we reduce intensity by mixing color with map using onBeforeCompile would be needed -
-        // keep simple: adjust material.emissive to tint slightly
-        if(m.material.emissive) m.material.emissive.set(hex).multiplyScalar(0.08);
-      } catch(e){}
-    }
-  });
-}
-
-// load a clothing GLB and attach/fit it
-async function loadAndWear(item) {
-  if(!item || !item.glb) return;
-  return new Promise((resolve, reject) => {
-    loader.load(item.glb, gltf => {
-      const root = gltf.scene.clone();
-      // ensure not culled
-      root.traverse(n => { if(n.isMesh) { n.castShadow=true; n.receiveShadow=true; n.frustumCulled=false; } });
-
-      // attempt smart attach
-      const result = smartAttachClothing(root, item);
-      if(result.success) {
-        // store in slot map by category (fallback to generic 'accessory' index if no category)
-        const key = (item.slot || item.category || 'accessory').toLowerCase();
-        slotMap[key] = { mesh: root, info: item, attachMethod: result.method };
-        addSlotUI(key, item);
-      } else {
-        console.warn('Clothing attach failed for', item);
-      }
-
-      // apply tint if user selected non-white (hex)
-      if(ui.tint.value && ui.tint.value !== '#ffffff') applyTintToCloth(root, ui.tint.value);
-
-      resolve(root);
-    }, xhr => {
-      // progress (optional)
-    }, err => {
-      console.error('Failed to load clothing', item.glb, err);
-      reject(err);
-    });
-  });
-}
-
-// load avatar and all selected clothing (array or single)
-async function loadScene() {
-  clearClothing();
-  // load avatar file chosen in UI
-  const avatarUrl = ui.avatarSelect.value || 'baseAvatar.glb';
-
-  // load avatar
-  await new Promise((res, rej) => {
-    loader.load(avatarUrl, gltf => {
+// --- Load Avatar ---
+async function loadAvatar(url) {
+  return new Promise((resolve,reject)=>{
+    loader.load(url, gltf=>{
       if(avatar) scene.remove(avatar);
       avatar = gltf.scene;
-      avatar.traverse(n => { if(n.isMesh){ n.castShadow=true; n.receiveShadow=true; n.frustumCulled=false; } });
       scene.add(avatar);
 
-      // find skeleton of first skinned mesh
-      avatarSkel = findAvatarSkeleton(avatar);
-      avatarBox = computeBox(avatar).box;
+      // skeleton
+      avatarSkel = null;
+      avatar.traverse(o=>{ if(o.isSkinnedMesh && o.skeleton) avatarSkel = o.skeleton; });
 
       // animations
-      mixers = [];
-      if(gltf.animations && gltf.animations.length) {
-        const mixer = new THREE.AnimationMixer(avatar);
-        mixers.push(mixer);
-        // play first animation loop
-        mixer.clipAction(gltf.animations[0]).play();
+      mixer = new THREE.AnimationMixer(avatar);
+      actions = {};
+      gltf.animations.forEach(clip=>{
+        actions[clip.name] = mixer.clipAction(clip);
+      });
+      playAnim("Idle");
+      resolve();
+    },undefined,reject);
+  });
+}
+
+// --- Play Animations ---
+function playAnim(name) {
+  if(!actions[name]) return;
+  if(activeAction) activeAction.fadeOut(0.3);
+  activeAction = actions[name];
+  activeAction.reset().fadeIn(0.3).play();
+}
+
+// --- Load Clothing ---
+async function loadClothing(item) {
+  return new Promise((resolve,reject)=>{
+    loader.load(item.glb,gltf=>{
+      const clothing = gltf.scene;
+      let bound = false;
+
+      clothing.traverse(o=>{
+        if(o.isSkinnedMesh && avatarSkel) {
+          try{ o.bind(avatarSkel); bound=true; }catch(e){}
+        }
+      });
+
+      if(!bound) {
+        // simple auto-fit to torso height
+        const box = new THREE.Box3().setFromObject(clothing);
+        const size = box.getSize(new THREE.Vector3());
+        const scale = 1.2 / size.y;
+        clothing.scale.setScalar(scale);
+        clothing.position.y = 1.0; // move near chest
       }
 
-      res();
-    }, undefined, err => rej(err));
+      avatar.add(clothing);
+      resolve();
+    },undefined,reject);
   });
-
-  // read selectedClothing from localStorage
-  let selected = null;
-  try {
-    selected = JSON.parse(localStorage.getItem('selectedClothing') || 'null');
-  } catch(e){ selected = null; }
-
-  if(!selected) {
-    // nothing to wear
-    ui.slots.innerHTML = '<div class="slot">No item selected — use products page to Try On</div>';
-    return;
-  }
-
-  // selected may be array or single object
-  let items = Array.isArray(selected) ? selected : [selected];
-
-  // ensure each item has a category/slot (if products.html didn't set it)
-  items = items.map((it, idx) => {
-    const copy = Object.assign({}, it);
-    copy.slot = copy.slot || (copy.category ? copy.category.toLowerCase() : `item${idx}`);
-    return copy;
-  });
-
-  // load each clothing (await sequential to minimize spikes; could parallelize)
-  for(const it of items) {
-    try {
-      await loadAndWear(it);
-    } catch(e){
-      console.warn('Error loading/wearing', it, e);
-    }
-  }
 }
 
-// UI events
-ui.screenshotBtn.addEventListener('click', () => {
-  renderer.domElement.toBlob(blob => {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'avatar.png'; a.click();
-    URL.revokeObjectURL(url);
+// --- Scene Loader ---
+async function loadScene() {
+  await loadAvatar(ui.avatarSelect.value);
+  const selected = JSON.parse(localStorage.getItem("selectedClothing")||"null");
+  if(selected) await loadClothing(selected);
+}
+
+// --- UI Events ---
+ui.animSelect.addEventListener("change",()=>playAnim(ui.animSelect.value));
+ui.screenshotBtn.addEventListener("click",()=>{
+  renderer.domElement.toBlob(b=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b);
+    a.download="avatar.png";a.click();
   });
 });
-ui.resetBtn.addEventListener('click', () => {
-  localStorage.removeItem('selectedClothing');
-  clearClothing();
-  // reload avatar only
+ui.resetBtn.addEventListener("click",()=>{
+  localStorage.removeItem("selectedClothing");
   loadScene();
 });
-ui.avatarSelect.addEventListener('change', () => loadScene());
-ui.tint.addEventListener('input', () => {
-  // reapply tint to all clothing
-  for(const k in slotMap) {
-    const node = slotMap[k].mesh;
-    if(node) applyTintToCloth(node, ui.tint.value);
-  }
-});
 
-// initial load
-await loadScene();
-
-// animation & render loop
-let last = performance.now();
-function update() {
-  requestAnimationFrame(update);
-  const now = performance.now();
-  const dt = (now-last)/1000; last = now;
-
-  // auto-rotate
-  if(ui.autoRotate.checked && avatar) {
-    avatar.rotation.y += dt*0.25;
-  }
-
-  // update mixers
-  if(mixers && mixers.length) mixers.forEach(m => m.update(dt));
-
-  controls.update();
-  renderer.render(scene, camera);
+// --- Init ---
+async function init() {
+  await loadScene();
+  animate();
 }
-update();
+init();
 
-// handle resize
-addEventListener('resize', ()=> {
-  camera.aspect = innerWidth/innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
-});
+// --- Loop ---
+const clock = new THREE.Clock();
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  if(mixer) mixer.update(dt);
+  if(ui.autoRotate.checked && avatar) avatar.rotation.y += dt*0.3;
+  controls.update();
+  renderer.render(scene,camera);
+}
 </script>
 </body>
 </html>
-
