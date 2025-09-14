@@ -116,7 +116,7 @@ async function loadClothing() {
 
         // position clothing on avatar
         if(selected.category === "Clothing") {
-            clothing.position.y = avatarBox.min.y + avatarSize.y * 0.6- newSize.y/2;
+            clothing.position.y = avatarBox.min.y + avatarSize.y * 0.5- newSize.y/2;
         } else if(selected.category === "Pants") {
             clothing.position.y = avatarBox.min.y + avatarSize.y * 0.35 - newSize.y/2;
         } else if(selected.category === "Shoes") {
@@ -154,6 +154,7 @@ animate();
 </script>
 </body>
 </html>
+
 
 
 
