@@ -115,7 +115,7 @@ async function loadClothing() {
         const newSize = newBox.getSize(new THREE.Vector3());
 
         // position clothing on avatar
-        if(selected.category === "Shirt" || selected.category === "Jacket") {
+        if(selected.category === "Clothing") {
             clothing.position.y = avatarBox.min.y + avatarSize.y * 0.7 - newSize.y/2;
         } else if(selected.category === "Pants") {
             clothing.position.y = avatarBox.min.y + avatarSize.y * 0.35 - newSize.y/2;
@@ -154,5 +154,6 @@ animate();
 </script>
 </body>
 </html>
+
 
 
