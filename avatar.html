@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Avatar Try-On - Reality Shop</title>
+<title>Advanced Avatar Try-On - Reality Shop</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { margin: 0; overflow: hidden; background: #121212; }
+  canvas { display: block; }
 </style>
 
 <script type="importmap">
@@ -22,32 +23,35 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { AnimationMixer } from 'three';
+import { AnimationMixer, SkeletonHelper } from 'three';
 
-const scene = new THREE.Scene();
+let scene, camera, renderer, controls;
+let avatar, avatarSkeleton, mixer;
+let clothingMeshes = [];
+const clock = new THREE.Clock();
+const loader = new GLTFLoader();
+
+// --- Scene Setup ---
+scene = new THREE.Scene();
 scene.background = new THREE.Color(0x121212);
 
-const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0,1.6,3);
+camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 1.6, 3);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0,1.5,0);
+controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 1.5, 0);
 controls.update();
 
-scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 1.2));
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-dirLight.position.set(0,10,10);
-scene.add(dirLight);
-
-const loader = new GLTFLoader();
-const clock = new THREE.Clock();
-
-let avatar, avatarSkeleton, mixer;
-let clothingMeshes = [];
+// Lights
+const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+scene.add(hemi);
+const dir = new THREE.DirectionalLight(0xffffff, 0.8);
+dir.position.set(0, 10, 10);
+scene.add(dir);
 
 // --- Load Avatar ---
 loader.load('imgs/avatar.glb', gltf => {
@@ -57,6 +61,10 @@ loader.load('imgs/avatar.glb', gltf => {
   avatar.traverse(obj => {
     if(obj.isSkinnedMesh && !avatarSkeleton) avatarSkeleton = obj.skeleton;
   });
+
+  // Optional: visualize skeleton for debugging
+  // const helper = new SkeletonHelper(avatar);
+  // scene.add(helper);
 
   if(gltf.animations && gltf.animations.length > 0){
     mixer = new AnimationMixer(avatar);
@@ -78,13 +86,12 @@ function loadClothing(){
 
     clothing.traverse(mesh => {
       if(mesh.isSkinnedMesh){
-        // Bind clothing to avatar skeleton
         mesh.skeleton = avatarSkeleton;
         mesh.bind(avatarSkeleton);
         clothingMeshes.push(mesh);
 
-        // Auto-fit clothing
-        fitClothingProportionally(mesh, product.category);
+        // Advanced fitting
+        fitClothing(mesh, product.category);
       }
     });
 
@@ -92,8 +99,8 @@ function loadClothing(){
   });
 }
 
-// --- Proportional Clothing Fit ---
-function fitClothingProportionally(mesh, category){
+// --- Advanced Clothing Fit Function ---
+function fitClothing(mesh, category){
   const avatarBox = new THREE.Box3().setFromObject(avatar);
   const avatarHeight = avatarBox.max.y - avatarBox.min.y;
 
@@ -102,60 +109,53 @@ function fitClothingProportionally(mesh, category){
 
   let scale = avatarHeight / clothHeight;
 
-  // Adjust per category
   switch(category){
     case "Clothing": // Shirts/Jackets
       scale *= 0.95;
       mesh.scale.set(scale, scale, scale);
-
-      // Optional: adjust position to avatar torso
-      const avatarMidY = (avatarBox.min.y + avatarBox.max.y*0.55);
-      const clothMidY = (clothBox.min.y + clothBox.max.y)/2;
-      mesh.position.y += avatarMidY - clothMidY;
+      mesh.position.y = avatarBox.min.y + avatarHeight * 0.55 - (clothBox.min.y + clothHeight/2)*scale;
       break;
-
     case "Pants":
       scale *= 0.95;
       mesh.scale.set(scale, scale, scale);
-
-      const avatarLegY = avatarBox.min.y + avatarHeight*0.25;
-      const clothLegMidY = (clothBox.min.y + clothBox.max.y)/2;
-      mesh.position.y += avatarLegY - clothLegMidY;
+      mesh.position.y = avatarBox.min.y + avatarHeight * 0.25 - (clothBox.min.y + clothHeight/2)*scale;
       break;
-
     case "Shoes":
       scale *= 1.0;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.min.y + 0.02;
+      mesh.position.y = avatarBox.min.y - (clothBox.min.y)*scale + 0.02;
       break;
-
     case "Accessories":
       scale *= 1.0;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.max.y - 0.05;
+      mesh.position.y = avatarBox.max.y - (clothBox.max.y)*scale - 0.05;
       break;
+    default:
+      mesh.position.y = avatarBox.min.y + avatarHeight * 0.55;
+      mesh.scale.set(scale, scale, scale);
   }
 }
 
-// --- Animate ---
+// --- Animation & Sync ---
 function animate(){
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if(mixer) mixer.update(delta);
 
-  // Keep clothing synced with avatar
+  // Keep clothing synced
   clothingMeshes.forEach(mesh => mesh.skeleton.pose());
 
   renderer.render(scene, camera);
 }
 animate();
 
-// --- Resize ---
+// --- Handle Resize ---
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
 </script>
 </body>
 </html>
