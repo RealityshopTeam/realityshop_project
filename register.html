@@ -236,13 +236,7 @@
     }
 
     // 2. Insert into profiles table if signUp success
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert([
-        {
-          id: data.user.id,
-          username: name
-        }
-      ]);
+
 
       if (profileError) {
         alert("User created but error saving profile: " + profileError.message);
@@ -261,6 +255,7 @@
 
 </body>
 </html>
+
 
 
 
