@@ -14,6 +14,7 @@
       line-height: 1.5;
     }
 
+    /* Navbar */
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -24,6 +25,7 @@
       position: sticky;
       top: 0;
       z-index: 1000;
+      flex-wrap: wrap;
     }
 
     .navbar .logo {
@@ -37,6 +39,9 @@
       list-style: none;
       display: flex;
       gap: 20px;
+      flex-wrap: wrap;
+      margin: 10px 0 0;
+      padding: 0;
     }
 
     .navbar ul li a {
@@ -53,28 +58,14 @@
       color: #06b6d4;
     }
 
-    .navbar ul li a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      left: 0;
-      bottom: 0;
-      background: #06b6d4;
-      transition: width 0.3s;
-    }
-
-    .navbar ul li a:hover::after,
-    .navbar ul li a.active::after {
-      width: 100%;
-    }
-
     h2 {
       text-align: center;
       color: #111827;
-      margin: 30px 0 20px;
+      margin: 20px 0 10px;
+      font-size: 1.4rem;
     }
 
+    /* Desktop Table */
     table {
       width: 90%;
       margin: auto;
@@ -137,20 +128,64 @@
       transform: translateY(-2px) scale(1.04);
     }
 
+    /* Mobile Styles */
     @media (max-width: 700px) {
-      .navbar {
-        flex-direction: column;
-        align-items: flex-start;
+      table, thead, tbody, th, td, tr {
+        display: block;
       }
-      .navbar ul {
-        margin-top: 8px;
-        flex-wrap: wrap;
-        gap: 10px;
+
+      thead {
+        display: none;
       }
+
+      table {
+        width: 100%;
+        box-shadow: none;
+      }
+
+      tbody tr {
+        margin: 12px;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 12px;
+        background: white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      }
+
+      td {
+        border: none;
+        text-align: left;
+        padding: 8px 6px;
+        position: relative;
+      }
+
+      td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 4px;
+        color: #555;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        max-width: 100px;
+      }
+
+      .total {
+        font-size: 18px;
+        text-align: center;
+      }
+
       .actions {
         flex-direction: column;
         gap: 12px;
         align-items: center;
+      }
+
+      .btn-main {
+        width: 90%;
+        text-align: center;
       }
     }
   </style>
@@ -165,7 +200,7 @@
       <li><a href="cart.html" class="active">Cart</a></li>
       <li><a href="wishlist.html">Wishlist</a></li>
       <li><a href="login.html">Account</a></li>
-      <li><a href="dashboard.html" class="active">Dashboard</a></li>
+      <li><a href="dashboard.html">Dashboard</a></li>
     </ul>
   </nav>
 
@@ -189,11 +224,10 @@
     Total Amount: ₹<span id="total-amount">0</span>
   </div>
 
-<div class="actions">
-  <button class="btn-main" onclick="clearCart()">Clear Cart</button>
-  <button class="btn-main" onclick="window.location.href='checkout.html'">Proceed to Checkout</button>
-</div>
-
+  <div class="actions">
+    <button class="btn-main" onclick="clearCart()">Clear Cart</button>
+    <button class="btn-main" onclick="window.location.href='checkout.html'">Proceed to Checkout</button>
+  </div>
 
   <script>
     function loadCart() {
@@ -208,13 +242,13 @@
 
         cartItems.innerHTML += `
           <tr>
-            <td>${item.name}</td>
-            <td>₹${item.price}</td>
-            <td>
+            <td data-label="Product">${item.name}</td>
+            <td data-label="Price">₹${item.price}</td>
+            <td data-label="Quantity">
               <input type="number" min="1" value="${item.quantity}" onchange="updateQuantity(${index}, this.value)">
             </td>
-            <td>₹${subtotal}</td>
-            <td><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
+            <td data-label="Subtotal">₹${subtotal}</td>
+            <td data-label="Action"><button class="btn-main" style="padding:6px 16px;" onclick="removeItem(${index})">Remove</button></td>
           </tr>
         `;
       });
@@ -246,12 +280,3 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
