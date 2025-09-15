@@ -111,9 +111,9 @@ function fitClothing(mesh, category){
 
   switch(category){
     case "Clothing": // Shirts/Jackets
-      scale *= 0.95;
+      scale *= 0.65;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.min.y + avatarHeight - (clothBox.min.y + clothHeight/3)*scale;
+      mesh.position.y = avatarBox.min.y + avatarHeight *0.55- (clothBox.min.y + clothHeight/3)*scale;
       break;
     case "Pants":
       scale *= 0.95;
@@ -159,5 +159,6 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
+
 
 
