@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
   body { margin: 0; overflow: hidden; background: #121212; }
-  #avatar-container { width: 100vw; height: 100vh; }
 </style>
 
 <script type="importmap">
@@ -25,23 +24,17 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { AnimationMixer } from 'three';
 
-let scene, camera, renderer, controls;
-let avatar, avatarSkeleton, mixer;
-let clothingMeshes = [];
-const clock = new THREE.Clock();
-const loader = new GLTFLoader();
-
-// === Scene Setup ===
-scene = new THREE.Scene();
+const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x121212);
-camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
 camera.position.set(0,1.6,3);
 
-renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-controls = new OrbitControls(camera, renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0,1.5,0);
 controls.update();
 
@@ -50,27 +43,30 @@ const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 dirLight.position.set(0,10,10);
 scene.add(dirLight);
 
-// === Load Avatar ===
+const loader = new GLTFLoader();
+const clock = new THREE.Clock();
+
+let avatar, avatarSkeleton, mixer;
+let clothingMeshes = [];
+
+// --- Load Avatar ---
 loader.load('imgs/avatar.glb', gltf => {
   avatar = SkeletonUtils.clone(gltf.scene);
   scene.add(avatar);
 
-  // Find avatar skeleton
   avatar.traverse(obj => {
-    if(obj.isSkinnedMesh && !avatarSkeleton){
-      avatarSkeleton = obj.skeleton;
-    }
+    if(obj.isSkinnedMesh && !avatarSkeleton) avatarSkeleton = obj.skeleton;
   });
 
-  // Animation Mixer for avatar
-  mixer = new AnimationMixer(avatar);
-  gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+  if(gltf.animations && gltf.animations.length > 0){
+    mixer = new AnimationMixer(avatar);
+    gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+  }
 
-  // Load clothing after avatar
   loadClothing();
 });
 
-// === Load Clothing Dynamically ===
+// --- Load Clothing ---
 function loadClothing(){
   const selected = localStorage.getItem("selectedClothing");
   if(!selected) return;
@@ -80,76 +76,81 @@ function loadClothing(){
   loader.load(product.glb, gltf => {
     const clothing = SkeletonUtils.clone(gltf.scene);
 
-    // Bind clothing to avatar skeleton
     clothing.traverse(mesh => {
       if(mesh.isSkinnedMesh){
+        // Bind clothing to avatar skeleton
         mesh.skeleton = avatarSkeleton;
         mesh.bind(avatarSkeleton);
         clothingMeshes.push(mesh);
+
+        // Auto-fit clothing
+        fitClothingProportionally(mesh, product.category);
       }
     });
 
-    // Fit clothing automatically
-    autoFitClothing(clothing, product.category);
     scene.add(clothing);
-
-    // Apply avatar animations to clothing
-    if(gltf.animations && gltf.animations.length > 0){
-      const clothingMixer = new AnimationMixer(clothing);
-      gltf.animations.forEach(clip => clothingMixer.clipAction(clip).play());
-      // Store clothing mixer (optional, for more complex syncing)
-      clothing.meshMixer = clothingMixer;
-    }
   });
 }
 
-// === Automatic Clothing Fit Function ===
-function autoFitClothing(clothing, category){
-  const clothBox = new THREE.Box3().setFromObject(clothing);
-  const clothSize = new THREE.Vector3();
-  clothBox.getSize(clothSize);
-
+// --- Proportional Clothing Fit ---
+function fitClothingProportionally(mesh, category){
   const avatarBox = new THREE.Box3().setFromObject(avatar);
-  const avatarSize = new THREE.Vector3();
-  avatarBox.getSize(avatarSize);
+  const avatarHeight = avatarBox.max.y - avatarBox.min.y;
 
-  // Scale to match avatar
-  let scaleFactor = avatarSize.y / clothSize.y;
+  const clothBox = new THREE.Box3().setFromObject(mesh);
+  const clothHeight = clothBox.max.y - clothBox.min.y;
 
+  let scale = avatarHeight / clothHeight;
+
+  // Adjust per category
   switch(category){
-    case "Clothing": // Shirts / Jackets
-      scaleFactor *= 0.95;
-      clothing.position.y = avatarBox.min.y + avatarSize.y * 0.55;
-      break;
-    case "Pants":
-      scaleFactor *= 0.95;
-      clothing.position.y = avatarBox.min.y + avatarSize.y * 0.25;
-      break;
-    case "Shoes":
-      scaleFactor *= 1.0;
-      clothing.position.y = avatarBox.min.y + 0.02;
-      break;
-    case "Accessories":
-      scaleFactor *= 1.0;
-      clothing.position.y = avatarBox.max.y - 0.05;
-      break;
-    default:
-      clothing.position.y = avatarBox.min.y + avatarSize.y * 0.55;
-  }
+    case "Clothing": // Shirts/Jackets
+      scale *= 0.95;
+      mesh.scale.set(scale, scale, scale);
 
-  clothing.scale.setScalar(scaleFactor);
+      // Optional: adjust position to avatar torso
+      const avatarMidY = (avatarBox.min.y + avatarBox.max.y*0.55);
+      const clothMidY = (clothBox.min.y + clothBox.max.y)/2;
+      mesh.position.y += avatarMidY - clothMidY;
+      break;
+
+    case "Pants":
+      scale *= 0.95;
+      mesh.scale.set(scale, scale, scale);
+
+      const avatarLegY = avatarBox.min.y + avatarHeight*0.25;
+      const clothLegMidY = (clothBox.min.y + clothBox.max.y)/2;
+      mesh.position.y += avatarLegY - clothLegMidY;
+      break;
+
+    case "Shoes":
+      scale *= 1.0;
+      mesh.scale.set(scale, scale, scale);
+      mesh.position.y = avatarBox.min.y + 0.02;
+      break;
+
+    case "Accessories":
+      scale *= 1.0;
+      mesh.scale.set(scale, scale, scale);
+      mesh.position.y = avatarBox.max.y - 0.05;
+      break;
+  }
 }
 
-// === Animation Loop ===
+// --- Animate ---
 function animate(){
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if(mixer) mixer.update(delta);
+
+  // Keep clothing synced with avatar
+  clothingMeshes.forEach(mesh => mesh.skeleton.pose());
+
   renderer.render(scene, camera);
 }
 animate();
 
-// === Window Resize Handling ===
+// --- Resize ---
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
