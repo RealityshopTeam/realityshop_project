@@ -23,7 +23,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
-import { AnimationMixer, SkeletonHelper } from 'three';
+import { AnimationMixer } from 'three';
 
 let scene, camera, renderer, controls;
 let avatar, avatarSkeleton, mixer;
@@ -35,7 +35,7 @@ const loader = new GLTFLoader();
 scene = new THREE.Scene();
 scene.background = new THREE.Color(0x121212);
 
-camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 1.6, 3);
 
 renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -58,36 +58,50 @@ loader.load('imgs/avatar.glb', gltf => {
   avatar = SkeletonUtils.clone(gltf.scene);
   scene.add(avatar);
 
+  // grab avatar skeleton from first skinned mesh
   avatar.traverse(obj => {
-    if(obj.isSkinnedMesh && !avatarSkeleton) avatarSkeleton = obj.skeleton;
+    if (obj.isSkinnedMesh && !avatarSkeleton) {
+      avatarSkeleton = obj.skeleton;
+    }
   });
 
-  // Optional: visualize skeleton for debugging
-  // const helper = new SkeletonHelper(avatar);
-  // scene.add(helper);
-
-  if(gltf.animations && gltf.animations.length > 0){
+  // optional: animate avatar if animations present
+  if (gltf.animations && gltf.animations.length > 0) {
     mixer = new AnimationMixer(avatar);
     gltf.animations.forEach(clip => mixer.clipAction(clip).play());
   }
 
+  // load clothing after avatar loaded
   loadClothing();
 });
 
 // --- Load Clothing ---
-function loadClothing(){
+function loadClothing() {
   const selected = localStorage.getItem("selectedClothing");
-  if(!selected) return;
+  if (!selected) return;
   const product = JSON.parse(selected);
-  if(!product.glb) return;
+  if (!product.glb) return;
 
   loader.load(product.glb, gltf => {
     const clothing = SkeletonUtils.clone(gltf.scene);
 
     clothing.traverse(mesh => {
-      if(mesh.isSkinnedMesh){
-        mesh.skeleton = avatarSkeleton;
-        mesh.bind(avatarSkeleton);
+      if (mesh.isSkinnedMesh) {
+        // Map bones by name between avatar and clothing
+        const bonesByName = {};
+        avatarSkeleton.bones.forEach(b => bonesByName[b.name] = b);
+
+        // Replace clothing bones with avatar bones where names match
+        mesh.skeleton.bones.forEach((bone, i) => {
+          if (bonesByName[bone.name]) {
+            mesh.skeleton.bones[i] = bonesByName[bone.name];
+          }
+        });
+
+        // Rebind clothing to avatar skeleton
+        const newSkeleton = new THREE.Skeleton(mesh.skeleton.bones, avatarSkeleton.boneInverses);
+        mesh.bind(newSkeleton);
+
         clothingMeshes.push(mesh);
 
         // Advanced fitting
@@ -100,7 +114,7 @@ function loadClothing(){
 }
 
 // --- Advanced Clothing Fit Function ---
-function fitClothing(mesh, category){
+function fitClothing(mesh, category) {
   const avatarBox = new THREE.Box3().setFromObject(avatar);
   const avatarHeight = avatarBox.max.y - avatarBox.min.y;
 
@@ -109,26 +123,26 @@ function fitClothing(mesh, category){
 
   let scale = avatarHeight / clothHeight;
 
-  switch(category){
+  switch (category) {
     case "Clothing": // Shirts/Jackets
       scale *= 1;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.min.y + avatarHeight *1- (clothBox.min.y + clothHeight/3)*scale;
+      mesh.position.y = avatarBox.min.y + avatarHeight * 1 - (clothBox.min.y + clothHeight / 3) * scale;
       break;
     case "Pants":
       scale *= 0.95;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.min.y + avatarHeight * 0.25 - (clothBox.min.y + clothHeight/2)*scale;
+      mesh.position.y = avatarBox.min.y + avatarHeight * 0.25 - (clothBox.min.y + clothHeight / 2) * scale;
       break;
     case "Shoes":
       scale *= 1.0;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.min.y - (clothBox.min.y)*scale + 0.02;
+      mesh.position.y = avatarBox.min.y - (clothBox.min.y) * scale + 0.02;
       break;
     case "Accessories":
       scale *= 1.0;
       mesh.scale.set(scale, scale, scale);
-      mesh.position.y = avatarBox.max.y - (clothBox.max.y)*scale - 0.05;
+      mesh.position.y = avatarBox.max.y - (clothBox.max.y) * scale - 0.05;
       break;
     default:
       mesh.position.y = avatarBox.min.y + avatarHeight * 0.55;
@@ -137,13 +151,15 @@ function fitClothing(mesh, category){
 }
 
 // --- Animation & Sync ---
-function animate(){
+function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
-  if(mixer) mixer.update(delta);
+  if (mixer) mixer.update(delta);
 
-  // Keep clothing synced
-  clothingMeshes.forEach(mesh => mesh.skeleton.pose());
+  // Keep clothing synced to avatar bones
+  clothingMeshes.forEach(mesh => {
+    if (mesh.skeleton) mesh.skeleton.pose();
+  });
 
   renderer.render(scene, camera);
 }
@@ -155,13 +171,6 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
-
 </script>
 </body>
 </html>
-
-
-
-
-
-
