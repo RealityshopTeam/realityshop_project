@@ -210,58 +210,50 @@
     </div>
   </div>
   <script>
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
+  // Form submit handler
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  const name = document.getElementById('name').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
-  const confirmPassword = document.getElementById('confirm-password').value.trim();
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value.trim();
+    const confirmPassword = document.getElementById('confirm-password').value.trim();
 
-  if (password !== confirmPassword) {
-    alert("Passwords do not match");
-    return;
-  }
+    if (password !== confirmPassword) {
+      alert("Passwords do not match");
+      return;
+    }
 
-  // 1. Sign up user in Supabase Auth
-  const { data, error } = await supabase.auth.signUp({
-    email: email,
-    password: password
-  });
-
-  if (error) {
-    alert("Error creating account: " + error.message);
-    return;
-  }
-
-  // 2. Insert into profiles table (link to the new user's id)
-  if (data.user) {
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      username: name
+    // 1. Sign up user
+    const { data, error } = await supabase.auth.signUp({
+      email: email,
+      password: password
     });
 
-    if (profileError) {
-      alert("User created but error saving profile: " + profileError.message);
-    } else {
-      alert("Registration successful! Please check your email to confirm your account.");
-      window.location.href = 'login.html'; // redirect to login page
+    if (error) {
+      alert("Error creating account: " + error.message);
+      return;
     }
-  }
-});
-    const { data, error } = await supabase.auth.signUp({
-  email,
-  password
-});
 
-if (data.user) {
-  // Insert a profile row with the same user ID
-  await supabase.from('profiles').insert([
-    { id: data.user.id, username: 'NewUser' }
-  ]);
-}
+    // 2. Insert into profiles table if signUp success
+    if (data.user) {
+      const { error: profileError } = await supabase.from('profiles').insert([
+        {
+          id: data.user.id,
+          username: name
+        }
+      ]);
 
+      if (profileError) {
+        alert("User created but error saving profile: " + profileError.message);
+      } else {
+        alert("Registration successful! Please check your email to confirm your account.");
+        window.location.href = 'login.html';
+      }
+    }
+  });
 </script>
+
 
   <footer>
     <p>© 2025 Reality Shop. All rights reserved.</p>
@@ -269,6 +261,7 @@ if (data.user) {
 
 </body>
 </html>
+
 
 
 
