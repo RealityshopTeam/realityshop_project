@@ -55,24 +55,23 @@ loader.load('imgs/avatar.glb', gltf => {
   avatar = SkeletonUtils.clone(gltf.scene);
   scene.add(avatar);
 
+  // Find avatar skeleton
   avatar.traverse(obj => {
     if(obj.isSkinnedMesh && !avatarSkeleton){
       avatarSkeleton = obj.skeleton;
     }
   });
 
-  // Animation Mixer
-  if(gltf.animations && gltf.animations.length > 0){
-    mixer = new AnimationMixer(avatar);
-    gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-  }
+  // Animation Mixer for avatar
+  mixer = new AnimationMixer(avatar);
+  gltf.animations.forEach(clip => mixer.clipAction(clip).play());
 
   // Load clothing after avatar
   loadClothing();
 });
 
 // === Load Clothing Dynamically ===
-async function loadClothing(){
+function loadClothing(){
   const selected = localStorage.getItem("selectedClothing");
   if(!selected) return;
   const product = JSON.parse(selected);
@@ -81,7 +80,7 @@ async function loadClothing(){
   loader.load(product.glb, gltf => {
     const clothing = SkeletonUtils.clone(gltf.scene);
 
-    // Bind clothing skinned meshes to avatar skeleton
+    // Bind clothing to avatar skeleton
     clothing.traverse(mesh => {
       if(mesh.isSkinnedMesh){
         mesh.skeleton = avatarSkeleton;
@@ -90,14 +89,22 @@ async function loadClothing(){
       }
     });
 
+    // Fit clothing automatically
     autoFitClothing(clothing, product.category);
     scene.add(clothing);
+
+    // Apply avatar animations to clothing
+    if(gltf.animations && gltf.animations.length > 0){
+      const clothingMixer = new AnimationMixer(clothing);
+      gltf.animations.forEach(clip => clothingMixer.clipAction(clip).play());
+      // Store clothing mixer (optional, for more complex syncing)
+      clothing.meshMixer = clothingMixer;
+    }
   });
 }
 
 // === Automatic Clothing Fit Function ===
 function autoFitClothing(clothing, category){
-  // Calculate bounding boxes
   const clothBox = new THREE.Box3().setFromObject(clothing);
   const clothSize = new THREE.Vector3();
   clothBox.getSize(clothSize);
@@ -106,10 +113,9 @@ function autoFitClothing(clothing, category){
   const avatarSize = new THREE.Vector3();
   avatarBox.getSize(avatarSize);
 
-  // Default scaling factor
+  // Scale to match avatar
   let scaleFactor = avatarSize.y / clothSize.y;
 
-  // Adjust per category for better fit
   switch(category){
     case "Clothing": // Shirts / Jackets
       scaleFactor *= 0.95;
@@ -127,17 +133,11 @@ function autoFitClothing(clothing, category){
       scaleFactor *= 1.0;
       clothing.position.y = avatarBox.max.y - 0.05;
       break;
-    default: // fallback
+    default:
       clothing.position.y = avatarBox.min.y + avatarSize.y * 0.55;
   }
 
-  // Apply uniform scale
   clothing.scale.setScalar(scaleFactor);
-}
-
-// === Keep Clothing in Sync with Avatar Animation ===
-function updateClothing(){
-  clothingMeshes.forEach(mesh => mesh.skeleton.pose());
 }
 
 // === Animation Loop ===
@@ -145,12 +145,11 @@ function animate(){
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   if(mixer) mixer.update(delta);
-  updateClothing();
   renderer.render(scene, camera);
 }
 animate();
 
-// === Handle Window Resize ===
+// === Window Resize Handling ===
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
@@ -159,4 +158,3 @@ window.addEventListener('resize', () => {
 </script>
 </body>
 </html>
-
