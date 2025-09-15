@@ -105,7 +105,7 @@
 
       loader.load(selected.glb, (gltf) => {
         const clothing = SkeletonUtils.clone(gltf.scene);
-        clothing.scale.set(1.2, 1.2, 1.2);
+        clothing.scale.set(1, 1, 1);
 
         if (avatar) {
           avatar.add(clothing);
@@ -136,3 +136,4 @@
   </script>
 </body>
 </html>
+
