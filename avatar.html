@@ -4,8 +4,7 @@
   <meta charset="UTF-8">
   <title>Avatar Try-On - Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Importmap for Three.js -->
+  <!-- Importmap for Three.js and dependencies -->
   <script type="importmap">
   {
     "imports": {
@@ -14,20 +13,16 @@
     }
   }
   </script>
-
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
     #canvas-container { width: 100vw; height: 100vh; }
     #back-btn {
       position: absolute;
-      top: 15px;
-      left: 15px;
+      top: 15px; left: 15px;
       padding: 10px 20px;
       background: linear-gradient(135deg,#00cfff,#0072ff);
-      border: none;
-      border-radius: 20px;
-      color: #fff;
-      font-weight: bold;
+      border: none; border-radius: 20px;
+      color: #fff; font-weight: bold;
       cursor: pointer;
       box-shadow: 0 4px 8px rgba(0,0,0,0.3);
       z-index: 10;
@@ -40,7 +35,6 @@
 <body>
   <button id="back-btn" onclick="window.close()">⟵ Back</button>
   <div id="canvas-container"></div>
-
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
@@ -48,8 +42,7 @@
     import * as SkeletonUtils from 'three/examples/utils/SkeletonUtils.js';
 
     const container = document.getElementById('canvas-container');
-
-    // Scene
+    // Scene setup
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
@@ -71,69 +64,94 @@
     const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
     hemiLight.position.set(0, 20, 0);
     scene.add(hemiLight);
-
     const dirLight = new THREE.DirectionalLight(0xffffff, 1);
     dirLight.position.set(3, 10, 10);
     scene.add(dirLight);
 
-    // Loaders
+    // GLTF Loader
     const loader = new GLTFLoader();
-
-    // Base avatar (replace this file with your avatar.glb)
     const avatarFile = "imgs/avatar.glb";
-    let avatar;
+    let avatar, mixer;
 
+    // Load base avatar with animations
     loader.load(avatarFile, (gltf) => {
       avatar = gltf.scene;
       avatar.scale.set(1.2, 1.2, 1.2);
       avatar.position.set(0, 0, 0);
       scene.add(avatar);
 
-      // Once avatar is loaded, try clothing
-      loadClothing();
+      // Play avatar animations if present
+      if (gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(avatar);
+        gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+      }
+
+      // Attach clothing/accessories after avatar is loaded
+      loadClothingAndAccessories(gltf);
     }, undefined, (err) => {
       console.error("Error loading avatar:", err);
     });
 
-    // Clothing loader
-    function loadClothing() {
-      const selected = JSON.parse(localStorage.getItem("selectedClothing") || "null");
-      if (!selected || !selected.glb) {
-        console.log("No clothing selected.");
+    // Dynamically load and attach clothing + accessories
+    function loadClothingAndAccessories(avatarGLTF) {
+      // Example: expecting [{glb: "...", name: "..."}] in localStorage
+      const selectedList = JSON.parse(localStorage.getItem("selectedProducts") || "null"); // array of products
+      const fallbackClothing = JSON.parse(localStorage.getItem("selectedClothing") || "null"); // fallback for legacy
+
+      // Always process as array for flexibility
+      const products = Array.isArray(selectedList) ? selectedList : (fallbackClothing ? [fallbackClothing] : []);
+      if (!products.length) {
+        console.log("No product/clothing selected.");
         return;
       }
 
-      loader.load(selected.glb, (gltf) => {
-        const clothing = SkeletonUtils.clone(gltf.scene);
-        clothing.scale.set(1, 1, 1);
-
-        if (avatar) {
-          avatar.add(clothing);
-          clothing.position.set(0, 0, 0);
-        } else {
-          scene.add(clothing);
-        }
-
-        console.log("Clothing loaded:", selected.name);
-      }, undefined, (err) => {
-        console.error("Error loading clothing:", err);
+      products.forEach(selected => {
+        if (!(selected && selected.glb)) return;
+        loader.load(selected.glb, (gltf) => {
+          // Find skinned mesh in clothing/accessory
+          let prodMesh = null;
+          gltf.scene.traverse(child => { if (child.isSkinnedMesh) prodMesh = child; });
+          if (!prodMesh) {
+            // Not rigged, fallback to simple parenting (WILL NOT DEFORM CORRECTLY)
+            avatar.add(gltf.scene);
+            gltf.scene.position.set(0, 0, 0);
+            console.warn(selected.name + ": not a skinned mesh—just attached as object");
+            return;
+          }
+          // Find avatar skinned mesh (first one)
+          let avatarMesh = null;
+          avatarGLTF.scene.traverse(child => { if (child.isSkinnedMesh) avatarMesh = child; });
+          if (!avatarMesh) {
+            avatar.add(prodMesh);
+            return;
+          }
+          // Bind clothing/accessory mesh to avatar skeleton
+          prodMesh.skeleton = avatarMesh.skeleton;
+          prodMesh.bind(avatarMesh.skeleton);
+          avatar.add(prodMesh);
+          prodMesh.scale.set(1, 1, 1);
+          prodMesh.position.set(0, 0, 0);
+          console.log("Product attached:", selected.name);
+        }, undefined, (err) => {
+          console.error("Error loading product:", err);
+        });
       });
     }
 
-    // Resize handler
+    // Animation loop
+    function animate() {
+      requestAnimationFrame(animate);
+      if (mixer) mixer.update(0.016);
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    // Responsive resize
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
-
-    // Animate
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-    animate();
   </script>
 </body>
 </html>
-
