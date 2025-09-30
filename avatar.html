@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <title>Avatar Try-On - Reality Shop</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Importmap for Three.js and dependencies -->
+  
+  <!-- Importmap for Three.js -->
   <script type="importmap">
   {
     "imports": {
@@ -13,36 +14,41 @@
     }
   }
   </script>
+  <!-- Ready Player Me SDK -->
+  <script src="https://cdn.readyplayer.me/sdk/readyplayerme.js"></script>
+
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
     #canvas-container { width: 100vw; height: 100vh; }
     #back-btn {
-      position: absolute;
-      top: 15px; left: 15px;
-      padding: 10px 20px;
-      background: linear-gradient(135deg,#00cfff,#0072ff);
-      border: none; border-radius: 20px;
-      color: #fff; font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      position: absolute; top: 15px; left: 15px;
+      padding: 10px 20px; background: linear-gradient(135deg,#00cfff,#0072ff);
+      border: none; border-radius: 20px; color: #fff; font-weight: bold;
+      cursor: pointer; box-shadow: 0 4px 8px rgba(0,0,0,0.3);
       z-index: 10;
     }
-    #back-btn:hover {
-      background: linear-gradient(135deg,#0072ff,#0044aa);
+    #rpm-frame {
+      position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%;
+      border: none; z-index: 20;
     }
   </style>
 </head>
 <body>
-  <button id="back-btn" onclick="window.close()">⟵ Back</button>
+  <button id="back-btn" onclick="window.location.href='product.html'">⟵ Back</button>
   <div id="canvas-container"></div>
+  <iframe id="rpm-frame" allow="camera *; microphone *"
+    src="https://demo.readyplayer.me/avatar?frameApi"></iframe>
+
   <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/examples/controls/OrbitControls.js';
     import { GLTFLoader } from 'three/examples/loaders/GLTFLoader.js';
-    import * as SkeletonUtils from 'three/examples/utils/SkeletonUtils.js';
 
     const container = document.getElementById('canvas-container');
-    // Scene setup
+    const loader = new GLTFLoader();
+
+    // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x111111);
 
@@ -68,77 +74,73 @@
     dirLight.position.set(3, 10, 10);
     scene.add(dirLight);
 
-    // GLTF Loader
-    const loader = new GLTFLoader();
-    const avatarFile = "imgs/avatar.glb";
     let avatar, mixer;
 
-    // Load base avatar with animations
-    loader.load(avatarFile, (gltf) => {
-      avatar = gltf.scene;
-      avatar.scale.set(1.2, 1.2, 1.2);
-      avatar.position.set(0, 0, 0);
-      scene.add(avatar);
-
-      // Play avatar animations if present
-      if (gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(avatar);
-        gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+    // --- Load Avatar from Ready Player Me ---
+    const rpmFrame = document.getElementById("rpm-frame");
+    window.addEventListener("message", (event) => {
+      if (event.origin !== "https://demo.readyplayer.me") return;
+      const url = event.data?.url;
+      if (url && url.endsWith(".glb")) {
+        console.log("Avatar Loaded:", url);
+        loadAvatar(url);
+        rpmFrame.style.display = "none"; // hide iframe after avatar selection
       }
-
-      // Attach clothing/accessories after avatar is loaded
-      loadClothingAndAccessories(gltf);
-    }, undefined, (err) => {
-      console.error("Error loading avatar:", err);
     });
 
-    // Dynamically load and attach clothing + accessories
-    function loadClothingAndAccessories(avatarGLTF) {
-      // Example: expecting [{glb: "...", name: "..."}] in localStorage
-      const selectedList = JSON.parse(localStorage.getItem("selectedProducts") || "null"); // array of products
-      const fallbackClothing = JSON.parse(localStorage.getItem("selectedClothing") || "null"); // fallback for legacy
+    function loadAvatar(url) {
+      loader.load(url, (gltf) => {
+        avatar = gltf.scene;
+        avatar.scale.set(1.2, 1.2, 1.2);
+        avatar.position.set(0, 0, 0);
+        scene.add(avatar);
 
-      // Always process as array for flexibility
-      const products = Array.isArray(selectedList) ? selectedList : (fallbackClothing ? [fallbackClothing] : []);
-      if (!products.length) {
-        console.log("No product/clothing selected.");
+        if (gltf.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(avatar);
+          gltf.animations.forEach((clip) => mixer.clipAction(clip).play());
+        }
+
+        loadSelectedClothing(gltf);
+      });
+    }
+
+    // --- Load Clothing from product.html ---
+    function loadSelectedClothing(avatarGLTF) {
+      const selectedProducts = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
+
+      if (!selectedProducts.length) {
+        console.log("No clothing selected.");
         return;
       }
 
-      products.forEach(selected => {
-        if (!(selected && selected.glb)) return;
-        loader.load(selected.glb, (gltf) => {
-          // Find skinned mesh in clothing/accessory
+      selectedProducts.forEach(product => {
+        loader.load(product.glb, (gltf) => {
           let prodMesh = null;
           gltf.scene.traverse(child => { if (child.isSkinnedMesh) prodMesh = child; });
+
           if (!prodMesh) {
-            // Not rigged, fallback to simple parenting (WILL NOT DEFORM CORRECTLY)
             avatar.add(gltf.scene);
-            gltf.scene.position.set(0, 0, 0);
-            console.warn(selected.name + ": not a skinned mesh—just attached as object");
+            console.warn(product.name + ": not rigged, only attached.");
             return;
           }
-          // Find avatar skinned mesh (first one)
+
+          // Match skeleton with avatar
           let avatarMesh = null;
           avatarGLTF.scene.traverse(child => { if (child.isSkinnedMesh) avatarMesh = child; });
-          if (!avatarMesh) {
-            avatar.add(prodMesh);
-            return;
-          }
-          // Bind clothing/accessory mesh to avatar skeleton
+          if (!avatarMesh) return;
+
           prodMesh.skeleton = avatarMesh.skeleton;
           prodMesh.bind(avatarMesh.skeleton);
           avatar.add(prodMesh);
-          prodMesh.scale.set(1, 1, 1);
+
+          prodMesh.scale.set(1, 1, 1); // adjust if needed
           prodMesh.position.set(0, 0, 0);
-          console.log("Product attached:", selected.name);
-        }, undefined, (err) => {
-          console.error("Error loading product:", err);
+          console.log("Clothing attached:", product.name);
         });
       });
     }
 
-    // Animation loop
+    // --- Animate ---
     function animate() {
       requestAnimationFrame(animate);
       if (mixer) mixer.update(0.016);
@@ -146,7 +148,7 @@
     }
     animate();
 
-    // Responsive resize
+    // --- Responsive ---
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
