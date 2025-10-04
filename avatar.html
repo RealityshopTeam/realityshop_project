@@ -86,7 +86,7 @@
       document.getElementById("loading").style.display = "none";
 
       // ✅ Load selected clothing
-      const selectedProduct = localStorage.getItem("selectedProduct") || "shirt1.glb";
+      const selectedProduct = localStorage.getItem("selectedProduct");
 
       try {
         const clothGLB = await loader.loadAsync(selectedProduct);
@@ -130,3 +130,4 @@
   </script>
 </body>
 </html>
+
