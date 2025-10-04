@@ -5,12 +5,11 @@
   <title>Avatar Try-On - Reality Shop</title>
   <style>
     body { margin: 0; overflow: hidden; background: #111; }
-    canvas { display: block; }
-    #loading { 
-      position: absolute; 
-      top: 50%; left: 50%; 
-      transform: translate(-50%, -50%); 
-      color: white; font-family: sans-serif; 
+    #loading {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: white; font-family: sans-serif;
     }
   </style>
 
@@ -68,7 +67,7 @@
       clock = new THREE.Clock();
 
       const loader = new GLTFLoader();
-      const avatarGLB = await loader.loadAsync("imgs/avatar.glb"); // Your main avatar
+      const avatarGLB = await loader.loadAsync("imgs/avatar.glb");
       avatar = avatarGLB.scene;
       scene.add(avatar);
 
@@ -86,18 +85,31 @@
 
       document.getElementById("loading").style.display = "none";
 
-      // ✅ Load selected clothing (from localStorage)
-      const selectedProduct = localStorage.getItem("selectedProduct"); // e.g. 'models/shirt1.glb'
-      if (selectedProduct) {
+      // ✅ Load selected clothing
+      const selectedProduct = localStorage.getItem("selectedProduct") || "shirt1.glb";
+
+      try {
         const clothGLB = await loader.loadAsync(selectedProduct);
         const clothing = clothGLB.scene;
+
+        let attached = false;
         clothing.traverse((obj) => {
           if (obj.isSkinnedMesh && skeleton) {
             obj.skeleton = skeleton;
             obj.bind(skeleton, obj.bindMatrix);
+            attached = true;
           }
         });
-        avatar.add(clothing);
+
+        if (!attached) {
+          // Static fallback
+          clothing.position.set(0, 0, 0);
+          clothing.scale.set(1, 1, 1);
+          avatar.add(clothing);
+        }
+
+      } catch (err) {
+        console.error("❌ Error loading clothing:", err);
       }
 
       window.addEventListener("resize", onWindowResize);
