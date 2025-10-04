@@ -42,19 +42,23 @@
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0x202020);
 
+      // Camera setup
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
       camera.position.set(0, 1.6, 3);
 
+      // Renderer setup
       renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setPixelRatio(window.devicePixelRatio);
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.shadowMap.enabled = true;
       document.body.appendChild(renderer.domElement);
 
+      // Orbit controls
       controls = new OrbitControls(camera, renderer.domElement);
       controls.target.set(0, 1.5, 0);
       controls.update();
 
+      // Lights
       const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.5);
       hemiLight.position.set(0, 20, 0);
       scene.add(hemiLight);
@@ -65,28 +69,39 @@
       scene.add(dirLight);
 
       clock = new THREE.Clock();
-
       const loader = new GLTFLoader();
-      const avatarGLB = await loader.loadAsync("imgs/avatar.glb");
-      avatar = avatarGLB.scene;
-      scene.add(avatar);
 
-      avatar.traverse((obj) => {
-        if (obj.isSkinnedMesh) skeleton = obj.skeleton;
-      });
+      // ✅ Load main avatar
+      try {
+        const avatarGLB = await loader.loadAsync("imgs/avatar.glb"); // Make sure this exists
+        avatar = avatarGLB.scene;
+        scene.add(avatar);
 
-      if (avatarGLB.animations && avatarGLB.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(avatar);
-        avatarGLB.animations.forEach((clip) => {
-          const action = mixer.clipAction(clip);
-          action.play();
+        avatar.traverse((obj) => {
+          if (obj.isSkinnedMesh) skeleton = obj.skeleton;
         });
+
+        // Play avatar animations (if any)
+        if (avatarGLB.animations && avatarGLB.animations.length > 0) {
+          mixer = new THREE.AnimationMixer(avatar);
+          avatarGLB.animations.forEach((clip) => {
+            const action = mixer.clipAction(clip);
+            action.play();
+          });
+        }
+      } catch (err) {
+        console.error("❌ Error loading avatar.glb:", err);
       }
 
       document.getElementById("loading").style.display = "none";
 
       // ✅ Load selected clothing
-      const selectedProduct = localStorage.getItem("selectedProduct");
+      let selectedProduct = localStorage.getItem("selectedProduct");
+      if (!selectedProduct || selectedProduct === "null" || selectedProduct.trim() === "") {
+        selectedProduct = "imgs/shirt.glb"; // fallback file
+      }
+
+      console.log("🧥 Selected product to load:", selectedProduct);
 
       try {
         const clothGLB = await loader.loadAsync(selectedProduct);
@@ -102,14 +117,19 @@
         });
 
         if (!attached) {
-          // Static fallback
+          // Static fallback for non-rigged meshes
           clothing.position.set(0, 0, 0);
           clothing.scale.set(1, 1, 1);
           avatar.add(clothing);
+          console.warn("⚠️ Clothing is not rigged, added as static mesh.");
+        } else {
+          avatar.add(clothing);
+          console.log("✅ Clothing attached to avatar skeleton.");
         }
 
       } catch (err) {
-        console.error("❌ Error loading clothing:", err);
+        console.error("❌ Error loading clothing model:", err);
+        console.warn("💡 Check file path or localStorage value.");
       }
 
       window.addEventListener("resize", onWindowResize);
@@ -130,4 +150,3 @@
   </script>
 </body>
 </html>
-
