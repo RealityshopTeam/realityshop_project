@@ -62,7 +62,7 @@
     clock = new THREE.Clock();
 
     // ✅ Load base avatar
-    loader.load("models/baseAvatar.glb", (gltf) => {
+    loader.load("imgs/avatar.glb", (gltf) => {
       avatar = gltf.scene;
       avatar.traverse((obj) => {
         if (obj.isSkinnedMesh) {
@@ -129,3 +129,4 @@
 </script>
 </body>
 </html>
+
