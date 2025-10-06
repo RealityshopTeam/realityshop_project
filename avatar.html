@@ -1,11 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Reality Shop - Avatar Customization</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <title>Reality Shop - Avatar Try-On</title>
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; }
+    #uploadBox {
+      position: absolute;
+      top: 10px; left: 10px;
+      z-index: 10;
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 10px;
+      color: #fff;
+    }
+  </style>
 
-  <!-- Importmap -->
   <script type="importmap">
   {
     "imports": {
@@ -15,158 +25,161 @@
     }
   }
   </script>
-
-  <style>
-    body { margin: 0; overflow: hidden; background: #0a0a0a; font-family: Poppins, sans-serif; color: white; }
-    #viewer { width: 100vw; height: 85vh; }
-    #controls { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
-    input, button { padding: 8px 12px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; }
-    button { background: linear-gradient(135deg,#00eaff,#0066ff); color: white; }
-    button:hover { background: linear-gradient(135deg,#0077ff,#0044aa); transform: translateY(-2px); }
-  </style>
 </head>
 <body>
-  <div id="viewer"></div>
 
-  <div id="controls">
+  <div id="uploadBox">
+    <label>Upload Selfie: </label>
     <input type="file" id="selfieInput" accept="image/*">
-    <button id="applyColors">Apply Selfie Colors</button>
   </div>
 
   <script type="module">
-    import * as THREE from "three";
-    import { GLTFLoader } from "GLTFLoader";
-    import { OrbitControls } from "OrbitControls";
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'GLTFLoader';
+    import { OrbitControls } from 'OrbitControls';
 
-    // === Basic setup ===
-    const container = document.getElementById("viewer");
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
+    // Suppress extension warning
+    console.warn = (msg) => {
+      if (msg.includes("KHR_materials_pbrSpecularGlossiness")) return;
+      console.log(msg);
+    };
 
-    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
-    camera.position.set(0, 1.5, 3);
+    let scene, camera, renderer, mixer, avatar, controls;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight * 0.85);
-    container.appendChild(renderer.domElement);
+    init();
+    animate();
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1.5, 0);
-    controls.update();
+    async function init() {
+      // Scene setup
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x000000);
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-    scene.add(hemi);
-    const dir = new THREE.DirectionalLight(0xffffff, 1);
-    dir.position.set(3, 5, 2);
-    scene.add(dir);
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
+      camera.position.set(0, 1.6, 3);
 
-    const loader = new GLTFLoader();
-    const clock = new THREE.Clock();
-    let avatar, mixer;
-    let clothing = null;
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
 
-    // === Load Avatar ===
-    loader.load("imgs/avatar.glb", (gltf) => {
-      avatar = gltf.scene;
-      avatar.scale.set(1.4, 1.4, 1.4);
-      scene.add(avatar);
+      // Lighting
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
+      hemiLight.position.set(0, 2, 0);
+      scene.add(hemiLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+      dirLight.position.set(0, 2, 2);
+      scene.add(dirLight);
 
-      if (gltf.animations.length > 0) {
-        mixer = new THREE.AnimationMixer(avatar);
-        const action = mixer.clipAction(gltf.animations[0]);
-        action.play();
+      controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.4, 0);
+      controls.update();
+
+      const loader = new GLTFLoader();
+
+      // Load avatar
+      loader.load("imgs/avatar.glb", (gltf) => {
+        avatar = gltf.scene;
+        avatar.scale.set(1, 1, 1);
+        scene.add(avatar);
+
+        // Play animation if available
+        if (gltf.animations && gltf.animations.length) {
+          mixer = new THREE.AnimationMixer(avatar);
+          const action = mixer.clipAction(gltf.animations[0]);
+          action.play();
+        }
+
+        // After avatar loads, try to load selected product
+        loadSelectedProduct(avatar);
+      });
+
+      // Handle selfie upload
+      document.getElementById("selfieInput").addEventListener("change", handleSelfie);
+
+      window.addEventListener("resize", () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    // === Load Selected Product and Attach to Avatar ===
+    function loadSelectedProduct(avatar) {
+      const selectedProduct = JSON.parse(localStorage.getItem("selectedProduct"));
+      if (!selectedProduct || !selectedProduct.glb) {
+        console.log("No product selected.");
+        return;
       }
+      console.log("Selected Product:", selectedProduct);
 
-      // Once avatar is loaded, try to load product
-      const selected = JSON.parse(localStorage.getItem("selectedClothing"));
-      if (selected && selected.glb) loadProduct(selected.glb, selected.name || "");
-    });
+      const loader = new GLTFLoader();
+      loader.load(selectedProduct.glb, (productGLTF) => {
+        const product = productGLTF.scene;
+        product.scale.set(1, 1, 1);
 
-    // === Load Clothing Product ===
-    function loadProduct(filePath, name) {
-      loader.load(filePath, (gltf) => {
-        clothing = gltf.scene;
-        clothing.scale.set(1.4, 1.4, 1.4);
-        clothing.traverse(obj => {
-          if (obj.isMesh) {
-            obj.material.side = THREE.DoubleSide;
+        // Find avatar bone to attach clothing
+        const spine = avatar.getObjectByName("Spine") || avatar.getObjectByName("Hips") || avatar;
+        spine.add(product);
+        product.position.set(0, 0, 0);
+
+        console.log("✅ Product attached to avatar successfully");
+      });
+    }
+
+    // === Detect average color from selfie and recolor avatar ===
+    async function handleSelfie(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await img.decode();
+
+      // Create canvas to extract average color
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+      const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+
+      let r = 0, g = 0, b = 0, count = 0;
+      for (let i = 0; i < imageData.length; i += 4 * 100) {
+        r += imageData[i];
+        g += imageData[i + 1];
+        b += imageData[i + 2];
+        count++;
+      }
+      r = Math.round(r / count);
+      g = Math.round(g / count);
+      b = Math.round(b / count);
+
+      const avgColor = new THREE.Color(`rgb(${r},${g},${b})`);
+      console.log("Detected skin color:", avgColor);
+
+      // Apply detected color to avatar materials
+      avatar.traverse((child) => {
+        if (child.isMesh && child.material) {
+          if (child.name.toLowerCase().includes("skin")) {
+            child.material.color.copy(avgColor);
           }
-        });
-
-        // Smart bone attachment
-        let attachBone = "Spine";
-        const lowerName = name.toLowerCase();
-        if (lowerName.includes("pant")) attachBone = "Hips";
-        else if (lowerName.includes("shoe")) attachBone = "LeftFoot";
-        else if (lowerName.includes("glass")) attachBone = "Head";
-        else if (lowerName.includes("neck")) attachBone = "Neck";
-
-        let bone = null;
-        avatar.traverse(child => {
-          if (child.isBone && child.name.toLowerCase().includes(attachBone.toLowerCase())) {
-            bone = child;
+          if (child.name.toLowerCase().includes("hair")) {
+            const darker = avgColor.clone().multiplyScalar(0.5);
+            child.material.color.copy(darker);
           }
-        });
-
-        if (bone) {
-          bone.add(clothing);
-          console.log("✅ Attached to bone:", attachBone);
-        } else {
-          avatar.add(clothing);
-          console.warn("⚠️ Bone not found, added to root instead");
         }
       });
     }
 
-    // === Apply colors from selfie ===
-    document.getElementById("applyColors").addEventListener("click", () => {
-      const file = document.getElementById("selfieInput").files[0];
-      if (!file) return alert("Please upload a selfie first!");
-
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d", { willReadFrequently: true });
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0, img.width, img.height);
-        const data = ctx.getImageData(0, 0, img.width, img.height).data;
-
-        let r = 0, g = 0, b = 0, count = 0;
-        for (let i = 0; i < data.length; i += 4) {
-          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
-        }
-        const avg = new THREE.Color(`rgb(${r / count}, ${g / count}, ${b / count})`);
-        const hairColor = avg.clone().offsetHSL(0, 0, -0.4);
-
-        avatar.traverse(obj => {
-          if (obj.isMesh) {
-            const n = obj.name.toLowerCase();
-            if (n.includes("skin") || n.includes("face") || n.includes("body"))
-              obj.material.color.copy(avg);
-            if (n.includes("hair") || n.includes("head"))
-              obj.material.color.copy(hairColor);
-          }
-        });
-        console.log("✅ Colors updated from selfie");
-      };
-      img.src = URL.createObjectURL(file);
-    });
-
-    // === Resize & Animate ===
-    window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / (window.innerHeight * 0.85);
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight * 0.85);
-    });
-
+    // === Animate ===
     function animate() {
       requestAnimationFrame(animate);
-      const delta = clock.getDelta();
+      const delta = clock.getDelta?.() || 0.016;
       if (mixer) mixer.update(delta);
       renderer.render(scene, camera);
     }
-    animate();
+
+    const clock = new THREE.Clock();
   </script>
+
 </body>
 </html>
