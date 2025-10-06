@@ -1,180 +1,128 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <title>Reality Shop - Avatar & Custom Try-On</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+  <!-- Import Map -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js",
+        "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js"
+      }
+    }
+  </script>
+
   <style>
     :root { --pad: 12px; }
     body {
-      margin: 0; font-family: system-ui, Arial, sans-serif; background: linear-gradient(135deg,#0b0d10 0%, #1c1f26 100%); color:#e9eef3;
-      display:flex; flex-direction:column; min-height:100dvh;
-      scroll-behavior: smooth;
+      margin: 0;
+      font-family: system-ui, Arial, sans-serif;
+      background: linear-gradient(135deg,#0b0d10 0%, #1c1f26 100%);
+      color:#e9eef3;
+      display:flex;
+      flex-direction:column;
+      min-height:100dvh;
+      scroll-behavior:smooth;
     }
     nav {
       background-color: #212121;
       box-shadow: 0 2px 8px rgba(0,0,0,0.5);
       position: fixed;
       width: 100%;
-      top: 0;
-      left: 0;
+      top: 0; left: 0;
       z-index: 100;
     }
     .nav-container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      height: 60px;
-      padding: 0 16px;
+      max-width:1200px;
+      margin:0 auto;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      height:60px;
+      padding:0 16px;
     }
     .logo {
-      color: #ff9800;
-      font-weight: 700;
-      font-size: 1.6rem;
-      letter-spacing: 2px;
-      text-decoration: none;
+      color:#ff9800;
+      font-weight:700;
+      font-size:1.6rem;
+      letter-spacing:2px;
+      text-decoration:none;
     }
     ul.nav-links {
-      display: flex;
-      list-style: none;
-      gap: 24px;
-      margin: 0;
-      padding: 0;
+      display:flex; list-style:none; gap:24px; margin:0; padding:0;
     }
     ul.nav-links a {
-      color: #eee;
-      text-decoration: none;
-      font-size: 1rem;
-      padding: 6px 8px;
-      border-radius: 8px;
-      transition: background-color 0.2s;
+      color:#eee; text-decoration:none; font-size:1rem;
+      padding:6px 8px; border-radius:8px;
+      transition:background-color 0.2s;
     }
     ul.nav-links a:hover, ul.nav-links a.active {
-      background-color: #ff9800;
-      color: #212121;
+      background-color:#ff9800; color:#212121;
     }
     main {
-      display: grid;
-      grid-template-columns: 1fr 360px;
-      gap: 16px;
-      padding: 80px 20px 20px;
-      flex: 1;
-      max-width: 1200px;
-      margin: 0 auto;
-      width: 100%;
-      box-sizing: border-box;
-      min-height: calc(100dvh - 80px);
+      display:grid;
+      grid-template-columns:1fr 360px;
+      gap:16px;
+      padding:80px 20px 20px;
+      flex:1;
+      max-width:1200px;
+      margin:0 auto;
+      width:100%;
+      box-sizing:border-box;
+      min-height:calc(100dvh - 80px);
     }
     #viewer {
-      background: #0f1318;
-      border: 1px solid #1b2026;
-      border-radius: 16px;
-      min-height: 70dvh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-      overflow: hidden;
+      background:#0f1318;
+      border:1px solid #1b2026;
+      border-radius:16px;
+      min-height:70dvh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      position:relative;
+      overflow:hidden;
     }
     #controls {
-      background: #0f1318;
-      border: 1px solid #1b2026;
-      border-radius: 16px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      font-size: 14px;
-      color: #ccc;
+      background:#0f1318;
+      border:1px solid #1b2026;
+      border-radius:16px;
+      padding:16px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      font-size:14px;
+      color:#ccc;
     }
-    .row {
-      display: flex; align-items: center; gap: 10px;
-    }
-    .row input[type="color"] {
-      width: 48px;
-      height: 36px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-    }
-    button, label.btn {
-      background:#1e2630;
-      color:#e9eef3;
-      border:1px solid #2a3542;
-      padding:8px 14px;
-      border-radius:10px;
-      cursor:pointer;
-      user-select:none;
-      transition: background 0.2s ease, transform 0.06s ease;
-    }
-    button:hover, label.btn:hover {
-      background:#222c39;
-    }
-    button:active, label.btn:active {
-      transform: translateY(1px);
-    }
-    #selfieCanvas {
-      display: none;
-    }
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .sep {
-      height: 1px;
-      background: #1b2026;
-      margin: 6px 0;
-    }
-    code {
-      background: #0b0f14;
-      padding: 2px 6px;
-      border-radius: 6px;
-      border: 1px solid #161b21;
-      user-select: text;
-    }
-    label.btn {
-      user-select: none;
-      text-align: center;
-      line-height: 36px;
-    }
+    .row { display:flex; align-items:center; gap:10px; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .sep { height:1px; background:#1b2026; margin:6px 0; }
     .product-list {
-      max-height: 250px;
-      overflow-y: auto;
-      padding: 6px;
-      border: 1px solid #222b34;
-      border-radius: 8px;
+      max-height:250px;
+      overflow-y:auto;
+      padding:6px;
+      border:1px solid #222b34;
+      border-radius:8px;
     }
     .product-item {
-      padding: 6px 8px;
-      background: #1a2029;
-      margin-bottom: 6px;
-      border-radius: 6px;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.2s;
+      padding:6px 8px;
+      background:#1a2029;
+      margin-bottom:6px;
+      border-radius:6px;
+      cursor:pointer;
+      transition:background 0.2s;
     }
-    .product-item:hover {
-      background: #324455;
-    }
-    @media (max-width: 1024px) {
-      main {
-        grid-template-columns: 1fr;
-        padding: 80px 12px 16px;
-      }
-      #controls {
-        max-width: none;
-        width: 100%;
-      }
-      #viewer {
-        min-height: 50dvh;
-      }
+    .product-item:hover { background:#324455; }
+    @media(max-width:1024px){
+      main{ grid-template-columns:1fr; padding:80px 12px 16px; }
+      #viewer{ min-height:50dvh; }
     }
   </style>
 </head>
+
 <body>
   <nav>
     <div class="nav-container">
@@ -204,105 +152,63 @@
         <input id="selfieInput" type="file" accept="image/*" style="display:none;" />
       </div>
 
-      <canvas id="selfieCanvas" width="512" height="512"></canvas>
+      <canvas id="selfieCanvas" width="512" height="512" style="display:none;"></canvas>
 
       <div class="sep"></div>
 
-      <div><strong>2) Detected colors</strong> <span class="hint">(you can tweak)</span></div>
+      <div><strong>2) Detected colors</strong></div>
       <div class="grid">
         <div>
-          <div class="row">
-            <label for="skinColor">Skin</label>
-            <input id="skinColor" type="color" value="#f2d3c2" />
-          </div>
-          <div class="hint">Auto from central face region.</div>
+          <div class="row"><label for="skinColor">Skin</label><input id="skinColor" type="color" value="#f2d3c2" /></div>
         </div>
         <div>
-          <div class="row">
-            <label for="hairColor">Hair</label>
-            <input id="hairColor" type="color" value="#3a2a20" />
-          </div>
-          <div class="hint">Auto from top band (darkest tones).</div>
+          <div class="row"><label for="hairColor">Hair</label><input id="hairColor" type="color" value="#3a2a20" /></div>
         </div>
       </div>
 
       <div class="sep"></div>
 
-      <div>
-        <strong>3) Try our products</strong>
-        <div class="hint">Click a garment or accessory below to try on.</div>
-      </div>
-      <div class="product-list" id="productList"></div>
+      <div><strong>3) Try our products</strong></div>
+      <div id="productList" class="product-list">Loading products...</div>
 
       <div class="row">
         <button id="applyBtn">Apply Colors</button>
-        <button id="resetBtn" title="Reload model">Reset Avatar</button>
-      </div>
-
-      <div class="sep"></div>
-
-      <div>
-        <strong>Material mapping</strong>
-        <div class="hint">
-          The GLB should have materials named <code>Skin</code> and <code>Hair</code>.<br />
-          Clothing/accessories should fit the avatar model properly.
-        </div>
-      </div>
-
-      <div class="sep"></div>
-
-      <div>
-        <strong>Controls</strong>
-        <div class="hint">Rotate and zoom avatar using mouse drag & wheel. Shift + drag to pan.</div>
+        <button id="resetBtn">Reset Avatar</button>
       </div>
     </aside>
   </main>
 
-  <footer style="padding:12px 16px; border-top:1px solid #1b2026; text-align:center;">
-    <span class="hint">For best results, use a clear, well-lit selfie. Glasses and hats may affect hair color detection.</span>
+  <footer style="padding:12px;text-align:center;color:#888;border-top:1px solid #1b2026;">
+    For best results, use a clear, well-lit selfie.
   </footer>
 
+  <!-- Main Script -->
   <script type="module">
-    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
-    import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
-    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+    import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
+    // ===== Scene Setup =====
     const viewer = document.getElementById('viewer');
-    const selfieInput = document.getElementById('selfieInput');
-    const canvas = document.getElementById('selfieCanvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-    const skinColorInput = document.getElementById('skinColor');
-    const hairColorInput = document.getElementById('hairColor');
-    const applyBtn = document.getElementById('applyBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const productList = document.getElementById('productList');
-
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(viewer.clientWidth, Math.max(viewer.clientHeight, 480));
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     viewer.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(40, viewer.clientWidth / Math.max(viewer.clientHeight, 480), 0.1, 100);
-    camera.position.set(0, 1.5, 3.2);
+    const camera = new THREE.PerspectiveCamera(40, viewer.clientWidth / viewer.clientHeight, 0.1, 100);
+    camera.position.set(0, 1.5, 3);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x445566, 0.8);
-    scene.add(hemi);
-    const key = new THREE.DirectionalLight(0xffffff, 1);
-    key.position.set(2, 4, 3);
-    scene.add(key);
-    const rim = new THREE.DirectionalLight(0xffffff, 0.5);
-    rim.position.set(-2, 3, -3);
-    scene.add(rim);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.9));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1);
+    keyLight.position.set(3, 5, 2);
+    scene.add(keyLight);
 
-    const ground = new THREE.Mesh(
-      new THREE.CircleGeometry(5, 64),
-      new THREE.MeshStandardMaterial({ color: 0x0c1116, metalness: 0, roughness: 1 })
-    );
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(5, 64),
+      new THREE.MeshStandardMaterial({ color: 0x0c1116, roughness: 1 }));
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
     scene.add(ground);
@@ -311,239 +217,135 @@
     let avatarRoot = null;
     let clothingCurrent = null;
 
-    const MODEL_URL = 'imgs/avatar.glb';
-
+    // ===== Load Avatar =====
     async function loadModel() {
-      if (avatarRoot) {
-        scene.remove(avatarRoot);
-        avatarRoot = null;
-      }
-      const gltf = await loader.loadAsync(MODEL_URL);
+      if (avatarRoot) scene.remove(avatarRoot);
+      const gltf = await loader.loadAsync('imgs/avatar.glb');
       avatarRoot = gltf.scene;
       avatarRoot.traverse(obj => {
-        if (obj.isMesh) {
-          obj.castShadow = true;
-          obj.receiveShadow = true;
-          if (!(obj.material instanceof THREE.MeshStandardMaterial)) {
-            obj.material = new THREE.MeshStandardMaterial({ color: obj.material?.color || 0xffffff });
-          }
-        }
+        if (obj.isMesh) obj.material = new THREE.MeshStandardMaterial({ color: 0xffffff });
       });
-
-      const box = new THREE.Box3().setFromObject(avatarRoot);
-      const size = new THREE.Vector3();
-      box.getSize(size);
-      const center = new THREE.Vector3();
-      box.getCenter(center);
-
-      const scale = 1.6 / Math.max(size.x, size.y, size.z);
-      avatarRoot.scale.setScalar(scale);
-      avatarRoot.position.sub(center.multiplyScalar(scale));
-      avatarRoot.position.y = 0;
-
       scene.add(avatarRoot);
     }
 
+    // ===== Selfie Color Estimation =====
+    const selfieInput = document.getElementById('selfieInput');
+    const canvas = document.getElementById('selfieCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const skinColorInput = document.getElementById('skinColor');
+    const hairColorInput = document.getElementById('hairColor');
+
     function rgbToHex(r, g, b) {
-      return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
-    }
-
-    function hexToThreeColor(hex) {
-      return new THREE.Color(hex);
-    }
-
-    function clamp(v, min, max) {
-      return Math.min(Math.max(v, min), max);
-    }
-
-    function averageRegion(imgData, region) {
-      const { data, width, height } = imgData;
-      const { x, y, w, h, type } = region;
-      const cx = x + w / 2, cy = y + h / 2;
-      const rx = w / 2, ry = h / 2;
-      const values = [];
-      for (let j = Math.max(0, y); j < Math.min(height, y + h); j++) {
-        for (let i = Math.max(0, x); i < Math.min(width, x + w); i++) {
-          const dx = (i - cx) / rx;
-          const dy = (j - cy) / ry;
-          if (dx * dx + dy * dy > 1) continue;
-          const idx = (j * width + i) * 4;
-          const r = data[idx], g = data[idx + 1], b = data[idx + 2], a = data[idx + 3];
-          if (a < 10) continue;
-          const luma = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-          if (type === 'skin') {
-            if (luma < 40 || luma > 240) continue;
-            if (!(r > 80 && g > 40 && b > 20)) continue;
-          } else if (type === 'hair') {
-            if (luma > 160) continue;
-          }
-          values.push([r, g, b]);
-        }
-      }
-      if (!values.length) return type === 'skin' ? [242, 211, 194] : [58, 42, 32];
-      const lum = values.map(([r, g, b]) => 0.2126 * r + 0.7152 * g + 0.0722 * b).sort((a, b) => a - b);
-      const lo = lum[Math.floor(lum.length * 0.1)];
-      const hi = lum[Math.floor(lum.length * 0.9)];
-      let R = 0, G = 0, B = 0, n = 0;
-      for (const [r, g, b] of values) {
-        const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-        if (L < lo || L > hi) continue;
-        R += r; G += g; B += b; n++;
-      }
-      return n === 0 ? values[0] : [Math.round(R / n), Math.round(G / n), Math.round(B / n)];
+      return "#" + [r, g, b].map(x => Math.round(x).toString(16).padStart(2, '0')).join('');
     }
 
     async function estimateColorsFromSelfie(file) {
       const img = new Image();
       const url = URL.createObjectURL(file);
-      await new Promise((res, rej) => {
-        img.onload = () => res();
-        img.onerror = () => rej();
-        img.src = url;
-      });
-      const S = canvas.width;
-      const scale = Math.max(S / img.width, S / img.height);
-      const w = Math.round(img.width * scale);
-      const h = Math.round(img.height * scale);
-      const ox = Math.round((S - w) / 2);
-      const oy = Math.round((S - h) / 2);
-      ctx.clearRect(0, 0, S, S);
-      ctx.drawImage(img, ox, oy, w, h);
-      const imgData = ctx.getImageData(0, 0, S, S);
-
-      const skinRegion = { x: Math.round(S * 0.20), y: Math.round(S * 0.15), w: Math.round(S * 0.60), h: Math.round(S * 0.70), type: 'skin' };
-      const hairRegion = { x: Math.round(S * 0.10), y: Math.round(S * 0.02), w: Math.round(S * 0.80), h: Math.round(S * 0.28), type: 'hair' };
-
-      const [sr, sg, sb] = averageRegion(imgData, skinRegion);
-      const [hr, hg, hb] = averageRegion(imgData, hairRegion);
-
-      const skinHex = rgbToHex(clamp(sr, 40, 245), clamp(sg, 30, 235), clamp(sb, 30, 230));
-      const hairHex = rgbToHex(clamp(hr, 10, 110), clamp(hg, 10, 110), clamp(hb, 10, 110));
-
-      skinColorInput.value = skinHex;
-      hairColorInput.value = hairHex;
-
-      URL.revokeObjectURL(url);
-      return { skinHex, hairHex };
-    }
-
-    function applyColorsToAvatar(skinHex, hairHex) {
-      if (!avatarRoot) return;
-      let appliedSkin = 0, appliedHair = 0;
-      avatarRoot.traverse(obj => {
-        if (obj.isMesh && obj.material) {
-          const name = (obj.material.name || obj.name || '').toLowerCase();
-          if (name.includes('skin')) {
-            obj.material.color = hexToThreeColor(skinHex);
-            obj.material.needsUpdate = true;
-            appliedSkin++;
-          } else if (name.includes('hair')) {
-            obj.material.color = hexToThreeColor(hairHex);
-            obj.material.needsUpdate = true;
-            appliedHair++;
-          }
-        }
-      });
-      if (appliedSkin + appliedHair === 0) {
-        alert('No materials named "Skin" or "Hair" found in model. Please rename materials accordingly.');
+      await new Promise(res => { img.onload = res; img.src = url; });
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let avgR = 0, avgG = 0, avgB = 0, count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        avgR += data[i]; avgG += data[i + 1]; avgB += data[i + 2]; count++;
       }
+      skinColorInput.value = rgbToHex(avgR / count, avgG / count, avgB / count);
+      hairColorInput.value = "#3a2a20";
+      URL.revokeObjectURL(url);
     }
 
     selfieInput.addEventListener('change', async e => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-      try {
-        await estimateColorsFromSelfie(file);
-      } catch {
-        alert('Failed to load selfie. Please try another image.');
-      }
+      if (e.target.files[0]) await estimateColorsFromSelfie(e.target.files[0]);
     });
 
-    applyBtn.addEventListener('click', () => {
-      applyColorsToAvatar(skinColorInput.value, hairColorInput.value);
-    });
-
-    resetBtn.addEventListener('click', async () => {
-      // Remove any clothing
-      if (clothingCurrent) {
-        scene.remove(clothingCurrent);
-        clothingCurrent.traverse(child => {
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) child.material.dispose();
-        });
-        clothingCurrent = null;
-      }
-      await loadModel();
-    });
-
-    window.addEventListener('resize', () => {
-      const w = viewer.clientWidth;
-      const h = Math.max(viewer.clientHeight, 480);
-      renderer.setSize(w, h);
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-    });
-
-    // Product list and try-on implementation
-    const products = [
-      { name: 'Blue T-Shirt', file: 'models/shirt1.glb' },
-      { name: 'Red Jacket', file: 'models/shirt2.glb' },
-      { name: 'Hat', file: 'models/hat1.glb' }
-    ];
-
-    const productListItemClick = (e) => {
-      const file = e.target.dataset.file;
-      if (!file) return;
-      loader.load(file, (gltf) => {
-        if (clothingCurrent) {
-          scene.remove(clothingCurrent);
-          clothingCurrent.traverse(child => {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) child.material.dispose();
-          });
-          clothingCurrent = null;
+    // ===== Apply colors to avatar =====
+    document.getElementById('applyBtn').addEventListener('click', () => {
+      if (!avatarRoot) return;
+      avatarRoot.traverse(obj => {
+        if (obj.isMesh) {
+          const matName = obj.material.name?.toLowerCase() || '';
+          if (matName.includes('skin')) obj.material.color.set(skinColorInput.value);
+          if (matName.includes('hair')) obj.material.color.set(hairColorInput.value);
         }
+      });
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', loadModel);
+
+    // ===== Load products from product.html =====
+    async function fetchProducts() {
+      try {
+        const res = await fetch('product.html');
+        if (!res.ok) throw new Error("Failed to fetch product.html");
+        const text = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, "text/html");
+
+        const productElements = doc.querySelectorAll('[data-name][data-file]');
+        const products = Array.from(productElements).map(el => ({
+          name: el.getAttribute('data-name'),
+          file: el.getAttribute('data-file')
+        }));
+
+        if (products.length === 0) {
+          console.warn("No valid products found in product.html");
+        }
+        return products;
+      } catch (e) {
+        console.error("Error loading products from product.html:", e);
+        return [];
+      }
+    }
+
+    async function populateProductList() {
+      const list = document.getElementById('productList');
+      const products = await fetchProducts();
+      list.innerHTML = '';
+
+      if (products.length === 0) {
+        list.textContent = 'No products available right now.';
+        return;
+      }
+
+      products.forEach(prod => {
+        const div = document.createElement('div');
+        div.className = 'product-item';
+        div.textContent = prod.name;
+        div.addEventListener('click', () => loadClothing(prod.file));
+        list.appendChild(div);
+      });
+    }
+
+    function loadClothing(file) {
+      loader.load(file, gltf => {
+        if (clothingCurrent) scene.remove(clothingCurrent);
         clothingCurrent = gltf.scene;
         clothingCurrent.position.copy(avatarRoot.position);
         clothingCurrent.scale.copy(avatarRoot.scale);
         scene.add(clothingCurrent);
-      }, undefined, (err) => {
-        alert('Failed to load clothing/accessory model.');
-        console.error(err);
-      });
-    };
-
-    function populateProductList() {
-      products.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'product-item';
-        div.textContent = p.name;
-        div.dataset.file = p.file;
-        div.addEventListener('click', productListItemClick);
-        productList.appendChild(div);
       });
     }
 
-    // Animate scene
+    // ===== Animation Loop =====
     function animate() {
       requestAnimationFrame(animate);
       controls.update();
-      if (avatarRoot) avatarRoot.rotation.y += 0.002;
-      if (clothingCurrent) clothingCurrent.rotation.y += 0.002;
       renderer.render(scene, camera);
     }
 
-    let avatarRoot = null;
-    let clothingCurrent = null;
-
-    async function init() {
+    // ===== Init =====
+    (async function init() {
       await loadModel();
-      populateProductList();
+      await populateProductList();
       animate();
-    }
+    })();
 
-    init();
+    window.addEventListener('resize', () => {
+      const w = viewer.clientWidth, h = viewer.clientHeight;
+      renderer.setSize(w, h);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    });
   </script>
 </body>
 </html>
-
