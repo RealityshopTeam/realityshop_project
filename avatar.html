@@ -2,224 +2,217 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Reality Shop – Avatar Try-On</title>
-
-  <!-- Three.js Importmap -->
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js",
-        "three/examples/jsm/controls/OrbitControls.js": "https://unpkg.com/three@0.160.0/examples/jsm/controls/OrbitControls.js"
-      }
-    }
-  </script>
-
+  <title>Reality Shop - Avatar Customization</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body {
       margin: 0;
-      background: #0f172a;
-      color: #e2e8f0;
-      font-family: 'Poppins', sans-serif;
+      background: #0a0a0a;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-      overflow: hidden;
-    }
-    h1 {
-      text-align: center;
-      color: #06b4d4;
-      margin: 12px 0;
-      font-weight: 700;
-    }
-    #avatarCanvas { flex: 1; display: block; }
-    #ui-panel {
-      background: #1e293b;
-      padding: 12px;
-      display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 10px;
-      flex-wrap: wrap;
+      justify-content: flex-start;
+      height: 100vh;
+      color: #fff;
+      font-family: Poppins, sans-serif;
     }
-    #selfieInput {
-      background: #06b4d4;
-      color: white;
-      padding: 8px 14px;
-      border: none;
+    #canvas-container {
+      width: 100%;
+      height: 80vh;
+    }
+    #ui {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 15px;
+      padding: 10px;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(10px);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+    }
+    input[type=file] {
+      background: #111;
+      color: #00eaff;
+      border: 1px solid #00eaff;
       border-radius: 8px;
+      padding: 8px;
+      cursor: pointer;
+    }
+    button {
+      background: linear-gradient(135deg, #00eaff, #0066ff);
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 20px;
       cursor: pointer;
       font-weight: 600;
+      transition: 0.3s;
     }
-    #productName {
-      color: #fff;
-      font-size: 1.1rem;
-      font-weight: 600;
+    button:hover {
+      background: linear-gradient(135deg, #0077ff, #0044aa);
+      transform: translateY(-2px);
     }
   </style>
+
+  <!-- Importmap for Three.js -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
+      "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/GLTFLoader.js",
+      "OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/controls/OrbitControls.js",
+      "AnimationMixer": "three"
+    }
+  }
+  </script>
 </head>
 <body>
-  <h1>Reality Shop – Avatar Try-On</h1>
+  <div id="canvas-container"></div>
 
-  <div id="ui-panel">
-    <input type="file" id="selfieInput" accept="image/*" />
-    <span id="productName">Loading selected product...</span>
+  <div id="ui">
+    <input type="file" id="selfieInput" accept="image/*">
+    <button id="recolorBtn">Apply Skin & Hair Color</button>
   </div>
-
-  <canvas id="avatarCanvas"></canvas>
 
   <script type="module">
     import * as THREE from "three";
-    import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-    import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+    import { GLTFLoader } from "GLTFLoader";
+    import { OrbitControls } from "OrbitControls";
 
-    const canvas = document.getElementById("avatarCanvas");
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight - 100);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    let scene, camera, renderer, avatar, mixer, clock;
+    const container = document.getElementById("canvas-container");
 
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0f172a);
+    const selectedProduct = JSON.parse(localStorage.getItem("selectedClothing"));
+    console.log("Selected Product:", selectedProduct);
 
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / (window.innerHeight - 100), 0.1, 100);
-    camera.position.set(0, 1.6, 3);
-    scene.add(camera);
+    init();
+    animate();
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    dirLight.position.set(5, 10, 7.5);
-    scene.add(hemiLight, dirLight);
+    async function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a0a0a);
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.8), 0.1, 100);
+      camera.position.set(0, 1.6, 3);
 
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
+      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
+      container.appendChild(renderer.domElement);
 
-    const loader = new GLTFLoader();
-    let avatar, clothing, mixer, animations;
+      const controls = new OrbitControls(camera, renderer.domElement);
+      controls.target.set(0, 1.5, 0);
+      controls.update();
 
-    // === Load Avatar (Animated GLB) ===
-    loader.load("imgs/avatar.glb", (gltf) => {
-      avatar = gltf.scene;
-      avatar.scale.set(1, 1, 1);
-      scene.add(avatar);
+      // Lights
+      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+      hemiLight.position.set(0, 20, 0);
+      scene.add(hemiLight);
+      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+      dirLight.position.set(-3, 10, -10);
+      scene.add(dirLight);
 
-      if (gltf.animations && gltf.animations.length > 0) {
+      clock = new THREE.Clock();
+
+      // Load avatar base
+      const loader = new GLTFLoader();
+      loader.load("imgs/avatar.glb", (gltf) => {
+        avatar = gltf.scene;
+        avatar.scale.set(1.4, 1.4, 1.4);
+        avatar.position.set(0, 0, 0);
+        scene.add(avatar);
+
         mixer = new THREE.AnimationMixer(avatar);
-        animations = gltf.animations;
-        const action = mixer.clipAction(animations[0]);
-        action.play();
-      }
+        if (gltf.animations && gltf.animations.length > 0) {
+          mixer.clipAction(gltf.animations[0]).play();
+        }
 
-      // Load clothing after avatar is ready
-      loadSelectedProduct();
-    });
+        if (selectedProduct && selectedProduct.glb) {
+          loadClothing(selectedProduct.glb);
+        }
+      });
+    }
 
-    // === Load Selected Product (from localStorage) ===
-    function loadSelectedProduct() {
-      const stored = localStorage.getItem("selectedClothing");
-      const productNameElem = document.getElementById("productName");
+    function loadClothing(modelPath) {
+      const loader = new GLTFLoader();
+      loader.load(modelPath, (gltf) => {
+        const clothing = gltf.scene;
+        clothing.scale.set(1.4, 1.4, 1.4);
+        clothing.position.set(0, 0, 0);
 
-      if (!stored) {
-        productNameElem.textContent = "No product selected.";
+        // Try to auto-fit the clothing on the avatar (approximate)
+        clothing.traverse((child) => {
+          if (child.isMesh) {
+            child.material.side = THREE.DoubleSide;
+          }
+        });
+
+        avatar.add(clothing);
+      });
+    }
+
+    // --- Skin & Hair Color from Selfie ---
+    document.getElementById("recolorBtn").addEventListener("click", () => {
+      const file = document.getElementById("selfieInput").files[0];
+      if (!file) {
+        alert("Please upload a selfie first!");
         return;
       }
 
-      const product = JSON.parse(stored);
-      productNameElem.textContent = `Wearing: ${product.name}`;
-
-      if (product.glb) {
-        loader.load(
-          product.glb,
-          (gltf) => {
-            clothing = gltf.scene;
-            scene.add(clothing);
-
-            fitClothingToAvatar(avatar, clothing);
-          },
-          undefined,
-          (err) => console.error("Error loading clothing:", err)
-        );
-      } else {
-        productNameElem.textContent += " (No 3D model available)";
-      }
-    }
-
-    // === Auto Fit Clothing to Avatar ===
-    function fitClothingToAvatar(avatar, clothing) {
-      if (!avatar || !clothing) return;
-      const avatarBox = new THREE.Box3().setFromObject(avatar);
-      const clothBox = new THREE.Box3().setFromObject(clothing);
-
-      const avatarSize = new THREE.Vector3();
-      const clothSize = new THREE.Vector3();
-      avatarBox.getSize(avatarSize);
-      clothBox.getSize(clothSize);
-
-      const scaleFactor = avatarSize.y / clothSize.y;
-      clothing.scale.multiplyScalar(scaleFactor * 0.95);
-
-      const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
-      const clothCenter = clothBox.getCenter(new THREE.Vector3());
-      clothing.position.sub(clothCenter).add(avatarCenter);
-      clothing.position.y += 0.02 * avatarSize.y;
-    }
-
-    // === Match Skin & Hair Color from Selfie ===
-    document.getElementById("selfieInput").addEventListener("change", async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-
       const img = new Image();
-      img.src = URL.createObjectURL(file);
-      await img.decode();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
 
-      const tempCanvas = document.createElement("canvas");
-      const ctx = tempCanvas.getContext("2d");
-      tempCanvas.width = 64;
-      tempCanvas.height = 64;
-      ctx.drawImage(img, 0, 0, 64, 64);
-      const data = ctx.getImageData(0, 0, 64, 64).data;
+        // Average face color approximation
+        const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+        let r = 0, g = 0, b = 0, count = 0;
+        for (let i = 0; i < imageData.length; i += 4) {
+          r += imageData[i];
+          g += imageData[i + 1];
+          b += imageData[i + 2];
+          count++;
+        }
+        r = Math.floor(r / count);
+        g = Math.floor(g / count);
+        b = Math.floor(b / count);
 
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        r += data[i];
-        g += data[i + 1];
-        b += data[i + 2];
-        count++;
-      }
+        const avgColor = new THREE.Color(`rgb(${r},${g},${b})`);
 
-      const avgColor = new THREE.Color(r / count / 255, g / count / 255, b / count / 255);
-
-      if (avatar) {
         avatar.traverse((child) => {
           if (child.isMesh) {
             const name = child.name.toLowerCase();
-            if (name.includes("skin")) {
-              child.material.color.copy(avgColor);
-            } else if (name.includes("hair")) {
-              const darker = avgColor.clone().multiplyScalar(0.5);
-              child.material.color.copy(darker);
+            if (name.includes("skin") || name.includes("face")) {
+              child.material.color = avgColor;
+            }
+            if (name.includes("hair")) {
+              // Slightly darker hair color
+              const hairColor = avgColor.clone().offsetHSL(0, 0, -0.3);
+              child.material.color = hairColor;
             }
           }
         });
-      }
+      };
+      img.src = URL.createObjectURL(file);
     });
 
-    // === Resize & Animate ===
     window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / (window.innerHeight - 100);
+      camera.aspect = window.innerWidth / (window.innerHeight * 0.8);
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight - 100);
+      renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
     });
 
-    const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
-      if (mixer) mixer.update(clock.getDelta());
-      controls.update();
+      const delta = clock.getDelta();
+      if (mixer) mixer.update(delta);
       renderer.render(scene, camera);
     }
-    animate();
   </script>
 </body>
 </html>
