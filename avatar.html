@@ -1,10 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Reality Shop – Avatar Try-On</title>
-  <script type="module" src="https://unpkg.com/three@0.160.0/build/three.module.js"></script>
-  <script type="module" src="https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"></script>
+
+  <!-- === Importmap for Three.js === -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/examples/jsm/loaders/GLTFLoader.js": "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js"
+      }
+    }
+  </script>
+
   <style>
     body {
       margin: 0;
@@ -15,6 +24,12 @@
       display: flex;
       flex-direction: column;
       height: 100vh;
+    }
+    h1 {
+      text-align: center;
+      color: #06b4d4;
+      font-weight: 700;
+      margin: 10px 0;
     }
     #avatarCanvas { flex: 1; display: block; }
     #productList {
@@ -36,7 +51,6 @@
       color: #fff;
     }
     .product-item:hover { background: #06b4d4; transform: translateY(-2px); }
-    h1 { text-align: center; color: #06b4d4; font-weight: 700; margin: 10px 0; }
   </style>
 </head>
 <body>
@@ -45,10 +59,10 @@
   <div id="productList">Loading products...</div>
 
   <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-    import { GLTFLoader } from "https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+    import * as THREE from "three";
+    import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
-    // --- Three.js setup ---
+    // === Scene Setup ===
     const canvas = document.getElementById("avatarCanvas");
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight - 160);
@@ -58,7 +72,12 @@
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0f172a);
 
-    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / (window.innerHeight - 160), 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(
+      50,
+      window.innerWidth / (window.innerHeight - 160),
+      0.1,
+      100
+    );
     camera.position.set(0, 1.6, 3);
     scene.add(camera);
 
@@ -70,83 +89,80 @@
     const loader = new GLTFLoader();
     let avatar, clothing;
 
-    // --- Load Avatar ---
-    loader.load("imgs/avatar.glb", gltf => {
+    // === Load Avatar ===
+    loader.load("imgs/avatar.glb", (gltf) => {
       avatar = gltf.scene;
       avatar.scale.set(1, 1, 1);
       scene.add(avatar);
-      autoApplyProduct(); // auto-apply if a product was selected
+      autoApplyProduct();
     });
 
-    // --- Animation ---
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    // --- Load Clothing and Auto-Fit ---
+    // === Auto-Fit Clothing to Avatar ===
     function loadClothing(url) {
-      if (!url) return alert("No model available for this product.");
+      if (!url) return alert("No 3D model found for this item.");
       if (clothing) { scene.remove(clothing); clothing = null; }
 
-      loader.load(url, gltf => {
-        clothing = gltf.scene;
-        scene.add(clothing);
+      loader.load(
+        url,
+        (gltf) => {
+          clothing = gltf.scene;
+          scene.add(clothing);
 
-        // Auto-fit logic
-        if (avatar) {
-          const avatarBox = new THREE.Box3().setFromObject(avatar);
-          const clothBox = new THREE.Box3().setFromObject(clothing);
+          if (avatar) {
+            const avatarBox = new THREE.Box3().setFromObject(avatar);
+            const clothBox = new THREE.Box3().setFromObject(clothing);
+            const avatarSize = new THREE.Vector3();
+            const clothSize = new THREE.Vector3();
+            avatarBox.getSize(avatarSize);
+            clothBox.getSize(clothSize);
 
-          const avatarSize = new THREE.Vector3();
-          const clothSize = new THREE.Vector3();
-          avatarBox.getSize(avatarSize);
-          clothBox.getSize(clothSize);
+            const scaleFactor = avatarSize.y / clothSize.y;
+            clothing.scale.multiplyScalar(scaleFactor);
 
-          // Scale clothing relative to avatar height
-          const scaleFactor = avatarSize.y / clothSize.y;
-          clothing.scale.multiplyScalar(scaleFactor);
+            const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+            const clothCenter = clothBox.getCenter(new THREE.Vector3());
 
-          // Align positions
-          const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
-          const clothCenter = clothBox.getCenter(new THREE.Vector3());
-
-          // Offset slightly upward to fit shoulders
-          clothing.position.sub(clothCenter).add(avatarCenter);
-          clothing.position.y += 0.05 * avatarSize.y;
-        }
-
-      }, undefined, err => console.error("Error loading clothing:", err));
+            clothing.position.sub(clothCenter).add(avatarCenter);
+            clothing.position.y += 0.05 * avatarSize.y;
+          }
+        },
+        undefined,
+        (err) => console.error("Error loading clothing:", err)
+      );
     }
 
-    // --- Get products from product.html ---
+    // === Fetch Products from product.html ===
     async function fetchProductsFromHTML() {
       try {
         const res = await fetch("product.html");
         if (!res.ok) throw new Error("Failed to load product.html");
         const text = await res.text();
         const match = text.match(/const products\\s*=\\s*(\\[.*?\\]);/s);
-        if (!match) throw new Error("No products array found");
+        if (!match) throw new Error("No products array found.");
 
         const products = Function(`"use strict"; return ${match[1]};`)();
-        return products.filter(p => ["Clothing", "Shoes", "Accessories"].includes(p.category));
+        return products.filter((p) =>
+          ["Clothing", "Shoes", "Accessories"].includes(p.category)
+        );
       } catch (err) {
         console.error("Error fetching products:", err);
         return [];
       }
     }
 
-    // --- Populate product list ---
+    // === Populate Product List ===
     async function populateProductList() {
       const list = document.getElementById("productList");
       list.innerHTML = "Loading...";
       const products = await fetchProductsFromHTML();
       list.innerHTML = "";
 
-      if (products.length === 0) { list.textContent = "No products available."; return; }
+      if (products.length === 0) {
+        list.textContent = "No wearable products available.";
+        return;
+      }
 
-      products.forEach(prod => {
+      products.forEach((prod) => {
         const div = document.createElement("div");
         div.className = "product-item";
         div.textContent = prod.name;
@@ -155,21 +171,29 @@
       });
     }
 
-    // --- Auto apply selected product from localStorage ---
+    // === Auto-Apply Selected Product from localStorage ===
     function autoApplyProduct() {
-      const selected = localStorage.getItem("selectedProduct");
-      if (!selected) return;
-      const product = JSON.parse(selected);
-      console.log("Auto-applying product:", product.name);
+      const stored = localStorage.getItem("selectedClothing");
+      if (!stored) return;
+      const product = JSON.parse(stored);
+      console.log("Auto-applying:", product.name);
       loadClothing(product.glb);
-      localStorage.removeItem("selectedProduct");
+      localStorage.removeItem("selectedClothing");
     }
 
+    // === Handle Resize ===
     window.addEventListener("resize", () => {
       camera.aspect = window.innerWidth / (window.innerHeight - 160);
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight - 160);
     });
+
+    // === Render Loop ===
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+    animate();
 
     populateProductList();
   </script>
