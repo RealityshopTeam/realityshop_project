@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <title>Reality Shop – Avatar Try-On</title>
 
-  <!-- Importmap for Three.js -->
+  <!-- Three.js Importmap -->
   <script type="importmap">
     {
       "imports": {
@@ -19,8 +19,8 @@
     body {
       margin: 0;
       background: #0f172a;
-      color: #f8fafc;
-      font-family: "Poppins", sans-serif;
+      color: #e2e8f0;
+      font-family: 'Poppins', sans-serif;
       display: flex;
       flex-direction: column;
       height: 100vh;
@@ -29,83 +29,65 @@
     h1 {
       text-align: center;
       color: #06b4d4;
+      margin: 12px 0;
       font-weight: 700;
-      margin: 10px 0;
     }
     #avatarCanvas { flex: 1; display: block; }
-    #productList {
+    #ui-panel {
       background: #1e293b;
-      padding: 10px;
+      padding: 12px;
       display: flex;
+      align-items: center;
+      justify-content: center;
       gap: 10px;
       flex-wrap: wrap;
-      justify-content: center;
-      overflow-y: auto;
-      height: 140px;
-    }
-    .product-item {
-      background: #334155;
-      padding: 8px 14px;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: 0.3s;
-      color: #fff;
-    }
-    .product-item:hover {
-      background: #06b4d4;
-      transform: translateY(-2px);
-    }
-    #uploadContainer {
-      text-align: center;
-      padding: 6px;
-      background: #1e293b;
     }
     #selfieInput {
       background: #06b4d4;
       color: white;
-      padding: 6px 12px;
+      padding: 8px 14px;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
+      font-weight: 600;
+    }
+    #productName {
+      color: #fff;
+      font-size: 1.1rem;
+      font-weight: 600;
     }
   </style>
 </head>
-
 <body>
   <h1>Reality Shop – Avatar Try-On</h1>
-  <div id="uploadContainer">
+
+  <div id="ui-panel">
     <input type="file" id="selfieInput" accept="image/*" />
-    <small> Upload a selfie to auto-match skin & hair color </small>
+    <span id="productName">Loading selected product...</span>
   </div>
+
   <canvas id="avatarCanvas"></canvas>
-  <div id="productList">Loading products...</div>
 
   <script type="module">
     import * as THREE from "three";
     import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
     import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
-    // === Scene Setup ===
     const canvas = document.getElementById("avatarCanvas");
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setSize(window.innerWidth, window.innerHeight - 180);
+    renderer.setSize(window.innerWidth, window.innerHeight - 100);
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0f172a);
 
-    const camera = new THREE.PerspectiveCamera(
-      50,
-      window.innerWidth / (window.innerHeight - 180),
-      0.1,
-      100
-    );
+    const camera = new THREE.PerspectiveCamera(50, window.innerWidth / (window.innerHeight - 100), 0.1, 100);
     camera.position.set(0, 1.6, 3);
     scene.add(camera);
 
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dirLight.position.set(5, 10, 7.5);
     scene.add(hemiLight, dirLight);
 
@@ -115,7 +97,7 @@
     const loader = new GLTFLoader();
     let avatar, clothing, mixer, animations;
 
-    // === Load Avatar with Animations ===
+    // === Load Avatar (Animated GLB) ===
     loader.load("imgs/avatar.glb", (gltf) => {
       avatar = gltf.scene;
       avatar.scale.set(1, 1, 1);
@@ -127,83 +109,66 @@
         const action = mixer.clipAction(animations[0]);
         action.play();
       }
+
+      // Load clothing after avatar is ready
+      loadSelectedProduct();
     });
 
-    // === Fit and Attach Clothing ===
-    function loadClothing(url) {
-      if (!url) return alert("No 3D model found for this item.");
-      if (clothing) { scene.remove(clothing); clothing = null; }
+    // === Load Selected Product (from localStorage) ===
+    function loadSelectedProduct() {
+      const stored = localStorage.getItem("selectedClothing");
+      const productNameElem = document.getElementById("productName");
 
-      loader.load(
-        url,
-        (gltf) => {
-          clothing = gltf.scene;
-          scene.add(clothing);
-
-          // Scale and position relative to avatar
-          const avatarBox = new THREE.Box3().setFromObject(avatar);
-          const clothBox = new THREE.Box3().setFromObject(clothing);
-
-          const avatarSize = new THREE.Vector3();
-          const clothSize = new THREE.Vector3();
-          avatarBox.getSize(avatarSize);
-          clothBox.getSize(clothSize);
-
-          const scaleFactor = avatarSize.y / clothSize.y;
-          clothing.scale.multiplyScalar(scaleFactor);
-
-          const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
-          const clothCenter = clothBox.getCenter(new THREE.Vector3());
-          clothing.position.sub(clothCenter).add(avatarCenter);
-          clothing.position.y += 0.02 * avatarSize.y;
-        },
-        undefined,
-        (err) => console.error("Error loading clothing:", err)
-      );
-    }
-
-    // === Fetch Products from product.html ===
-    async function fetchProductsFromHTML() {
-      try {
-        const res = await fetch("product.html");
-        const text = await res.text();
-        const match = text.match(/const products\\s*=\\s*(\\[.*?\\]);/s);
-        if (!match) throw new Error("No products found in product.html");
-        const products = Function(`"use strict"; return ${match[1]};`)();
-        return products.filter((p) =>
-          ["Clothing", "Shoes", "Accessories"].includes(p.category)
-        );
-      } catch (err) {
-        console.error(err);
-        return [];
-      }
-    }
-
-    // === Populate Product List ===
-    async function populateProductList() {
-      const list = document.getElementById("productList");
-      list.textContent = "Loading...";
-      const products = await fetchProductsFromHTML();
-      list.innerHTML = "";
-
-      if (products.length === 0) {
-        list.textContent = "No wearable products found.";
+      if (!stored) {
+        productNameElem.textContent = "No product selected.";
         return;
       }
 
-      products.forEach((p) => {
-        const div = document.createElement("div");
-        div.className = "product-item";
-        div.textContent = p.name;
-        div.onclick = () => loadClothing(p.glb);
-        list.appendChild(div);
-      });
+      const product = JSON.parse(stored);
+      productNameElem.textContent = `Wearing: ${product.name}`;
+
+      if (product.glb) {
+        loader.load(
+          product.glb,
+          (gltf) => {
+            clothing = gltf.scene;
+            scene.add(clothing);
+
+            fitClothingToAvatar(avatar, clothing);
+          },
+          undefined,
+          (err) => console.error("Error loading clothing:", err)
+        );
+      } else {
+        productNameElem.textContent += " (No 3D model available)";
+      }
     }
 
-    // === Average Skin Tone from Selfie ===
+    // === Auto Fit Clothing to Avatar ===
+    function fitClothingToAvatar(avatar, clothing) {
+      if (!avatar || !clothing) return;
+      const avatarBox = new THREE.Box3().setFromObject(avatar);
+      const clothBox = new THREE.Box3().setFromObject(clothing);
+
+      const avatarSize = new THREE.Vector3();
+      const clothSize = new THREE.Vector3();
+      avatarBox.getSize(avatarSize);
+      clothBox.getSize(clothSize);
+
+      const scaleFactor = avatarSize.y / clothSize.y;
+      clothing.scale.multiplyScalar(scaleFactor * 0.95);
+
+      const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+      const clothCenter = clothBox.getCenter(new THREE.Vector3());
+      clothing.position.sub(clothCenter).add(avatarCenter);
+      clothing.position.y += 0.02 * avatarSize.y;
+    }
+
+    // === Match Skin & Hair Color from Selfie ===
     document.getElementById("selfieInput").addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
+
       const img = new Image();
       img.src = URL.createObjectURL(file);
       await img.decode();
@@ -222,30 +187,31 @@
         b += data[i + 2];
         count++;
       }
+
       const avgColor = new THREE.Color(r / count / 255, g / count / 255, b / count / 255);
 
-      // Apply to avatar skin/hair materials
-      avatar.traverse((child) => {
-        if (child.isMesh) {
-          const name = child.name.toLowerCase();
-          if (name.includes("skin")) {
-            child.material.color.copy(avgColor);
-          } else if (name.includes("hair")) {
-            const darker = avgColor.clone().multiplyScalar(0.5);
-            child.material.color.copy(darker);
+      if (avatar) {
+        avatar.traverse((child) => {
+          if (child.isMesh) {
+            const name = child.name.toLowerCase();
+            if (name.includes("skin")) {
+              child.material.color.copy(avgColor);
+            } else if (name.includes("hair")) {
+              const darker = avgColor.clone().multiplyScalar(0.5);
+              child.material.color.copy(darker);
+            }
           }
-        }
-      });
+        });
+      }
     });
 
-    // === Resize Handler ===
+    // === Resize & Animate ===
     window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / (window.innerHeight - 180);
+      camera.aspect = window.innerWidth / (window.innerHeight - 100);
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight - 180);
+      renderer.setSize(window.innerWidth, window.innerHeight - 100);
     });
 
-    // === Animation Loop ===
     const clock = new THREE.Clock();
     function animate() {
       requestAnimationFrame(animate);
@@ -254,8 +220,6 @@
       renderer.render(scene, camera);
     }
     animate();
-
-    populateProductList();
   </script>
 </body>
 </html>
