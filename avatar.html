@@ -3,60 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Reality Shop - Avatar Customization</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body {
-      margin: 0;
-      background: #0a0a0a;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      height: 100vh;
-      color: #fff;
-      font-family: Poppins, sans-serif;
-    }
-    #canvas-container {
-      width: 100%;
-      height: 80vh;
-    }
-    #ui {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 15px;
-      padding: 10px;
-      background: rgba(0,0,0,0.6);
-      backdrop-filter: blur(10px);
-      position: fixed;
-      bottom: 0;
-      left: 0;
-    }
-    input[type=file] {
-      background: #111;
-      color: #00eaff;
-      border: 1px solid #00eaff;
-      border-radius: 8px;
-      padding: 8px;
-      cursor: pointer;
-    }
-    button {
-      background: linear-gradient(135deg, #00eaff, #0066ff);
-      color: white;
-      border: none;
-      padding: 10px 18px;
-      border-radius: 20px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: 0.3s;
-    }
-    button:hover {
-      background: linear-gradient(135deg, #0077ff, #0044aa);
-      transform: translateY(-2px);
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Importmap -->
   <script type="importmap">
@@ -68,13 +15,22 @@
     }
   }
   </script>
+
+  <style>
+    body { margin: 0; overflow: hidden; background: #0a0a0a; font-family: Poppins, sans-serif; color: white; }
+    #viewer { width: 100vw; height: 85vh; }
+    #controls { position: fixed; bottom: 0; width: 100%; display: flex; justify-content: center; align-items: center; gap: 10px; padding: 10px; background: rgba(0,0,0,0.5); backdrop-filter: blur(10px); }
+    input, button { padding: 8px 12px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; }
+    button { background: linear-gradient(135deg,#00eaff,#0066ff); color: white; }
+    button:hover { background: linear-gradient(135deg,#0077ff,#0044aa); transform: translateY(-2px); }
+  </style>
 </head>
 <body>
-  <div id="canvas-container"></div>
+  <div id="viewer"></div>
 
-  <div id="ui">
+  <div id="controls">
     <input type="file" id="selfieInput" accept="image/*">
-    <button id="recolorBtn">Apply Skin & Hair Color</button>
+    <button id="applyColors">Apply Selfie Colors</button>
   </div>
 
   <script type="module">
@@ -82,142 +38,126 @@
     import { GLTFLoader } from "GLTFLoader";
     import { OrbitControls } from "OrbitControls";
 
-    // Suppress old GLTF extension warning
-    console.warn = (msg) => {
-      if (msg.includes("KHR_materials_pbrSpecularGlossiness")) return;
-      console.log(msg);
-    };
+    // === Basic setup ===
+    const container = document.getElementById("viewer");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0a0a);
 
-    let scene, camera, renderer, avatar, mixer, clock;
-    const container = document.getElementById("canvas-container");
-    const selectedProduct = JSON.parse(localStorage.getItem("selectedClothing"));
-    console.log("Selected Product:", selectedProduct);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(0, 1.5, 3);
 
-    init();
-    animate();
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight * 0.85);
+    container.appendChild(renderer.domElement);
 
-    async function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x0a0a0a);
-      camera = new THREE.PerspectiveCamera(45, window.innerWidth / (window.innerHeight * 0.8), 0.1, 100);
-      camera.position.set(0, 1.6, 3);
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.5, 0);
+    controls.update();
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
-      container.appendChild(renderer.domElement);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1);
+    dir.position.set(3, 5, 2);
+    scene.add(dir);
 
-      const controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 1.5, 0);
-      controls.update();
+    const loader = new GLTFLoader();
+    const clock = new THREE.Clock();
+    let avatar, mixer;
+    let clothing = null;
 
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
-      hemiLight.position.set(0, 20, 0);
-      scene.add(hemiLight);
+    // === Load Avatar ===
+    loader.load("imgs/avatar.glb", (gltf) => {
+      avatar = gltf.scene;
+      avatar.scale.set(1.4, 1.4, 1.4);
+      scene.add(avatar);
 
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(-3, 10, -10);
-      scene.add(dirLight);
-
-      clock = new THREE.Clock();
-
-      const loader = new GLTFLoader();
-      loader.load("imgs/avatar.glb", (gltf) => {
-        avatar = gltf.scene;
-        avatar.scale.set(1.4, 1.4, 1.4);
-        avatar.position.set(0, 0, 0);
-        scene.add(avatar);
-
+      if (gltf.animations.length > 0) {
         mixer = new THREE.AnimationMixer(avatar);
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer.clipAction(gltf.animations[0]).play();
-        }
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
+      }
 
-        if (selectedProduct && selectedProduct.glb) {
-          loadProductWithBones(selectedProduct.glb);
-        }
-      });
-    }
+      // Once avatar is loaded, try to load product
+      const selected = JSON.parse(localStorage.getItem("selectedClothing"));
+      if (selected && selected.glb) loadProduct(selected.glb, selected.name || "");
+    });
 
-    function loadProductWithBones(modelPath) {
-      const loader = new GLTFLoader();
-      loader.load(modelPath, (gltf) => {
-        const item = gltf.scene;
-        item.scale.set(1.4, 1.4, 1.4);
-        item.position.set(0, 0, 0);
-
-        // Attach based on category keywords
-        let attachBoneName = "Spine"; // default
-        const name = selectedProduct.name?.toLowerCase() || "";
-
-        if (name.includes("Clothing") || name.includes("Clothing")) attachBoneName = "Spine";
-        else if (name.includes("pant") || name.includes("jean")) attachBoneName = "Hips";
-        else if (name.includes("shoe") || name.includes("sandal")) attachBoneName = "LeftFoot";
-        else if (name.includes("glass")) attachBoneName = "Head";
-        else if (name.includes("neck") || name.includes("chain")) attachBoneName = "Neck";
-
-        // Find matching bone in avatar skeleton
-        let targetBone = null;
-        avatar.traverse((child) => {
-          if (child.isBone && child.name.includes(attachBoneName)) {
-            targetBone = child;
+    // === Load Clothing Product ===
+    function loadProduct(filePath, name) {
+      loader.load(filePath, (gltf) => {
+        clothing = gltf.scene;
+        clothing.scale.set(1.4, 1.4, 1.4);
+        clothing.traverse(obj => {
+          if (obj.isMesh) {
+            obj.material.side = THREE.DoubleSide;
           }
         });
 
-        if (targetBone) {
-          targetBone.add(item);
-          console.log(`Attached product to bone: ${attachBoneName}`);
+        // Smart bone attachment
+        let attachBone = "Spine";
+        const lowerName = name.toLowerCase();
+        if (lowerName.includes("pant")) attachBone = "Hips";
+        else if (lowerName.includes("shoe")) attachBone = "LeftFoot";
+        else if (lowerName.includes("glass")) attachBone = "Head";
+        else if (lowerName.includes("neck")) attachBone = "Neck";
+
+        let bone = null;
+        avatar.traverse(child => {
+          if (child.isBone && child.name.toLowerCase().includes(attachBone.toLowerCase())) {
+            bone = child;
+          }
+        });
+
+        if (bone) {
+          bone.add(clothing);
+          console.log("✅ Attached to bone:", attachBone);
         } else {
-          console.warn("No matching bone found; adding to avatar root.");
-          avatar.add(item);
+          avatar.add(clothing);
+          console.warn("⚠️ Bone not found, added to root instead");
         }
       });
     }
 
-    // --- Apply Skin & Hair Color ---
-    document.getElementById("recolorBtn").addEventListener("click", () => {
+    // === Apply colors from selfie ===
+    document.getElementById("applyColors").addEventListener("click", () => {
       const file = document.getElementById("selfieInput").files[0];
-      if (!file) {
-        alert("Please upload a selfie first!");
-        return;
-      }
+      if (!file) return alert("Please upload a selfie first!");
 
       const img = new Image();
       img.onload = () => {
         const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d", { willReadFrequently: true });
         canvas.width = img.width;
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0, img.width, img.height);
-
         const data = ctx.getImageData(0, 0, img.width, img.height).data;
+
         let r = 0, g = 0, b = 0, count = 0;
         for (let i = 0; i < data.length; i += 4) {
-          r += data[i];
-          g += data[i + 1];
-          b += data[i + 2];
-          count++;
+          r += data[i]; g += data[i + 1]; b += data[i + 2]; count++;
         }
-        const avgColor = new THREE.Color(`rgb(${r / count}, ${g / count}, ${b / count})`);
+        const avg = new THREE.Color(`rgb(${r / count}, ${g / count}, ${b / count})`);
+        const hairColor = avg.clone().offsetHSL(0, 0, -0.4);
 
-        avatar.traverse((child) => {
-          if (child.isMesh) {
-            const name = child.name.toLowerCase();
-            if (name.includes("skin") || name.includes("face")) {
-              child.material.color = avgColor;
-            } else if (name.includes("hair")) {
-              const darker = avgColor.clone().offsetHSL(0, 0, -0.3);
-              child.material.color = darker;
-            }
+        avatar.traverse(obj => {
+          if (obj.isMesh) {
+            const n = obj.name.toLowerCase();
+            if (n.includes("skin") || n.includes("face") || n.includes("body"))
+              obj.material.color.copy(avg);
+            if (n.includes("hair") || n.includes("head"))
+              obj.material.color.copy(hairColor);
           }
         });
+        console.log("✅ Colors updated from selfie");
       };
       img.src = URL.createObjectURL(file);
     });
 
+    // === Resize & Animate ===
     window.addEventListener("resize", () => {
-      camera.aspect = window.innerWidth / (window.innerHeight * 0.8);
+      camera.aspect = window.innerWidth / (window.innerHeight * 0.85);
       camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight * 0.8);
+      renderer.setSize(window.innerWidth, window.innerHeight * 0.85);
     });
 
     function animate() {
@@ -226,6 +166,7 @@
       if (mixer) mixer.update(delta);
       renderer.render(scene, camera);
     }
+    animate();
   </script>
 </body>
 </html>
