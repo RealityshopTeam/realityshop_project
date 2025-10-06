@@ -58,14 +58,13 @@
     }
   </style>
 
-  <!-- Importmap for Three.js -->
+  <!-- Importmap -->
   <script type="importmap">
   {
     "imports": {
       "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
       "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/GLTFLoader.js",
-      "OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/controls/OrbitControls.js",
-      "AnimationMixer": "three"
+      "OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/controls/OrbitControls.js"
     }
   }
   </script>
@@ -83,9 +82,14 @@
     import { GLTFLoader } from "GLTFLoader";
     import { OrbitControls } from "OrbitControls";
 
+    // Suppress old GLTF extension warning
+    console.warn = (msg) => {
+      if (msg.includes("KHR_materials_pbrSpecularGlossiness")) return;
+      console.log(msg);
+    };
+
     let scene, camera, renderer, avatar, mixer, clock;
     const container = document.getElementById("canvas-container");
-
     const selectedProduct = JSON.parse(localStorage.getItem("selectedClothing"));
     console.log("Selected Product:", selectedProduct);
 
@@ -106,17 +110,16 @@
       controls.target.set(0, 1.5, 0);
       controls.update();
 
-      // Lights
       const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 1);
       hemiLight.position.set(0, 20, 0);
       scene.add(hemiLight);
+
       const dirLight = new THREE.DirectionalLight(0xffffff, 1);
       dirLight.position.set(-3, 10, -10);
       scene.add(dirLight);
 
       clock = new THREE.Clock();
 
-      // Load avatar base
       const loader = new GLTFLoader();
       loader.load("imgs/avatar.glb", (gltf) => {
         avatar = gltf.scene;
@@ -130,30 +133,47 @@
         }
 
         if (selectedProduct && selectedProduct.glb) {
-          loadClothing(selectedProduct.glb);
+          loadProductWithBones(selectedProduct.glb);
         }
       });
     }
 
-    function loadClothing(modelPath) {
+    function loadProductWithBones(modelPath) {
       const loader = new GLTFLoader();
       loader.load(modelPath, (gltf) => {
-        const clothing = gltf.scene;
-        clothing.scale.set(1.4, 1.4, 1.4);
-        clothing.position.set(0, 0, 0);
+        const item = gltf.scene;
+        item.scale.set(1.4, 1.4, 1.4);
+        item.position.set(0, 0, 0);
 
-        // Try to auto-fit the clothing on the avatar (approximate)
-        clothing.traverse((child) => {
-          if (child.isMesh) {
-            child.material.side = THREE.DoubleSide;
+        // Attach based on category keywords
+        let attachBoneName = "Spine"; // default
+        const name = selectedProduct.name?.toLowerCase() || "";
+
+        if (name.includes("Clothing") || name.includes("Clothing")) attachBoneName = "Spine";
+        else if (name.includes("pant") || name.includes("jean")) attachBoneName = "Hips";
+        else if (name.includes("shoe") || name.includes("sandal")) attachBoneName = "LeftFoot";
+        else if (name.includes("glass")) attachBoneName = "Head";
+        else if (name.includes("neck") || name.includes("chain")) attachBoneName = "Neck";
+
+        // Find matching bone in avatar skeleton
+        let targetBone = null;
+        avatar.traverse((child) => {
+          if (child.isBone && child.name.includes(attachBoneName)) {
+            targetBone = child;
           }
         });
 
-        avatar.add(clothing);
+        if (targetBone) {
+          targetBone.add(item);
+          console.log(`Attached product to bone: ${attachBoneName}`);
+        } else {
+          console.warn("No matching bone found; adding to avatar root.");
+          avatar.add(item);
+        }
       });
     }
 
-    // --- Skin & Hair Color from Selfie ---
+    // --- Apply Skin & Hair Color ---
     document.getElementById("recolorBtn").addEventListener("click", () => {
       const file = document.getElementById("selfieInput").files[0];
       if (!file) {
@@ -169,31 +189,24 @@
         canvas.height = img.height;
         ctx.drawImage(img, 0, 0, img.width, img.height);
 
-        // Average face color approximation
-        const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
+        const data = ctx.getImageData(0, 0, img.width, img.height).data;
         let r = 0, g = 0, b = 0, count = 0;
-        for (let i = 0; i < imageData.length; i += 4) {
-          r += imageData[i];
-          g += imageData[i + 1];
-          b += imageData[i + 2];
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i + 1];
+          b += data[i + 2];
           count++;
         }
-        r = Math.floor(r / count);
-        g = Math.floor(g / count);
-        b = Math.floor(b / count);
-
-        const avgColor = new THREE.Color(`rgb(${r},${g},${b})`);
+        const avgColor = new THREE.Color(`rgb(${r / count}, ${g / count}, ${b / count})`);
 
         avatar.traverse((child) => {
           if (child.isMesh) {
             const name = child.name.toLowerCase();
             if (name.includes("skin") || name.includes("face")) {
               child.material.color = avgColor;
-            }
-            if (name.includes("hair")) {
-              // Slightly darker hair color
-              const hairColor = avgColor.clone().offsetHSL(0, 0, -0.3);
-              child.material.color = hairColor;
+            } else if (name.includes("hair")) {
+              const darker = avgColor.clone().offsetHSL(0, 0, -0.3);
+              child.material.color = darker;
             }
           }
         });
