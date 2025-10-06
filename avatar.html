@@ -70,34 +70,57 @@
     const loader = new GLTFLoader();
     let avatar, clothing;
 
+    // --- Load Avatar ---
     loader.load("imgs/avatar.glb", gltf => {
       avatar = gltf.scene;
       avatar.scale.set(1, 1, 1);
       scene.add(avatar);
-      // After avatar loads, auto-apply product if saved
-      autoApplyProduct();
+      autoApplyProduct(); // auto-apply if a product was selected
     });
 
+    // --- Animation ---
     function animate() {
       requestAnimationFrame(animate);
       renderer.render(scene, camera);
     }
     animate();
 
-    // --- Load clothing ---
+    // --- Load Clothing and Auto-Fit ---
     function loadClothing(url) {
       if (!url) return alert("No model available for this product.");
       if (clothing) { scene.remove(clothing); clothing = null; }
 
       loader.load(url, gltf => {
         clothing = gltf.scene;
-        clothing.scale.set(1, 1, 1);
-        clothing.position.set(0, 1, 0);
         scene.add(clothing);
+
+        // Auto-fit logic
+        if (avatar) {
+          const avatarBox = new THREE.Box3().setFromObject(avatar);
+          const clothBox = new THREE.Box3().setFromObject(clothing);
+
+          const avatarSize = new THREE.Vector3();
+          const clothSize = new THREE.Vector3();
+          avatarBox.getSize(avatarSize);
+          clothBox.getSize(clothSize);
+
+          // Scale clothing relative to avatar height
+          const scaleFactor = avatarSize.y / clothSize.y;
+          clothing.scale.multiplyScalar(scaleFactor);
+
+          // Align positions
+          const avatarCenter = avatarBox.getCenter(new THREE.Vector3());
+          const clothCenter = clothBox.getCenter(new THREE.Vector3());
+
+          // Offset slightly upward to fit shoulders
+          clothing.position.sub(clothCenter).add(avatarCenter);
+          clothing.position.y += 0.05 * avatarSize.y;
+        }
+
       }, undefined, err => console.error("Error loading clothing:", err));
     }
 
-    // --- Fetch products from product.html ---
+    // --- Get products from product.html ---
     async function fetchProductsFromHTML() {
       try {
         const res = await fetch("product.html");
@@ -114,7 +137,7 @@
       }
     }
 
-    // --- Populate UI ---
+    // --- Populate product list ---
     async function populateProductList() {
       const list = document.getElementById("productList");
       list.innerHTML = "Loading...";
@@ -132,14 +155,14 @@
       });
     }
 
-    // --- Auto apply saved product from product.html ---
+    // --- Auto apply selected product from localStorage ---
     function autoApplyProduct() {
       const selected = localStorage.getItem("selectedProduct");
       if (!selected) return;
       const product = JSON.parse(selected);
       console.log("Auto-applying product:", product.name);
       loadClothing(product.glb);
-      localStorage.removeItem("selectedProduct"); // clear after use
+      localStorage.removeItem("selectedProduct");
     }
 
     window.addEventListener("resize", () => {
