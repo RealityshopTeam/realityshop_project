@@ -348,20 +348,6 @@
           alert("No model URL available for AR.");
           return;
         }
-        // open a new page with an embedded model-viewer using the same model
-        const pageHtml = `
-<!doctype html>
-<html>
-  <head>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-    <style>body{margin:0;height:100vh;background:#000;display:flex;align-items:center;justify-content:center}</style>
-  </head>
-  <body>
-    <model-viewer src="${encodeURI(modelUrl)}" ar ar-modes="webxr scene-viewer quick-look" camera-controls environment-image="neutral" style="width:100vw;height:100vh"></model-viewer>
-  </body>
-</html>
-`;
         const blob = new Blob([pageHtml], {type: 'text/html'});
         const url = URL.createObjectURL(blob);
         window.open(url, '_blank');
@@ -531,3 +517,4 @@
   </script>
 </body>
 </html>
+
