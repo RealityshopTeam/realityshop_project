@@ -1,185 +1,533 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Reality Shop - Avatar Try-On</title>
+  <meta charset="utf-8" />
+  <title>Reality Shop — Avatar Customizer (Three.js)</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    body { margin: 0; overflow: hidden; background: #000; }
-    #uploadBox {
-      position: absolute;
-      top: 10px; left: 10px;
-      z-index: 10;
-      background: rgba(255,255,255,0.1);
-      padding: 10px;
-      border-radius: 10px;
-      color: #fff;
-    }
+    :root { --bg: #0b0d10; --panel: rgba(255,255,255,0.06); --accent: #4fd1c5; color-scheme: dark; }
+    html,body { height:100%; margin:0; background:var(--bg); font-family:Inter, system-ui, Arial; color:#eee; }
+    #app { display:flex; gap:16px; height:100vh; padding:12px; box-sizing:border-box; align-items:stretch; }
+    #viewer { flex:1 1 720px; border-radius:12px; overflow:hidden; background: linear-gradient(180deg,#081017 0%, #0b1014 100%); box-shadow: 0 6px 30px rgba(0,0,0,0.6); position:relative; }
+    #ui { width:360px; min-width:280px; background:var(--panel); border-radius:12px; padding:14px; box-sizing:border-box; overflow:auto; }
+    canvas { display:block; width:100%; height:100%; }
+    h2 { margin:6px 0 12px 0; font-size:18px; color:#fff; }
+    label { display:block; font-size:13px; margin-top:10px; color:#dbe7e3; }
+    .row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+    button, select, input[type="color"] { background:transparent; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
+    button:hover { border-color: var(--accent); box-shadow:0 4px 18px rgba(79,209,197,0.06); }
+    .small { padding:6px 8px; font-size:13px; }
+    .muted { color:#9aa7a6; font-size:13px; }
+    .control-group { margin-bottom:12px; }
+    .footer { margin-top:12px; font-size:12px; color:#9aa7a6; }
+    .topbar { position:absolute; left:12px; top:12px; z-index:3; display:flex; gap:8px; align-items:center; }
+    .topbar button { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); }
+    .badge { font-size:12px; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.02); color:#bfeee8; }
   </style>
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.166.1/build/three.module.js",
-      "GLTFLoader": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/loaders/GLTFLoader.js",
-      "OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.166.1/examples/jsm/controls/OrbitControls.js"
-    }
-  }
-  </script>
 </head>
 <body>
+  <div id="app">
+    <div id="viewer">
+      <div class="topbar">
+        <div class="badge">Reality Shop — Avatar</div>
+        <button id="arBtn" class="small">View in AR</button>
+        <button id="saveBtn" class="small">Save</button>
+        <button id="resetBtn" class="small">Reset</button>
+      </div>
+      <div id="canvasContainer" style="position:absolute; inset:0;"></div>
+    </div>
 
-  <div id="uploadBox">
-    <label>Upload Selfie: </label>
-    <input type="file" id="selfieInput" accept="image/*">
+    <div id="ui">
+      <h2>Avatar Controls</h2>
+
+      <div class="control-group">
+        <label>Base Avatar</label>
+        <select id="avatarSelect">
+          <option value="https://modelviewer.dev/shared-assets/models/Astronaut.glb">Astronaut (placeholder)</option>
+          <option value="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb">Robot (placeholder)</option>
+          <!-- Replace or add your own avatar GLB URLs here -->
+        </select>
+      </div>
+
+      <div class="control-group">
+        <label>Outfit / Clothing</label>
+        <div class="row">
+          <button class="small" data-outfit="variant1">Outfit 1</button>
+          <button class="small" data-outfit="variant2">Outfit 2</button>
+          <button class="small" data-outfit="remove">Remove Outfit</button>
+        </div>
+        <div class="muted">If your avatars come with separate clothing nodes this will toggle them; otherwise outfits are loaded as full models (replace URLs below).</div>
+      </div>
+
+      <div class="control-group">
+        <label>Skin Color</label>
+        <div class="row">
+          <input id="skinColor" type="color" value="#e0b89e" />
+          <button id="skinReset" class="small">Reset</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Hair Color</label>
+        <div class="row">
+          <input id="hairColor" type="color" value="#2b1b12" />
+          <button id="hairReset" class="small">Reset</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <label>Animations</label>
+        <div class="row" id="animButtons">
+          <button class="small" data-anim="idle">Idle</button>
+          <button class="small" data-anim="walk">Walk</button>
+          <button class="small" data-anim="wave">Wave</button>
+        </div>
+        <div class="muted">Animations depend on model containing animation clips named idle/walk/wave or generic clip indices.</div>
+      </div>
+
+      <div class="control-group">
+        <label>View Options</label>
+        <div class="row">
+          <button id="resetCam" class="small">Reset Camera</button>
+          <button id="toggleAutoRotate" class="small">Toggle Auto-Rotate</button>
+        </div>
+      </div>
+
+      <div class="footer">
+        Tip: Replace the sample model URLs in the script area with your production avatar and outfit `.glb` files.
+      </div>
+    </div>
   </div>
 
-  <script type="module">
-    import * as THREE from 'three';
-    import { GLTFLoader } from 'GLTFLoader';
-    import { OrbitControls } from 'OrbitControls';
+  <!-- Three.js + helpers -->
+  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://unpkg.com/three@0.150.1/examples/jsm/utils/SkeletonUtils.js"></script>
 
-    // Suppress extension warning
-    console.warn = (msg) => {
-      if (msg.includes("KHR_materials_pbrSpecularGlossiness")) return;
-      console.log(msg);
+  <script>
+  (function () {
+    // ---------------------------
+    // Config — replace these URLs with your own .glb assets
+    // ---------------------------
+    const CONFIG = {
+      // Base avatars (these options populate the <select> above automatically)
+      avatars: {
+        astronaut: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+        robot: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
+        // add your own: 'male': '/models/male_base.glb'
+      },
+      // Outfit variants (if you have full-model outfit variants, set them here)
+      outfitVariants: {
+        variant1: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", // replace with outfit glb
+        variant2: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb" // replace
+      },
+      // Names (approx) of material parts for automatic skin/hair detection
+      skinMaterialKeywords: ["skin", "Skin", "Body", "body"],
+      hairMaterialKeywords: ["hair", "Hair"]
     };
 
-    let scene, camera, renderer, mixer, avatar, controls;
+    // ---------------------------
+    // Scene setup
+    // ---------------------------
+    const container = document.getElementById('canvasContainer');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x090b0d);
 
-    init();
-    animate();
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight, false);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
 
-    async function init() {
-      // Scene setup
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x000000);
+    // Camera
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 1.6, 2.6);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
-      camera.position.set(0, 1.6, 3);
+    // Controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.3, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+    // Lights
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
+    hemi.position.set(0, 20, 0);
+    scene.add(hemi);
 
-      // Lighting
-      const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 2);
-      hemiLight.position.set(0, 2, 0);
-      scene.add(hemiLight);
-      const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-      dirLight.position.set(0, 2, 2);
-      scene.add(dirLight);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(5, 10, 7);
+    dir.castShadow = true;
+    dir.shadow.camera.left = -5;
+    dir.shadow.camera.right = 5;
+    dir.shadow.camera.top = 5;
+    dir.shadow.camera.bottom = -5;
+    scene.add(dir);
 
-      controls = new OrbitControls(camera, renderer.domElement);
-      controls.target.set(0, 1.4, 0);
+    // ground (soft)
+    const ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.25 }));
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    // Loader / utils
+    const gltfLoader = new THREE.GLTFLoader();
+    const clock = new THREE.Clock();
+    let modelRoot = null;     // loaded avatar root
+    let mixer = null;         // animation mixer
+    let currentAction = null;
+    let actions = {};
+    let autoRotate = true;
+
+    // default state
+    const state = {
+      avatarURL: document.getElementById('avatarSelect').value,
+      outfit: null,
+      skinColor: document.getElementById('skinColor').value,
+      hairColor: document.getElementById('hairColor').value
+    };
+
+    // ---------------------------
+    // Responsive
+    // ---------------------------
+    window.addEventListener('resize', () => {
+      const w = container.clientWidth, h = container.clientHeight;
+      camera.aspect = w/h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w,h);
+    });
+
+    // ---------------------------
+    // Load avatar function
+    // - supports full replacement
+    // - also tries to preserve animation mixer where possible
+    // ---------------------------
+    async function loadAvatar(url, preserveTransform=false) {
+      // clean up previous
+      if (modelRoot) {
+        scene.remove(modelRoot);
+        modelRoot.traverse(n => { if (n.isMesh) { n.geometry?.dispose?.(); n.material?.dispose?.(); } });
+        modelRoot = null;
+        mixer = null;
+        actions = {};
+        currentAction = null;
+      }
+
+      const gltf = await new Promise((resolve, reject) => {
+        gltfLoader.load(url, resolve, null, err => reject(err));
+      });
+
+      modelRoot = THREE.SkeletonUtils.clone(gltf.scene || gltf.scenes[0]);
+      modelRoot.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
+
+      // simple normalization and centering
+      const bbox = new THREE.Box3().setFromObject(modelRoot);
+      const size = bbox.getSize(new THREE.Vector3());
+      const center = bbox.getCenter(new THREE.Vector3());
+      const scale = 1.6 / Math.max(size.x, size.y, size.z);
+      modelRoot.scale.setScalar(scale);
+      modelRoot.position.sub(center.multiplyScalar(scale));
+      modelRoot.position.y += 0.02; // small lift so feet don't clip
+
+      scene.add(modelRoot);
+
+      // animations
+      if (gltf.animations && gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(modelRoot);
+        gltf.animations.forEach(clip => {
+          const name = clip.name ? clip.name.toLowerCase() : null;
+          actions[name || clip.name || ("clip" + Math.random().toString(16).slice(2))] = mixer.clipAction(clip);
+        });
+        // also add numeric indices fallback
+        gltf.animations.forEach((clip, idx) => {
+          const key = "anim" + idx;
+          if (!actions[key]) actions[key] = mixer.clipAction(clip);
+        });
+      }
+
+      // attempt to auto-detect skin/hair materials and set initial colors
+      applySkinColor(state.skinColor, modelRoot);
+      applyHairColor(state.hairColor, modelRoot);
+
+      // if outfits are expected as separate nodes inside the model, record them for toggling (optional)
+      detectClothingNodes(modelRoot);
+
+      // update AR button: model must be accessible via URL — we rely on state.avatarURL (external)
+      updateARButton(state.avatarURL);
+
+      return modelRoot;
+    }
+
+    // ---------------------------
+    // Clothing detection + toggling
+    // ---------------------------
+    // This will try to find child nodes with typical clothing names for toggling visibility
+    const detectedClothing = {};
+    function detectClothingNodes(root) {
+      detectedClothing.nodes = []; // array of {name, object}
+      root.traverse(obj => {
+        if (!obj.isMesh) return;
+        const n = obj.name || "";
+        const nameLower = n.toLowerCase();
+        if (nameLower.includes("shirt") || nameLower.includes("jacket") || nameLower.includes("dress") || nameLower.includes("pants") || nameLower.includes("top") || nameLower.includes("outfit") ) {
+          detectedClothing.nodes.push({name: n, object: obj});
+        }
+      });
+      // console.log("Detected clothing nodes:", detectedClothing.nodes.map(n=>n.name));
+    }
+
+    function toggleDetectedClothing(show=true) {
+      if (!detectedClothing.nodes || !detectedClothing.nodes.length) return false;
+      detectedClothing.nodes.forEach(n => n.object.visible = show);
+      return true;
+    }
+
+    // ---------------------------
+    // Skin / hair color application
+    // ---------------------------
+    function applySkinColor(hex, root) {
+      if (!root) return;
+      root.traverse(node => {
+        if (!node.isMesh) return;
+        if (node.material) {
+          const mat = Array.isArray(node.material) ? node.material : [node.material];
+          mat.forEach(m => {
+            const lname = (m.name || "").toLowerCase();
+            if (CONFIG.skinMaterialKeywords.some(k => lname.includes(k.toLowerCase()))) {
+              if (m.color) m.color.set(hex);
+              if (m.emissive) m.emissive.setScalar(0);
+            }
+          });
+        }
+      });
+    }
+
+    function applyHairColor(hex, root) {
+      if (!root) return;
+      root.traverse(node => {
+        if (!node.isMesh) return;
+        if (node.material) {
+          const mat = Array.isArray(node.material) ? node.material : [node.material];
+          mat.forEach(m => {
+            const lname = (m.name || "").toLowerCase();
+            if (CONFIG.hairMaterialKeywords.some(k => lname.includes(k.toLowerCase()))) {
+              if (m.color) m.color.set(hex);
+            }
+          });
+        }
+      });
+    }
+
+    // ---------------------------
+    // Animation control
+    // ---------------------------
+    function playAnimationByName(name) {
+      if (!mixer) return;
+      // try exact name / lowercase versions / index-based fallback
+      const key = name.toLowerCase();
+      let action = actions[key] || actions["anim0"] || Object.values(actions)[0];
+      if (!action) return;
+      if (currentAction && currentAction !== action) {
+        currentAction.fadeOut(0.25);
+      }
+      action.reset();
+      action.fadeIn(0.25);
+      action.play();
+      currentAction = action;
+    }
+
+    // ---------------------------
+    // AR Button — opens a simple model-viewer page with current model URL
+    // (model-viewer handles WebXR/scene-viewer/quick-look fallback)
+    // ---------------------------
+    const arBtn = document.getElementById('arBtn');
+    function updateARButton(modelUrl) {
+      arBtn.onclick = () => {
+        if (!modelUrl) {
+          alert("No model URL available for AR.");
+          return;
+        }
+        // open a new page with an embedded model-viewer using the same model
+        const pageHtml = `
+<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>body{margin:0;height:100vh;background:#000;display:flex;align-items:center;justify-content:center}</style>
+  </head>
+  <body>
+    <model-viewer src="${encodeURI(modelUrl)}" ar ar-modes="webxr scene-viewer quick-look" camera-controls environment-image="neutral" style="width:100vw;height:100vh"></model-viewer>
+  </body>
+</html>
+`;
+        const blob = new Blob([pageHtml], {type: 'text/html'});
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      };
+    }
+
+    // ---------------------------
+    // Save / Load state to localStorage
+    // ---------------------------
+    const LS_KEY = "realityshop_avatar_state_v1";
+    function saveState() {
+      try {
+        const payload = {
+          avatarURL: state.avatarURL,
+          outfit: state.outfit,
+          skinColor: state.skinColor,
+          hairColor: state.hairColor
+        };
+        localStorage.setItem(LS_KEY, JSON.stringify(payload));
+        alert("Saved avatar configuration.");
+      } catch (e) {
+        console.error(e);
+        alert("Failed to save.");
+      }
+    }
+    function loadState() {
+      try {
+        const s = localStorage.getItem(LS_KEY);
+        if (!s) return null;
+        return JSON.parse(s);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // ---------------------------
+    // UI wiring
+    // ---------------------------
+    document.getElementById('avatarSelect').addEventListener('change', async (e) => {
+      const url = e.target.value;
+      state.avatarURL = url;
+      await loadAvatar(url);
+    });
+
+    // outfit buttons
+    document.querySelectorAll('[data-outfit]').forEach(btn => {
+      btn.addEventListener('click', async (ev) => {
+        const key = ev.currentTarget.getAttribute('data-outfit');
+        if (key === 'remove') {
+          // attempt to toggle detected clothing off; otherwise reload base
+          const toggled = toggleDetectedClothing(false);
+          state.outfit = null;
+          if (!toggled) {
+            await loadAvatar(state.avatarURL);
+          }
+        } else {
+          // prefer variant substitution (replace entire model) if variant URL exists
+          const variantUrl = CONFIG.outfitVariants[key];
+          if (variantUrl) {
+            state.outfit = key;
+            await loadAvatar(variantUrl);
+          } else {
+            // try toggling internal clothing
+            toggleDetectedClothing(true);
+          }
+        }
+      });
+    });
+
+    // skin & hair color
+    const skinColorInput = document.getElementById('skinColor');
+    const hairColorInput = document.getElementById('hairColor');
+    skinColorInput.addEventListener('input', () => {
+      state.skinColor = skinColorInput.value;
+      applySkinColor(state.skinColor, modelRoot);
+    });
+    hairColorInput.addEventListener('input', () => {
+      state.hairColor = hairColorInput.value;
+      applyHairColor(state.hairColor, modelRoot);
+    });
+    document.getElementById('skinReset').addEventListener('click', () => {
+      state.skinColor = '#e0b89e'; skinColorInput.value = state.skinColor;
+      applySkinColor(state.skinColor, modelRoot);
+    });
+    document.getElementById('hairReset').addEventListener('click', () => {
+      state.hairColor = '#2b1b12'; hairColorInput.value = state.hairColor;
+      applyHairColor(state.hairColor, modelRoot);
+    });
+
+    // animations
+    document.getElementById('animButtons').addEventListener('click', (ev) => {
+      const btn = ev.target.closest('button');
+      if (!btn) return;
+      const anim = btn.getAttribute('data-anim');
+      playAnimationByName(anim);
+    });
+
+    // save/reset
+    document.getElementById('saveBtn').addEventListener('click', saveState);
+    document.getElementById('resetBtn').addEventListener('click', async () => {
+      localStorage.removeItem(LS_KEY);
+      // reset UI
+      state.avatarURL = document.getElementById('avatarSelect').value;
+      state.skinColor = '#e0b89e';
+      state.hairColor = '#2b1b12';
+      skinColorInput.value = state.skinColor;
+      hairColorInput.value = state.hairColor;
+      await loadAvatar(state.avatarURL);
+    });
+
+    // camera options
+    document.getElementById('resetCam').addEventListener('click', () => {
+      camera.position.set(0, 1.6, 2.6);
+      controls.target.set(0,1.3,0);
       controls.update();
+    });
+    document.getElementById('toggleAutoRotate').addEventListener('click', () => {
+      autoRotate = !autoRotate;
+    });
 
-      const loader = new GLTFLoader();
-
-      // Load avatar
-      loader.load("imgs/avatar.glb", (gltf) => {
-        avatar = gltf.scene;
-        avatar.scale.set(1, 1, 1);
-        scene.add(avatar);
-
-        // Play animation if available
-        if (gltf.animations && gltf.animations.length) {
-          mixer = new THREE.AnimationMixer(avatar);
-          const action = mixer.clipAction(gltf.animations[0]);
-          action.play();
+    // load saved state or default avatar
+    (async () => {
+      // populate avatar select from CONFIG. (optional)
+      const sel = document.getElementById('avatarSelect');
+      // if user appended additional options in script tags, don't overwrite. Keep existing.
+      // We'll ensure current value exists in options.
+      // Load saved
+      const saved = loadState();
+      if (saved && saved.avatarURL) {
+        state.avatarURL = saved.avatarURL;
+        state.outfit = saved.outfit || null;
+        if (saved.skinColor) { state.skinColor = saved.skinColor; skinColorInput.value = state.skinColor; }
+        if (saved.hairColor) { state.hairColor = saved.hairColor; hairColorInput.value = state.hairColor; }
+        // append option if not present
+        const found = Array.from(sel.options).some(o => o.value === state.avatarURL);
+        if (!found) {
+          const opt = document.createElement('option'); opt.value = state.avatarURL; opt.textContent = "Saved Avatar";
+          sel.appendChild(opt);
         }
-
-        // After avatar loads, try to load selected product
-        loadSelectedProduct(avatar);
-      });
-
-      // Handle selfie upload
-      document.getElementById("selfieInput").addEventListener("change", handleSelfie);
-
-      window.addEventListener("resize", () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
-    }
-
-    // === Load Selected Product and Attach to Avatar ===
-    function loadSelectedProduct(avatar) {
-      const selectedProduct = JSON.parse(localStorage.getItem("selectedProduct"));
-      if (!selectedProduct || !selectedProduct.glb) {
-        console.log("No product selected.");
-        return;
+        sel.value = state.avatarURL;
+      } else {
+        state.avatarURL = sel.value;
       }
-      console.log("Selected Product:", selectedProduct);
 
-      const loader = new GLTFLoader();
-      loader.load(selectedProduct.glb, (productGLTF) => {
-        const product = productGLTF.scene;
-        product.scale.set(1, 1, 1);
+      await loadAvatar(state.avatarURL);
+    })();
 
-        // Find avatar bone to attach clothing
-        const spine = avatar.getObjectByName("Spine") || avatar.getObjectByName("Hips") || avatar;
-        spine.add(product);
-        product.position.set(0, 0, 0);
-
-        console.log("✅ Product attached to avatar successfully");
-      });
-    }
-
-    // === Detect average color from selfie and recolor avatar ===
-    async function handleSelfie(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const img = new Image();
-      img.src = URL.createObjectURL(file);
-      await img.decode();
-
-      // Create canvas to extract average color
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.drawImage(img, 0, 0, img.width, img.height);
-      const imageData = ctx.getImageData(0, 0, img.width, img.height).data;
-
-      let r = 0, g = 0, b = 0, count = 0;
-      for (let i = 0; i < imageData.length; i += 4 * 100) {
-        r += imageData[i];
-        g += imageData[i + 1];
-        b += imageData[i + 2];
-        count++;
-      }
-      r = Math.round(r / count);
-      g = Math.round(g / count);
-      b = Math.round(b / count);
-
-      const avgColor = new THREE.Color(`rgb(${r},${g},${b})`);
-      console.log("Detected skin color:", avgColor);
-
-      // Apply detected color to avatar materials
-      avatar.traverse((child) => {
-        if (child.isMesh && child.material) {
-          if (child.name.toLowerCase().includes("skin")) {
-            child.material.color.copy(avgColor);
-          }
-          if (child.name.toLowerCase().includes("hair")) {
-            const darker = avgColor.clone().multiplyScalar(0.5);
-            child.material.color.copy(darker);
-          }
-        }
-      });
-    }
-
-    // === Animate ===
+    // ---------------------------
+    // Rendering loop
+    // ---------------------------
     function animate() {
       requestAnimationFrame(animate);
-      const delta = clock.getDelta?.() || 0.016;
-      if (mixer) mixer.update(delta);
+      const dt = clock.getDelta();
+      if (mixer) mixer.update(dt);
+      controls.update();
+      if (autoRotate && modelRoot) {
+        modelRoot.rotation.y += dt * 0.15;
+      }
       renderer.render(scene, camera);
     }
+    animate();
 
-    const clock = new THREE.Clock();
+    // expose for debugging (optional)
+    window.RS = { scene, camera, renderer, loadAvatar, state };
+
+  })();
   </script>
-
 </body>
 </html>
