@@ -2,519 +2,496 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Reality Shop — Avatar Customizer (Three.js)</title>
+  <title>Reality Shop — Avatar Try-On (Ready Player Me)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <style>
-    :root { --bg: #0b0d10; --panel: rgba(255,255,255,0.06); --accent: #4fd1c5; color-scheme: dark; }
-    html,body { height:100%; margin:0; background:var(--bg); font-family:Inter, system-ui, Arial; color:#eee; }
-    #app { display:flex; gap:16px; height:100vh; padding:12px; box-sizing:border-box; align-items:stretch; }
-    #viewer { flex:1 1 720px; border-radius:12px; overflow:hidden; background: linear-gradient(180deg,#081017 0%, #0b1014 100%); box-shadow: 0 6px 30px rgba(0,0,0,0.6); position:relative; }
-    #ui { width:360px; min-width:280px; background:var(--panel); border-radius:12px; padding:14px; box-sizing:border-box; overflow:auto; }
-    canvas { display:block; width:100%; height:100%; }
-    h2 { margin:6px 0 12px 0; font-size:18px; color:#fff; }
-    label { display:block; font-size:13px; margin-top:10px; color:#dbe7e3; }
-    .row { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
-    button, select, input[type="color"] { background:transparent; border:1px solid rgba(255,255,255,0.08); color:#fff; padding:8px 10px; border-radius:8px; cursor:pointer; }
-    button:hover { border-color: var(--accent); box-shadow:0 4px 18px rgba(79,209,197,0.06); }
-    .small { padding:6px 8px; font-size:13px; }
-    .muted { color:#9aa7a6; font-size:13px; }
-    .control-group { margin-bottom:12px; }
-    .footer { margin-top:12px; font-size:12px; color:#9aa7a6; }
-    .topbar { position:absolute; left:12px; top:12px; z-index:3; display:flex; gap:8px; align-items:center; }
-    .topbar button { background:rgba(0,0,0,0.35); border:1px solid rgba(255,255,255,0.06); }
-    .badge { font-size:12px; padding:6px 8px; border-radius:8px; background:rgba(255,255,255,0.02); color:#bfeee8; }
+    :root { --accent:#06b4d4; --bg:#061021; }
+    html,body { height:100%; margin:0; font-family:Inter,system-ui,Arial; background:linear-gradient(180deg,#071021,#0b1220); color:#e6f0f6; }
+    header { padding:12px 16px; display:flex; gap:12px; align-items:center; background:rgba(0,0,0,0.12); position:sticky; top:0; }
+    main { display:flex; gap:16px; padding:16px; height:calc(100% - 64px); box-sizing:border-box; }
+    #viewer { flex:1; border-radius:12px; overflow:hidden; background:#051018; position:relative; }
+    #ui { width:360px; min-width:320px; background:#07121b; border-radius:12px; padding:14px; box-shadow:0 12px 30px rgba(0,0,0,0.6); display:flex; flex-direction:column; gap:12px; }
+    .small { font-size:0.9rem; color:#9fb3bf; }
+    .muted { color:#7eaab8; }
+    label.btn { background:linear-gradient(135deg,var(--accent),#0072ff); color:#021018; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; display:inline-block; }
+    button.control { background:#0f2940; color:#bfeaf9; border:1px solid rgba(127,200,220,0.06); padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:600; }
+    button.primary { background:linear-gradient(135deg,var(--accent),#0072ff); color:#021018; border:none; padding:10px; border-radius:10px; font-weight:700; cursor:pointer; }
+    #productPreview { height:140px; border-radius:8px; background:#071a22; display:flex; align-items:center; justify-content:center; color:#6eaebf; overflow:hidden; }
+    input[type=file] { display:none; }
+    .row { display:flex; gap:8px; align-items:center; }
+    footer.small { color:#7eaab8; font-size:0.86rem; text-align:center; margin-top:6px; }
   </style>
+
+  <!-- importmap -->
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js",
+      "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js",
+      "three/examples/jsm/utils/SkeletonUtils.js": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/utils/SkeletonUtils.js"
+    }
+  }
+  </script>
 </head>
 <body>
-  <div id="app">
-    <div id="viewer">
-      <div class="topbar">
-        <div class="badge">Reality Shop — Avatar</div>
-        <button id="arBtn" class="small">View in AR</button>
-        <button id="saveBtn" class="small">Save</button>
-        <button id="resetBtn" class="small">Reset</button>
-      </div>
-      <div id="canvasContainer" style="position:absolute; inset:0;"></div>
-    </div>
+  <header>
+    <div style="font-weight:700; color:var(--accent)">Reality Shop — Avatar Try-On</div>
+    <div class="small muted">Upload selfie → pick suggested Ready Player Me avatar → try on product</div>
+  </header>
 
-    <div id="ui">
-      <h2>Avatar Controls</h2>
+  <main>
+    <div id="viewer" role="main" aria-label="3D avatar viewer"></div>
 
-      <div class="control-group">
-        <label>Base Avatar</label>
-        <select id="avatarSelect">
-          <option value="https://modelviewer.dev/shared-assets/models/Astronaut.glb">Astronaut (placeholder)</option>
-          <option value="https://modelviewer.dev/shared-assets/models/RobotExpressive.glb">Robot (placeholder)</option>
-          <!-- Replace or add your own avatar GLB URLs here -->
-        </select>
+    <aside id="ui" aria-label="controls">
+      <div>
+        <div class="small">Selected product</div>
+        <div id="productName" style="font-weight:700; color:#cceef6">Loading…</div>
+        <div id="productPreview" class="small">No preview</div>
       </div>
 
-      <div class="control-group">
-        <label>Outfit / Clothing</label>
-        <div class="row">
-          <button class="small" data-outfit="variant1">Outfit 1</button>
-          <button class="small" data-outfit="variant2">Outfit 2</button>
-          <button class="small" data-outfit="remove">Remove Outfit</button>
+      <div>
+        <div class="small">1) Upload selfie (frontal)</div>
+        <div class="row" style="margin-top:6px;">
+          <label class="btn" for="selfieInput">Choose selfie</label>
+          <input id="selfieInput" type="file" accept="image/*" />
+          <button id="suggestBtn" class="control">Suggest avatar</button>
         </div>
-        <div class="muted">If your avatars come with separate clothing nodes this will toggle them; otherwise outfits are loaded as full models (replace URLs below).</div>
+        <div class="muted small">We will suggest male/female avatar — you can accept or manually pick.</div>
       </div>
 
-      <div class="control-group">
-        <label>Skin Color</label>
-        <div class="row">
-          <input id="skinColor" type="color" value="#e0b89e" />
-          <button id="skinReset" class="small">Reset</button>
+      <div>
+        <div class="small">2) Avatar choice</div>
+        <div class="row" style="margin-top:8px;">
+          <button id="useMaleBtn" class="control">Use Male (RPM)</button>
+          <button id="useFemaleBtn" class="control">Use Female (RPM)</button>
+          <div id="suggestText" class="small muted" style="margin-left:6px"></div>
         </div>
       </div>
 
-      <div class="control-group">
-        <label>Hair Color</label>
-        <div class="row">
-          <input id="hairColor" type="color" value="#2b1b12" />
-          <button id="hairReset" class="small">Reset</button>
+      <div>
+        <div class="small">3) Actions</div>
+        <div class="row" style="margin-top:8px;">
+          <button id="applyColorsBtn" class="primary">Apply Colors</button>
+          <button id="removeOutfitBtn" class="control">Remove outfit</button>
+        </div>
+        <div style="margin-top:8px;" class="row">
+          <button id="turnBtn" class="control">Turn 360°</button>
+          <button id="downloadBtn" class="control">Download PNG</button>
         </div>
       </div>
 
-      <div class="control-group">
-        <label>Animations</label>
-        <div class="row" id="animButtons">
-          <button class="small" data-anim="idle">Idle</button>
-          <button class="small" data-anim="walk">Walk</button>
-          <button class="small" data-anim="wave">Wave</button>
-        </div>
-        <div class="muted">Animations depend on model containing animation clips named idle/walk/wave or generic clip indices.</div>
-      </div>
+      <footer class="small">Products loaded only from your `product.html` selection. Suggested avatar is heuristic — user can choose manually.</footer>
+    </aside>
+  </main>
 
-      <div class="control-group">
-        <label>View Options</label>
-        <div class="row">
-          <button id="resetCam" class="small">Reset Camera</button>
-          <button id="toggleAutoRotate" class="small">Toggle Auto-Rotate</button>
-        </div>
-      </div>
+  <script type="module">
+  import * as THREE from "three";
+  import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+  import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+  import * as SkeletonUtils from "three/examples/jsm/utils/SkeletonUtils.js";
 
-      <div class="footer">
-        Tip: Replace the sample model URLs in the script area with your production avatar and outfit `.glb` files.
-      </div>
-    </div>
-  </div>
+  // === Ready Player Me default avatar GLBs (replace with your preferred URLs) ===
+  // These are placeholder demo links. Replace with your actual RPM GLB exports if you have them.
+  const RPM_MALE = "https://models.readyplayer.me/64d0d0b5d5f1a000ee0a0001.glb";   // <— replace with a real male GLB URL
+  const RPM_FEMALE = "https://models.readyplayer.me/64d0d0c3d5f1a000ee0a0002.glb"; // <— replace with a real female GLB URL
 
-  <!-- Three.js + helpers -->
-  <script src="https://unpkg.com/three@0.150.1/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.150.1/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three@0.150.1/examples/js/loaders/GLTFLoader.js"></script>
-  <script src="https://unpkg.com/three@0.150.1/examples/jsm/utils/SkeletonUtils.js"></script>
+  // DOM
+  const viewer = document.getElementById("viewer");
+  const selfieInput = document.getElementById("selfieInput");
+  const suggestBtn = document.getElementById("suggestBtn");
+  const useMaleBtn = document.getElementById("useMaleBtn");
+  const useFemaleBtn = document.getElementById("useFemaleBtn");
+  const applyColorsBtn = document.getElementById("applyColorsBtn");
+  const removeOutfitBtn = document.getElementById("removeOutfitBtn");
+  const turnBtn = document.getElementById("turnBtn");
+  const downloadBtn = document.getElementById("downloadBtn");
+  const productNameEl = document.getElementById("productName");
+  const productPreview = document.getElementById("productPreview");
+  const suggestText = document.getElementById("suggestText");
 
-  <script>
-  (function () {
-    // ---------------------------
-    // Config — replace these URLs with your own .glb assets
-    // ---------------------------
-    const CONFIG = {
-      // Base avatars (these options populate the <select> above automatically)
-      avatars: {
-        astronaut: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
-        robot: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb"
-        // add your own: 'male': '/models/male_base.glb'
-      },
-      // Outfit variants (if you have full-model outfit variants, set them here)
-      outfitVariants: {
-        variant1: "https://modelviewer.dev/shared-assets/models/Astronaut.glb", // replace with outfit glb
-        variant2: "https://modelviewer.dev/shared-assets/models/RobotExpressive.glb" // replace
-      },
-      // Names (approx) of material parts for automatic skin/hair detection
-      skinMaterialKeywords: ["skin", "Skin", "Body", "body"],
-      hairMaterialKeywords: ["hair", "Hair"]
-    };
+  // Three.js setup
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x051018);
 
-    // ---------------------------
-    // Scene setup
-    // ---------------------------
-    const container = document.getElementById('canvasContainer');
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x090b0d);
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  viewer.appendChild(renderer.domElement);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(container.clientWidth, container.clientHeight, false);
-    renderer.shadowMap.enabled = true;
-    container.appendChild(renderer.domElement);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 1.6, 3.2);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 1.4, 0);
+  controls.enableDamping = true;
 
-    // Camera
-    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(0, 1.6, 2.6);
+  const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.9);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xffffff, 1.0);
+  key.position.set(2, 4, 3);
+  scene.add(key);
 
-    // Controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1.3, 0);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.08;
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshStandardMaterial({ color: 0x071019, roughness: 1 }));
+  ground.rotation.x = -Math.PI/2;
+  ground.position.y = 0;
+  scene.add(ground);
 
-    // Lights
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.6);
-    hemi.position.set(0, 20, 0);
-    scene.add(hemi);
+  const loader = new GLTFLoader();
+  let avatar = null, avatarMixer = null, avatarActions = [], currentOutfit = null;
 
-    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
-    dir.position.set(5, 10, 7);
-    dir.castShadow = true;
-    dir.shadow.camera.left = -5;
-    dir.shadow.camera.right = 5;
-    dir.shadow.camera.top = 5;
-    dir.shadow.camera.bottom = -5;
-    scene.add(dir);
+  // Read selected product (product.html stores selectedClothing)
+  function getSelectedProductFromStorage(){
+    try {
+      const raw = localStorage.getItem("selectedClothing") || localStorage.getItem("selectedProduct");
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch(e) {
+      console.warn("Failed parsing selected product:", e);
+      return null;
+    }
+  }
 
-    // ground (soft)
-    const ground = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.ShadowMaterial({ opacity: 0.25 }));
-    ground.rotation.x = -Math.PI / 2;
-    ground.position.y = 0;
-    ground.receiveShadow = true;
-    scene.add(ground);
+  // Update product UI
+  function updateProductUI(){
+    const prod = getSelectedProductFromStorage();
+    if (!prod) {
+      productNameEl.textContent = "No product selected";
+      productPreview.textContent = "No preview";
+      return;
+    }
+    productNameEl.textContent = prod.name || "product";
+    productPreview.innerHTML = "";
+    if (prod.img) {
+      const im = document.createElement("img");
+      im.src = prod.img;
+      im.style.maxWidth = "100%";
+      im.style.maxHeight = "100%";
+      productPreview.appendChild(im);
+    } else if (prod.glb) {
+      const p = document.createElement("div");
+      p.style.padding="8px"; p.style.textAlign="center";
+      p.textContent = prod.glb.split("/").pop();
+      productPreview.appendChild(p);
+    } else productPreview.textContent = "No preview";
+  }
+  updateProductUI();
 
-    // Loader / utils
-    const gltfLoader = new THREE.GLTFLoader();
-    const clock = new THREE.Clock();
-    let modelRoot = null;     // loaded avatar root
-    let mixer = null;         // animation mixer
-    let currentAction = null;
-    let actions = {};
-    let autoRotate = true;
+  // Resize handling
+  function resizeRender(){
+    const r = viewer.clientWidth / viewer.clientHeight;
+    camera.aspect = r;
+    camera.updateProjectionMatrix();
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+  }
+  window.addEventListener("resize", resizeRender);
+  resizeRender();
 
-    // default state
-    const state = {
-      avatarURL: document.getElementById('avatarSelect').value,
-      outfit: null,
-      skinColor: document.getElementById('skinColor').value,
-      hairColor: document.getElementById('hairColor').value
-    };
+  // Load avatar from RPM (URL)
+  async function loadAvatar(url){
+    return new Promise((resolve, reject) => {
+      loader.load(url, (gltf) => {
+        // remove existing avatar
+        if (avatar) scene.remove(avatar);
+        avatar = gltf.scene;
+        avatar.position.set(0, 0, 0);
+        avatar.scale.set(1.6, 1.6, 1.6);
+        scene.add(avatar);
 
-    // ---------------------------
-    // Responsive
-    // ---------------------------
-    window.addEventListener('resize', () => {
-      const w = container.clientWidth, h = container.clientHeight;
-      camera.aspect = w/h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w,h);
+        // animations
+        if (gltf.animations && gltf.animations.length) {
+          avatarMixer = new THREE.AnimationMixer(avatar);
+          avatarActions = gltf.animations.map(c => avatarMixer.clipAction(c));
+          // play first available clip
+          avatarActions[0]?.play();
+        }
+        resolve(gltf);
+      }, undefined, (err) => {
+        console.error("Avatar load failed:", err);
+        reject(err);
+      });
+    });
+  }
+
+  // Fit & attach outfit (attempts bone attach)
+  function fitAndAttachOutfit(outfit, productName="") {
+    if (!avatar || !outfit) return;
+    // ensure outfit materials ok
+    outfit.traverse(m => {
+      if (m.isMesh && m.material) {
+        m.material.side = THREE.DoubleSide;
+        if (m.material.metalness === undefined) { m.material.metalness = 0.03; m.material.roughness = 0.8; }
+      }
     });
 
-    // ---------------------------
-    // Load avatar function
-    // - supports full replacement
-    // - also tries to preserve animation mixer where possible
-    // ---------------------------
-    async function loadAvatar(url, preserveTransform=false) {
-      // clean up previous
-      if (modelRoot) {
-        scene.remove(modelRoot);
-        modelRoot.traverse(n => { if (n.isMesh) { n.geometry?.dispose?.(); n.material?.dispose?.(); } });
-        modelRoot = null;
-        mixer = null;
-        actions = {};
-        currentAction = null;
+    // compute bounding boxes & scale
+    const avatarBox = new THREE.Box3().setFromObject(avatar);
+    const outfitBox = new THREE.Box3().setFromObject(outfit);
+    const avatarSize = new THREE.Vector3(); avatarBox.getSize(avatarSize);
+    const outfitSize = new THREE.Vector3(); outfitBox.getSize(outfitSize);
+
+    if (outfitSize.y > 0.001) {
+      const scale = (avatarSize.y * 0.98) / outfitSize.y;
+      outfit.scale.multiplyScalar(scale);
+    }
+
+    // center outfit on avatar
+    const aCenter = avatarBox.getCenter(new THREE.Vector3());
+    const oCenter = outfitBox.getCenter(new THREE.Vector3());
+    outfit.position.sub(oCenter).add(aCenter);
+    outfit.position.y += avatarSize.y * 0.02;
+
+    // choose bone
+    const name = (productName||"").toLowerCase();
+    let preferred = ["Chest","Spine","Hips","Head","LeftFoot"];
+    if (name.includes("shirt")||name.includes("jacket")||name.includes("top")) preferred = ["Chest","Spine","Spine1","Hips"];
+    else if (name.includes("pant")||name.includes("jean")||name.includes("trouser")) preferred = ["Hips","Pelvis","LeftUpLeg","RightUpLeg"];
+    else if (name.includes("shoe")||name.includes("sandal")||name.includes("boot")) preferred = ["LeftFoot","RightFoot","Foot"];
+    else if (name.includes("glass")||name.includes("sunglass")) preferred = ["Head","HeadTop"];
+    else if (name.includes("neck")||name.includes("chain")||name.includes("necklace")) preferred = ["Neck","Neck1"];
+
+    let foundBone = null;
+    avatar.traverse(c => {
+      if (foundBone) return;
+      if (c.isBone) {
+        const bn = c.name.toLowerCase();
+        for (const p of preferred) if (bn.includes(p.toLowerCase())) { foundBone = c; break; }
       }
+    });
 
-      const gltf = await new Promise((resolve, reject) => {
-        gltfLoader.load(url, resolve, null, err => reject(err));
-      });
-
-      modelRoot = THREE.SkeletonUtils.clone(gltf.scene || gltf.scenes[0]);
-      modelRoot.traverse(n => { if (n.isMesh) { n.castShadow = true; n.receiveShadow = true; } });
-
-      // simple normalization and centering
-      const bbox = new THREE.Box3().setFromObject(modelRoot);
-      const size = bbox.getSize(new THREE.Vector3());
-      const center = bbox.getCenter(new THREE.Vector3());
-      const scale = 1.6 / Math.max(size.x, size.y, size.z);
-      modelRoot.scale.setScalar(scale);
-      modelRoot.position.sub(center.multiplyScalar(scale));
-      modelRoot.position.y += 0.02; // small lift so feet don't clip
-
-      scene.add(modelRoot);
-
-      // animations
-      if (gltf.animations && gltf.animations.length) {
-        mixer = new THREE.AnimationMixer(modelRoot);
-        gltf.animations.forEach(clip => {
-          const name = clip.name ? clip.name.toLowerCase() : null;
-          actions[name || clip.name || ("clip" + Math.random().toString(16).slice(2))] = mixer.clipAction(clip);
-        });
-        // also add numeric indices fallback
-        gltf.animations.forEach((clip, idx) => {
-          const key = "anim" + idx;
-          if (!actions[key]) actions[key] = mixer.clipAction(clip);
-        });
-      }
-
-      // attempt to auto-detect skin/hair materials and set initial colors
-      applySkinColor(state.skinColor, modelRoot);
-      applyHairColor(state.hairColor, modelRoot);
-
-      // if outfits are expected as separate nodes inside the model, record them for toggling (optional)
-      detectClothingNodes(modelRoot);
-
-      // update AR button: model must be accessible via URL — we rely on state.avatarURL (external)
-      updateARButton(state.avatarURL);
-
-      return modelRoot;
+    if (foundBone) {
+      // attach with local transform preserved
+      outfit.updateMatrixWorld(true);
+      const worldMat = outfit.matrixWorld.clone();
+      const invBone = new THREE.Matrix4().copy(foundBone.matrixWorld).invert();
+      const local = new THREE.Matrix4().multiplyMatrices(invBone, worldMat);
+      // detach & add to bone
+      outfit.parent && outfit.parent.remove(outfit);
+      foundBone.add(outfit);
+      outfit.matrix.copy(local);
+      outfit.matrix.decompose(outfit.position, outfit.quaternion, outfit.scale);
+      outfit.matrixWorldNeedsUpdate = true;
+      console.log("Attached outfit to bone:", foundBone.name);
+    } else {
+      avatar.add(outfit);
+      console.warn("No bone matched; attached to avatar root");
     }
 
-    // ---------------------------
-    // Clothing detection + toggling
-    // ---------------------------
-    // This will try to find child nodes with typical clothing names for toggling visibility
-    const detectedClothing = {};
-    function detectClothingNodes(root) {
-      detectedClothing.nodes = []; // array of {name, object}
-      root.traverse(obj => {
-        if (!obj.isMesh) return;
-        const n = obj.name || "";
-        const nameLower = n.toLowerCase();
-        if (nameLower.includes("shirt") || nameLower.includes("jacket") || nameLower.includes("dress") || nameLower.includes("pants") || nameLower.includes("top") || nameLower.includes("outfit") ) {
-          detectedClothing.nodes.push({name: n, object: obj});
-        }
-      });
-      // console.log("Detected clothing nodes:", detectedClothing.nodes.map(n=>n.name));
+    currentOutfit = outfit;
+  }
+
+  // Load product from localStorage and apply
+  async function loadSelectedProduct(){
+    const sel = getSelectedProductFromStorage();
+    if (!sel || !sel.glb) { updateProductUI(); return; }
+    updateProductUI();
+    try {
+      const gltf = await new Promise((res,rej) => loader.load(sel.glb, res, undefined, rej));
+      // clone with SkeletonUtils to keep things safe
+      const outfit = SkeletonUtils.clone(gltf.scene);
+      fitAndAttachOutfit(outfit, sel.name || "");
+    } catch(e) {
+      console.error("Failed to load selected product:", e);
+      alert("Failed to load product model. Check console.");
+    }
+  }
+
+  // Selfie sampling helpers
+  function sampleAverageFromCanvas(img, sx, sy, sw, sh) {
+    const c = document.createElement("canvas");
+    c.width = sw; c.height = sh;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, -sx, -sy);
+    const d = ctx.getImageData(0,0,sw,sh).data;
+    let r=0,g=0,b=0,count=0;
+    for (let i=0;i<d.length;i+=4) {
+      const a = d[i+3]; if (a<10) continue;
+      const rr=d[i], gg=d[i+1], bb=d[i+2];
+      const luma = 0.2126*rr + 0.7152*gg + 0.0722*bb;
+      if (luma < 20 || luma > 245) continue;
+      r+=rr; g+=gg; b+=bb; count++;
+    }
+    if (count===0) return null;
+    return [Math.round(r/count), Math.round(g/count), Math.round(b/count)];
+  }
+
+  // Apply color to avatar meshes heuristically
+  function applyColorsToAvatar(skinRgb, hairRgb) {
+    if (!avatar) { console.warn("Avatar not loaded"); return; }
+    const skinColor = skinRgb ? new THREE.Color(`rgb(${skinRgb[0]},${skinRgb[1]},${skinRgb[2]})`) : null;
+    const hairColor = hairRgb ? new THREE.Color(`rgb(${hairRgb[0]},${hairRgb[1]},${hairRgb[2]})`) : null;
+
+    const skinTargets = [], hairTargets = [];
+    avatar.traverse(m => {
+      if (!m.isMesh || !m.material) return;
+      const nm = (m.name||"").toLowerCase();
+      const mname = (m.material.name||"").toLowerCase();
+      if (nm.includes("skin") || nm.includes("face") || mname.includes("skin") || mname.includes("face") || nm.includes("body")) skinTargets.push(m);
+      else if (nm.includes("hair") || mname.includes("hair")) hairTargets.push(m);
+    });
+
+    // fallback to centroid heuristics
+    if (skinTargets.length===0 || hairTargets.length===0) {
+      const meshes = [];
+      avatar.traverse(m => { if (m.isMesh) { const box = new THREE.Box3().setFromObject(m); const c = box.getCenter(new THREE.Vector3()); meshes.push({m,c}); }});
+      meshes.sort((a,b)=>b.c.y - a.c.y); // highest first
+      if (hairTargets.length===0 && meshes[0]) hairTargets.push(meshes[0].m);
+      if (skinTargets.length===0 && meshes.length>2) skinTargets.push(meshes[Math.floor(meshes.length/2)].m);
     }
 
-    function toggleDetectedClothing(show=true) {
-      if (!detectedClothing.nodes || !detectedClothing.nodes.length) return false;
-      detectedClothing.nodes.forEach(n => n.object.visible = show);
-      return true;
-    }
+    if (skinColor) skinTargets.forEach(m => { try { m.material.color.copy(skinColor); m.material.needsUpdate = true; } catch(e){} });
+    if (hairColor) hairTargets.forEach(m => { try { m.material.color.copy(hairColor); m.material.needsUpdate = true; } catch(e){} });
+  }
 
-    // ---------------------------
-    // Skin / hair color application
-    // ---------------------------
-    function applySkinColor(hex, root) {
-      if (!root) return;
-      root.traverse(node => {
-        if (!node.isMesh) return;
-        if (node.material) {
-          const mat = Array.isArray(node.material) ? node.material : [node.material];
-          mat.forEach(m => {
-            const lname = (m.name || "").toLowerCase();
-            if (CONFIG.skinMaterialKeywords.some(k => lname.includes(k.toLowerCase()))) {
-              if (m.color) m.color.set(hex);
-              if (m.emissive) m.emissive.setScalar(0);
-            }
-          });
-        }
-      });
-    }
+  // Heuristic gender suggestion: uses width/height ratio of central face band (not reliable). We will only suggest, not auto-apply.
+  function suggestGenderFromSelfieImage(img) {
+    // sample central face box
+    const W = img.width, H = img.height;
+    const faceBox = { x: Math.round(W*0.25), y: Math.round(H*0.2), w: Math.round(W*0.5), h: Math.round(H*0.5) };
+    // compute average chroma/hair-luminance as a naive heuristic
+    const s = sampleAverageFromCanvas(img, faceBox.x, faceBox.y, faceBox.w, faceBox.h) || [128,128,128];
+    // simple heuristic: if faceBox width/height ratio > 0.9 -> suggest male else female (VERY rough)
+    const ratio = faceBox.w / faceBox.h;
+    return ratio > 0.9 ? "male" : "female";
+  }
 
-    function applyHairColor(hex, root) {
-      if (!root) return;
-      root.traverse(node => {
-        if (!node.isMesh) return;
-        if (node.material) {
-          const mat = Array.isArray(node.material) ? node.material : [node.material];
-          mat.forEach(m => {
-            const lname = (m.name || "").toLowerCase();
-            if (CONFIG.hairMaterialKeywords.some(k => lname.includes(k.toLowerCase()))) {
-              if (m.color) m.color.set(hex);
-            }
-          });
-        }
-      });
-    }
+  // === UI actions ===
+  selfieInput.addEventListener("change", () => {
+    suggestText.textContent = "";
+  });
 
-    // ---------------------------
-    // Animation control
-    // ---------------------------
-    function playAnimationByName(name) {
-      if (!mixer) return;
-      // try exact name / lowercase versions / index-based fallback
-      const key = name.toLowerCase();
-      let action = actions[key] || actions["anim0"] || Object.values(actions)[0];
-      if (!action) return;
-      if (currentAction && currentAction !== action) {
-        currentAction.fadeOut(0.25);
-      }
-      action.reset();
-      action.fadeIn(0.25);
-      action.play();
-      currentAction = action;
-    }
+  suggestBtn.addEventListener("click", async () => {
+    const file = selfieInput.files[0];
+    if (!file) return alert("Choose a selfie first to get suggestion.");
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+    const suggestion = suggestGenderFromSelfieImage(img);
+    suggestText.textContent = `Suggested: ${suggestion.toUpperCase()} (heuristic). You can accept or choose manually.`;
+    URL.revokeObjectURL(img.src);
+  });
 
-    // ---------------------------
-    // AR Button — opens a simple model-viewer page with current model URL
-    // (model-viewer handles WebXR/scene-viewer/quick-look fallback)
-    // ---------------------------
-    const arBtn = document.getElementById('arBtn');
-    function updateARButton(modelUrl) {
-      arBtn.onclick = () => {
-        if (!modelUrl) {
-          alert("No model URL available for AR.");
-          return;
-        }
-        const blob = new Blob([pageHtml], {type: 'text/html'});
-        const url = URL.createObjectURL(blob);
-        window.open(url, '_blank');
-      };
-    }
+  useMaleBtn.addEventListener("click", async () => {
+    // load male RPM avatar
+    await loadAvatarFlow(RPM_MALE);
+  });
+  useFemaleBtn.addEventListener("click", async () => {
+    await loadAvatarFlow(RPM_FEMALE);
+  });
 
-    // ---------------------------
-    // Save / Load state to localStorage
-    // ---------------------------
-    const LS_KEY = "realityshop_avatar_state_v1";
-    function saveState() {
-      try {
-        const payload = {
-          avatarURL: state.avatarURL,
-          outfit: state.outfit,
-          skinColor: state.skinColor,
-          hairColor: state.hairColor
-        };
-        localStorage.setItem(LS_KEY, JSON.stringify(payload));
-        alert("Saved avatar configuration.");
-      } catch (e) {
-        console.error(e);
-        alert("Failed to save.");
-      }
-    }
-    function loadState() {
-      try {
-        const s = localStorage.getItem(LS_KEY);
-        if (!s) return null;
-        return JSON.parse(s);
-      } catch (e) {
-        return null;
-      }
-    }
+  // apply colors button: picks regions for skin & hair and applies
+  applyColorsBtn.addEventListener("click", async () => {
+    const file = selfieInput.files[0];
+    if (!file) return alert("Please upload a selfie first.");
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+    const W = img.width, H = img.height;
+    const faceRegion = { x: Math.round(W*0.28), y: Math.round(H*0.22), w: Math.round(W*0.44), h: Math.round(H*0.45) };
+    const hairRegion = { x: Math.round(W*0.18), y: 0, w: Math.round(W*0.64), h: Math.round(H*0.22) };
+    const skinRgb = sampleAverageFromCanvas(img, faceRegion.x, faceRegion.y, faceRegion.w, faceRegion.h);
+    const hairRgb = sampleAverageFromCanvas(img, hairRegion.x, hairRegion.y, hairRegion.w, hairRegion.h);
+    applyColorsToAvatar(skinRgb, hairRgb);
+    URL.revokeObjectURL(img.src);
+  });
 
-    // ---------------------------
-    // UI wiring
-    // ---------------------------
-    document.getElementById('avatarSelect').addEventListener('change', async (e) => {
-      const url = e.target.value;
-      state.avatarURL = url;
+  removeOutfitBtn.addEventListener("click", () => {
+    if (currentOutfit && currentOutfit.parent) currentOutfit.parent.remove(currentOutfit);
+    currentOutfit = null;
+  });
+
+  turnBtn.addEventListener("click", () => {
+    if (!avatar) return;
+    const start = avatar.rotation.y;
+    const dur = 1000;
+    const t0 = performance.now();
+    (function step(t){
+      const p = Math.min(1,(t-t0)/dur);
+      avatar.rotation.y = start + p * Math.PI * 2;
+      if (p < 1) requestAnimationFrame(step);
+      else avatar.rotation.y = start;
+    })(t0);
+  });
+
+  downloadBtn.addEventListener("click", () => {
+    renderer.domElement.toBlob((blob) => {
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "avatar.png";
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+  });
+
+  // load avatar and then the selected product
+  async function loadAvatarFlow(url) {
+    try {
       await loadAvatar(url);
-    });
-
-    // outfit buttons
-    document.querySelectorAll('[data-outfit]').forEach(btn => {
-      btn.addEventListener('click', async (ev) => {
-        const key = ev.currentTarget.getAttribute('data-outfit');
-        if (key === 'remove') {
-          // attempt to toggle detected clothing off; otherwise reload base
-          const toggled = toggleDetectedClothing(false);
-          state.outfit = null;
-          if (!toggled) {
-            await loadAvatar(state.avatarURL);
-          }
-        } else {
-          // prefer variant substitution (replace entire model) if variant URL exists
-          const variantUrl = CONFIG.outfitVariants[key];
-          if (variantUrl) {
-            state.outfit = key;
-            await loadAvatar(variantUrl);
-          } else {
-            // try toggling internal clothing
-            toggleDetectedClothing(true);
-          }
-        }
-      });
-    });
-
-    // skin & hair color
-    const skinColorInput = document.getElementById('skinColor');
-    const hairColorInput = document.getElementById('hairColor');
-    skinColorInput.addEventListener('input', () => {
-      state.skinColor = skinColorInput.value;
-      applySkinColor(state.skinColor, modelRoot);
-    });
-    hairColorInput.addEventListener('input', () => {
-      state.hairColor = hairColorInput.value;
-      applyHairColor(state.hairColor, modelRoot);
-    });
-    document.getElementById('skinReset').addEventListener('click', () => {
-      state.skinColor = '#e0b89e'; skinColorInput.value = state.skinColor;
-      applySkinColor(state.skinColor, modelRoot);
-    });
-    document.getElementById('hairReset').addEventListener('click', () => {
-      state.hairColor = '#2b1b12'; hairColorInput.value = state.hairColor;
-      applyHairColor(state.hairColor, modelRoot);
-    });
-
-    // animations
-    document.getElementById('animButtons').addEventListener('click', (ev) => {
-      const btn = ev.target.closest('button');
-      if (!btn) return;
-      const anim = btn.getAttribute('data-anim');
-      playAnimationByName(anim);
-    });
-
-    // save/reset
-    document.getElementById('saveBtn').addEventListener('click', saveState);
-    document.getElementById('resetBtn').addEventListener('click', async () => {
-      localStorage.removeItem(LS_KEY);
-      // reset UI
-      state.avatarURL = document.getElementById('avatarSelect').value;
-      state.skinColor = '#e0b89e';
-      state.hairColor = '#2b1b12';
-      skinColorInput.value = state.skinColor;
-      hairColorInput.value = state.hairColor;
-      await loadAvatar(state.avatarURL);
-    });
-
-    // camera options
-    document.getElementById('resetCam').addEventListener('click', () => {
-      camera.position.set(0, 1.6, 2.6);
-      controls.target.set(0,1.3,0);
-      controls.update();
-    });
-    document.getElementById('toggleAutoRotate').addEventListener('click', () => {
-      autoRotate = !autoRotate;
-    });
-
-    // load saved state or default avatar
-    (async () => {
-      // populate avatar select from CONFIG. (optional)
-      const sel = document.getElementById('avatarSelect');
-      // if user appended additional options in script tags, don't overwrite. Keep existing.
-      // We'll ensure current value exists in options.
-      // Load saved
-      const saved = loadState();
-      if (saved && saved.avatarURL) {
-        state.avatarURL = saved.avatarURL;
-        state.outfit = saved.outfit || null;
-        if (saved.skinColor) { state.skinColor = saved.skinColor; skinColorInput.value = state.skinColor; }
-        if (saved.hairColor) { state.hairColor = saved.hairColor; hairColorInput.value = state.hairColor; }
-        // append option if not present
-        const found = Array.from(sel.options).some(o => o.value === state.avatarURL);
-        if (!found) {
-          const opt = document.createElement('option'); opt.value = state.avatarURL; opt.textContent = "Saved Avatar";
-          sel.appendChild(opt);
-        }
-        sel.value = state.avatarURL;
-      } else {
-        state.avatarURL = sel.value;
-      }
-
-      await loadAvatar(state.avatarURL);
-    })();
-
-    // ---------------------------
-    // Rendering loop
-    // ---------------------------
-    function animate() {
-      requestAnimationFrame(animate);
-      const dt = clock.getDelta();
-      if (mixer) mixer.update(dt);
-      controls.update();
-      if (autoRotate && modelRoot) {
-        modelRoot.rotation.y += dt * 0.15;
-      }
-      renderer.render(scene, camera);
+      // after avatar loads try to load product
+      await loadSelectedProduct();
+    } catch(e) {
+      console.error("Load avatar flow failed", e);
+      alert("Failed to load avatar. Check console.");
     }
-    animate();
+  }
 
-    // expose for debugging (optional)
-    window.RS = { scene, camera, renderer, loadAvatar, state };
+  // === initial: try to load a default avatar (optional). we won't auto-choose gender; require manual choose for clarity.
+  // If you'd like auto-load based on last choice, uncomment next line and set a default.
+  // loadAvatarFlow(RPM_MALE);
 
-  })();
+  // Load selected product if avatar already present when started (handled after avatar load)
+  async function loadSelectedProduct(){
+    const sel = getSelectedProductFromStorage();
+    if (!sel || !sel.glb) { updateProductUI(); return; }
+    updateProductUI();
+    // remove previous outfit
+    if (currentOutfit && currentOutfit.parent) currentOutfit.parent.remove(currentOutfit);
+    try {
+      const gltf = await new Promise((res,rej) => loader.load(sel.glb, res, undefined, rej));
+      const clone = SkeletonUtils.clone(gltf.scene);
+      fitAndAttachOutfit(clone, sel.name || "");
+    } catch(e) {
+      console.error("Product load failed:", e);
+      alert("Failed to load product GLB; check console and file paths.");
+    }
+  }
+
+  // small helper: get selected item from product.html's storage key
+  function getSelectedProductFromStorage() {
+    try {
+      const raw = localStorage.getItem("selectedClothing") || localStorage.getItem("selectedProduct");
+      return raw ? JSON.parse(raw) : null;
+    } catch(e) { return null; }
+  }
+
+  // Render loop
+  const clock = new THREE.Clock();
+  function animate(){
+    requestAnimationFrame(animate);
+    const dt = clock.getDelta();
+    if (avatarMixer) avatarMixer.update(dt);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  animate();
+
+  // initial resize
+  function initResize(){
+    renderer.setSize(viewer.clientWidth, viewer.clientHeight);
+    camera.aspect = viewer.clientWidth / viewer.clientHeight;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", initResize);
+  initResize();
+
+  // autosync if user selected product in another tab
+  window.addEventListener("storage", (ev) => {
+    if (ev.key === "selectedClothing" || ev.key === "selectedProduct") {
+      updateProductUI();
+      // if avatar loaded, reload product
+      loadSelectedProduct();
+    }
+  });
+
+  // done
   </script>
 </body>
 </html>
-
