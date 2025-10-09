@@ -438,21 +438,26 @@
   // loadAvatarFlow(RPM_MALE);
 
   // Load selected product if avatar already present when started (handled after avatar load)
-  async function loadSelectedProduct(){
-    const sel = getSelectedProductFromStorage();
-    if (!sel || !sel.glb) { updateProductUI(); return; }
-    updateProductUI();
-    // remove previous outfit
-    if (currentOutfit && currentOutfit.parent) currentOutfit.parent.remove(currentOutfit);
-    try {
-      const gltf = await new Promise((res,rej) => loader.load(sel.glb, res, undefined, rej));
-      const clone = SkeletonUtils.clone(gltf.scene);
-      fitAndAttachOutfit(clone, sel.name || "");
-    } catch(e) {
-      console.error("Product load failed:", e);
-      alert("Failed to load product GLB; check console and file paths.");
-    }
+function loadSelectedProduct() {
+  const selectedProduct = JSON.parse(localStorage.getItem("selectedProduct"));
+  if (!selectedProduct || !selectedProduct.glb) {
+    console.warn("No selected product found");
+    return;
   }
+
+  const loader = new GLTFLoader();
+  loader.load(selectedProduct.glb, (gltf) => {
+    const product = gltf.scene;
+    product.scale.set(1, 1, 1);
+    product.position.set(0, 0, 0);
+    scene.add(product);
+
+    // Attach to avatar if available
+    if (avatar) {
+      product.position.y = avatar.position.y + 1;
+    }
+  });
+}
 
   // small helper: get selected item from product.html's storage key
   function getSelectedProductFromStorage() {
@@ -495,3 +500,4 @@
   </script>
 </body>
 </html>
+
