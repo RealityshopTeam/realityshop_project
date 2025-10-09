@@ -107,185 +107,187 @@
 
   <footer><p>© 2025 Reality Shop. All rights reserved.</p></footer>
 
-  <script type="module">
-    // === Product Data ===
-    const products = [
-      {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
-      {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
-      {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
-      {name: "Single Royal Chair", price: 950, glb: "imgs/chair.glb", category: "Furniture"},
-      {name: "Single Cot", price: 999, glb: "imgs/singlecot.glb", category: "Furniture"},
-      {name: "Blue T-shirt", price: 499, img: "imgs/Ts.jpg", category: "Clothing"},
-      {name: "Plain Shirt", price: 450, img: "imgs/short.jpg", category: "Clothing"},
-      {name: "Table", price: 850, glb: "imgs/table.glb", category: "Furniture"},
-      {name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories"},
-      {name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture"},
-      {name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture"},
-      {name: "Sweat Shirt", price: 550, img: "imgs/Tshort.jpg", category: "Clothing"},
-      {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
-      {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
-      {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
-      {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
-      {name: "white crop top",price:345, glb:"imgs/cc0_-_shirt_on_hanger.glb", category:"Clothing"},
-      {name: "men shirt",price:800, glb:"imgs/realistic_dress_shirt.glb", category:"Clothing"},
-      {name:"clear sunglass",price:250, glb:"imgs/sunglasses_free.glb", category:"Accessories"},
-      {name:"pink sunglass",price:389, glb:"imgs/pink_round_sunglasses.glb", category:"Accessories"},
-      {name:"balenciaga sunglass",price:20000, glb:"imgs/balenciaga_sunglasses.glb", category:"Accessories"},
-      {name: "wireless ear buds", price:1500, glb:"imgs/wireless_unbranded_in_ear_head_phones.glb", category:"Electronics"},
-      {name:"white ear phones",price:350, glb:"imgs/ear_phones.glb", category:"Electronics"},
-      {name:"head phones",price:2000, glb:"imgs/ear_phone.glb", category:"Electronics"},
-      {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
-      {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
-      {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
-      {name: "jashin necklace", price:369, glb:"imgs/jashin_necklace.glb", category:"Accessories"},
-      {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
-      {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
-      {name: "braclet", price:148, glb:"imgs/elegant_hand_chain_bangle__3d_model.glb", category:"Accessories"},
-      {name: "star earrings", price:79, glb:"imgs/stars_earrings.glb", category:"Accessories"},
-      {name: "louboutin", price:88, glb:"imgs/louboutin_earring.glb", category:"Accessories"},
-      {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
-      {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
-      {name:"men checks shirt",price:567, glb:"imgs/mens_casual_shirt.glb", category:"Clothing"},
-      {name:"canon retro camera",price:70000, glb:"imgs/canon_at-1_retro_camera.glb", category:"Electronics"},
-      {name:"Samsung led tv",price:52000, glb:"imgs/samsung_55_curved_tv_and_remote.glb", category:"Electronics"},
-      {name:"LG led tv",price:39000, glb:"imgs/tv_led_large.glb", category:"Electronics"},
-      {name:"refrigerator",price:23149, glb:"imgs/refrigerator.glb", category:"Electronics"},
-      {name:"fridge",price:20000, glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb", category:"Electronics"},
-      {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
-      {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
-      {name:"apple watch",price:45000, glb:"imgs/apple_watch.glb", category:"Electronics"},
-      {name:"silver chain watch",price:1200, glb:"imgs/invicta_watch.glb", category:"Electronics"},
-      {name:"black chain watch",price:999, glb:"imgs/digital_watch.glb", category:"Electronics"},
-      {name:"HP victus laptop",price:700000, glb:"imgs/hp_victus_gaming_laptop.glb", category:"Electronics"},
-      {name:"lenovo laptop",price:55000, glb:"imgs/lenovo_thinkpad_laptop.glb", category:"Electronics"},
-      {name:"washing machine",price:18250, glb:"imgs/washing_machine.glb", category:"Electronics"},
-      {name:"lg washing machine",price:19490, glb:"imgs/washing_machine(1).glb", category:"Electronics"},
-      {name:"Tube Light",price:1900, glb:"imgs/tube_light.glb", category:"Electronics"},
-      {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
-      {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
-      {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
-    ];
+ <script type="module">
+  // === Product Data ===
+  const products = [
+    {name: "Samsung s22 ultra", price: 65999, glb: "imgs/samsung_galaxy_s22_ultra.glb", category: "Mobile"},
+    {name: "Poco x3", price: 15999, glb: "imgs/poco_x3_nfc.glb", category: "Mobile"},
+    {name: "Iphone 16 pro max", price: 159999, glb: "imgs/iphone_16_pro_max.glb", category: "Mobile"},
+    {name: "Single Royal Chair", price: 950, glb: "imgs/chair.glb", category: "Furniture"},
+    {name: "Single Cot", price: 999, glb: "imgs/singlecot.glb", category: "Furniture"},
+    {name: "Blue T-shirt", price: 499, img: "imgs/Ts.jpg", category: "Clothing"},
+    {name: "Plain Shirt", price: 450, img: "imgs/short.jpg", category: "Clothing"},
+    {name: "Table", price: 850, glb: "imgs/table.glb", category: "Furniture"},
+    {name: "Sun Glass", price: 299, glb: "imgs/sunglas.glb", category: "Accessories"},
+    {name: "Three Seat Sofa", price: 999, glb: "imgs/sofa1.glb", category: "Furniture"},
+    {name: "Wooden Table", price: 750, glb: "imgs/wood table.glb", category: "Furniture"},
+    {name: "Sweat Shirt", price: 550, img: "imgs/Tshort.jpg", category: "Clothing"},
+    {name: "Head Phones", price: 899, glb: "imgs/head phone.glb", category: "Electronics"},
+    {name: "Single Sofa", price: 980, glb: "imgs/sofa.glb", category: "Furniture"},
+    {name: "nike shoes", price: 1400, glb: "imgs/nike_air_zoom_pegasus_36.glb", category:"Shoes"},
+    {name: "puma shoes", price:2905, glb: "imgs/free_shoe_model.glb", category:"Shoes"},
+    {name: "white crop top",price:345, glb:"imgs/cc0_-_shirt_on_hanger.glb", category:"Clothing"},
+    {name: "men shirt",price:800, glb:"imgs/realistic_dress_shirt.glb", category:"Clothing"},
+    {name:"clear sunglass",price:250, glb:"imgs/sunglasses_free.glb", category:"Accessories"},
+    {name:"pink sunglass",price:389, glb:"imgs/pink_round_sunglasses.glb", category:"Accessories"},
+    {name:"balenciaga sunglass",price:20000, glb:"imgs/balenciaga_sunglasses.glb", category:"Accessories"},
+    {name: "wireless ear buds", price:1500, glb:"imgs/wireless_unbranded_in_ear_head_phones.glb", category:"Electronics"},
+    {name:"white ear phones",price:350, glb:"imgs/ear_phones.glb", category:"Electronics"},
+    {name:"head phones",price:2000, glb:"imgs/ear_phone.glb", category:"Electronics"},
+    {name: "gold necklace", price:299, glb:"imgs/gold_necklace__chain.glb", category:"Accessories"},
+    {name: "gemstone necklace", price:259, glb:"imgs/gemstone_necklace.glb", category:"Accessories"},
+    {name: "hex necklace", price:199, glb:"imgs/hex_necklace.glb", category:"Accessories"},
+    {name: "jashin necklace", price:369, glb:"imgs/jashin_necklace.glb", category:"Accessories"},
+    {name: "pearl necklace", price:499, glb:"imgs/pearl_necklace.glb", category:"Accessories"},
+    {name: "gold bangle", price:99, glb:"imgs/bangle.glb", category:"Accessories"},
+    {name: "braclet", price:148, glb:"imgs/elegant_hand_chain_bangle__3d_model.glb", category:"Accessories"},
+    {name: "star earrings", price:79, glb:"imgs/stars_earrings.glb", category:"Accessories"},
+    {name: "louboutin", price:88, glb:"imgs/louboutin_earring.glb", category:"Accessories"},
+    {name: "anarkali earrings", price:108, glb:"imgs/anarkali_earring.glb", category:"Accessories"},
+    {name: "diamond earrings", price:167, glb:"imgs/earring_diamond.glb", category:"Accessories"},
+    {name:"men checks shirt",price:567, glb:"imgs/mens_casual_shirt.glb", category:"Clothing"},
+    {name:"canon retro camera",price:70000, glb:"imgs/canon_at-1_retro_camera.glb", category:"Electronics"},
+    {name:"Samsung led tv",price:52000, glb:"imgs/samsung_55_curved_tv_and_remote.glb", category:"Electronics"},
+    {name:"LG led tv",price:39000, glb:"imgs/tv_led_large.glb", category:"Electronics"},
+    {name:"refrigerator",price:23149, glb:"imgs/refrigerator.glb", category:"Electronics"},
+    {name:"fridge",price:20000, glb:"imgs/refrigerator_-_household_props_challenge_day_23.glb", category:"Electronics"},
+    {name: "watch", price:569, glb:"imgs/watches_chopard_-_low_poly_-_free.glb", category:"Accessories"},
+    {name: "smart watch", price:1599, glb:"imgs/free_-_smart_watches.glb", category:"Accessories"},
+    {name:"apple watch",price:45000, glb:"imgs/apple_watch.glb", category:"Electronics"},
+    {name:"silver chain watch",price:1200, glb:"imgs/invicta_watch.glb", category:"Electronics"},
+    {name:"black chain watch",price:999, glb:"imgs/digital_watch.glb", category:"Electronics"},
+    {name:"HP victus laptop",price:700000, glb:"imgs/hp_victus_gaming_laptop.glb", category:"Electronics"},
+    {name:"lenovo laptop",price:55000, glb:"imgs/lenovo_thinkpad_laptop.glb", category:"Electronics"},
+    {name:"washing machine",price:18250, glb:"imgs/washing_machine.glb", category:"Electronics"},
+    {name:"lg washing machine",price:19490, glb:"imgs/washing_machine(1).glb", category:"Electronics"},
+    {name:"Tube Light",price:1900, glb:"imgs/tube_light.glb", category:"Electronics"},
+    {name:"fry pan",price:1500, glb:"imgs/frying_pan_36cm.glb", category:"Electronics"},
+    {name:"gas stove",price:3000, glb:"imgs/gas_stove_kitchen.glb", category:"Electronics"},
+    {name:"mobile charger",price:550, glb:"imgs/mobile_charger.glb", category:"Electronics"},
+  ];
 
-    const productDetails = document.getElementById('product-details');
-    const relatedList = document.getElementById('related-list');
+  const productDetails = document.getElementById('product-details');
+  const relatedList = document.getElementById('related-list');
 
-    function getQueryParam(param) {
-      return new URLSearchParams(window.location.search).get(param);
+  function getQueryParam(param) {
+    return new URLSearchParams(window.location.search).get(param);
+  }
+
+  function getWishlist() {
+    return JSON.parse(localStorage.getItem('wishlist') || '[]');
+  }
+  function setWishlist(list) {
+    localStorage.setItem('wishlist', JSON.stringify(list));
+  }
+  function isWishlisted(name) {
+    return getWishlist().some(item => item.name === name);
+  }
+
+  function displayProduct(product) {
+    if (!product) {
+      productDetails.innerHTML = "<p>Product not found.</p>";
+      return;
     }
 
-    function getWishlist() {
-      return JSON.parse(localStorage.getItem('wishlist') || '[]');
-    }
-    function setWishlist(list) {
-      localStorage.setItem('wishlist', JSON.stringify(list));
-    }
-    function isWishlisted(name) {
-      return getWishlist().some(item => item.name === name);
-    }
+    const canAR = ['Furniture'].includes(product.category);
+    const canTryOn = ['Clothing','Shoes','Accessories'].includes(product.category);
 
-    function displayProduct(product) {
-      if (!product) {
-        productDetails.innerHTML = "<p>Product not found.</p>";
-        return;
-      }
-
-      const canAR = ['Furniture'].includes(product.category);
-      const canTryOn = ['Clothing','Shoes'].includes(product.category);
-
-      productDetails.innerHTML = `
-        ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1"></model-viewer>` :
-          product.img ? `<img src="${product.img}" alt="${product.name}">` : `<div>No Preview</div>`}
-        <div class="product-info">
-          <h1>${product.name}</h1>
-          <p class="price">₹${product.price}.00</p>
-          <div class="buttons-row">
-            <button id="add-to-cart" class="btn-primary">Add to Cart</button>
-            <button id="wishlist-btn" class="btn-primary ${isWishlisted(product.name) ? 'active' : ''}">
-              ${isWishlisted(product.name) ? 'Remove from Wishlist' : 'Add to Wishlist'}
-            </button>
-            ${canAR && product.glb ? `<button id="ar-btn" class="btn-primary">View in AR</button>` : ''}
-            ${canTryOn ? `<button id="tryon-btn" class="btn-primary">Try On</button>` : ''}
-          </div>
-          <p class="description">High quality product description goes here.</p>
+    productDetails.innerHTML = `
+      ${product.glb ? `<model-viewer src="${product.glb}" alt="${product.name}" camera-controls auto-rotate shadow-intensity="1"></model-viewer>` :
+        product.img ? `<img src="${product.img}" alt="${product.name}">` : `<div>No Preview</div>`}
+      <div class="product-info">
+        <h1>${product.name}</h1>
+        <p class="price">₹${product.price}.00</p>
+        <div class="buttons-row">
+          <button id="add-to-cart" class="btn-primary">Add to Cart</button>
+          <button id="wishlist-btn" class="btn-primary ${isWishlisted(product.name) ? 'active' : ''}">
+            ${isWishlisted(product.name) ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          </button>
+          ${canAR && product.glb ? `<button id="ar-btn" class="btn-primary">View in AR</button>` : ''}
+          ${canTryOn ? `<button id="tryon-btn" class="btn-primary">Try On</button>` : ''}
         </div>
-      `;
+        <p class="description">High quality product description goes here.</p>
+      </div>
+    `;
 
-      // Add to Cart
-      document.getElementById('add-to-cart').onclick = () => {
-        let cart = JSON.parse(localStorage.getItem('cart') || '[]');
-        let idx = cart.findIndex(item => item.name === product.name);
-        if (idx > -1) cart[idx].quantity++;
-        else cart.push({ name: product.name, price: product.price, quantity: 1 });
-        localStorage.setItem('cart', JSON.stringify(cart));
-        alert(`Added ${product.name} to cart`);
-      };
-
-      // Wishlist
-      const wishlistBtn = document.getElementById('wishlist-btn');
-      wishlistBtn.onclick = () => {
-        let wishlist = getWishlist();
-        let idx = wishlist.findIndex(item => item.name === product.name);
-        if (idx > -1) {
-          wishlist.splice(idx, 1);
-          wishlistBtn.classList.remove('active');
-          wishlistBtn.textContent = "Add to Wishlist";
-        } else {
-          wishlist.push(product);
-          wishlistBtn.classList.add('active');
-          wishlistBtn.textContent = "Remove from Wishlist";
-        }
-        setWishlist(wishlist);
-      };
-
-      // AR Button
-      const arBtn = document.getElementById('ar-btn');
-      if (arBtn) arBtn.onclick = () => window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
-
-      // Try On Button → Save to localStorage and go to avatar.html
-      const tryOnBtn = document.getElementById('tryon-btn');
-      if (tryOnBtn) tryOnBtn.onclick = () => {
-        const selectedProduct = {
-          name: product.name,
-          img: product.img || null,
-          glb: product.glb || null,
-          category: product.category
-        };
-        localStorage.setItem("selectedClothing", JSON.stringify(selectedProduct));
-        window.open("avatar.html", "_blank");
-      };
-    }
-
-    function displayRelated(product) {
-      relatedList.innerHTML = '';
-      let related = products.filter(p => p.category === product.category && p.name !== product.name);
-      if (!related.length) related = products.slice(0, 4);
-      related.forEach(p => {
-        const div = document.createElement('div');
-        div.className = 'product';
-        div.innerHTML = `
-          ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name}" camera-controls auto-rotate></model-viewer>` :
-            p.img ? `<img src="${p.img}" alt="${p.name}" />` : `<div>No Image</div>`}
-          <h3>${p.name}</h3><p class="price">₹${p.price}.00</p>
-        `;
-        div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
-        relatedList.appendChild(div);
-      });
-    }
-
-    // On Load
-    window.onload = () => {
-      const productName = getQueryParam('name');
-      const product = products.find(p => p.name === productName);
-      if (product) {
-        displayProduct(product);
-        displayRelated(product);
-      } else {
-        productDetails.innerHTML = '<p>Product not found.</p>';
-      }
+    // Add to Cart
+    document.getElementById('add-to-cart').onclick = () => {
+      let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+      let idx = cart.findIndex(item => item.name === product.name);
+      if (idx > -1) cart[idx].quantity++;
+      else cart.push({ name: product.name, price: product.price, quantity: 1 });
+      localStorage.setItem('cart', JSON.stringify(cart));
+      alert(`Added ${product.name} to cart`);
     };
-  </script>
+
+    // Wishlist
+    const wishlistBtn = document.getElementById('wishlist-btn');
+    wishlistBtn.onclick = () => {
+      let wishlist = getWishlist();
+      let idx = wishlist.findIndex(item => item.name === product.name);
+      if (idx > -1) {
+        wishlist.splice(idx, 1);
+        wishlistBtn.classList.remove('active');
+        wishlistBtn.textContent = "Add to Wishlist";
+      } else {
+        wishlist.push(product);
+        wishlistBtn.classList.add('active');
+        wishlistBtn.textContent = "Remove from Wishlist";
+      }
+      setWishlist(wishlist);
+    };
+
+    // AR View
+    const arBtn = document.getElementById('ar-btn');
+    if (arBtn) arBtn.onclick = () => window.open(`ar-view.html?model=${encodeURIComponent(product.glb)}`, '_blank');
+
+    // Try-On Avatar Flow
+    const tryOnBtn = document.getElementById('tryon-btn');
+    if (tryOnBtn) tryOnBtn.onclick = () => {
+      const selectedProduct = {
+        name: product.name,
+        img: product.img || null,
+        glb: product.glb || null,
+        category: product.category
+      };
+      // ✅ Save to unified key for avatar.html compatibility
+      localStorage.setItem("selectedProduct", JSON.stringify(selectedProduct));
+      window.open("avatar.html", "_blank");
+    };
+  }
+
+  function displayRelated(product) {
+    relatedList.innerHTML = '';
+    let related = products.filter(p => p.category === product.category && p.name !== product.name);
+    if (!related.length) related = products.slice(0, 4);
+    related.forEach(p => {
+      const div = document.createElement('div');
+      div.className = 'product';
+      div.innerHTML = `
+        ${p.glb ? `<model-viewer src="${p.glb}" alt="${p.name}" camera-controls auto-rotate></model-viewer>` :
+          p.img ? `<img src="${p.img}" alt="${p.name}" />` : `<div>No Image</div>`}
+        <h3>${p.name}</h3><p class="price">₹${p.price}.00</p>
+      `;
+      div.onclick = () => window.location.href = `product.html?name=${encodeURIComponent(p.name)}`;
+      relatedList.appendChild(div);
+    });
+  }
+
+  // On Load
+  window.onload = () => {
+    const productName = getQueryParam('name');
+    const product = products.find(p => p.name === productName);
+    if (product) {
+      displayProduct(product);
+      displayRelated(product);
+    } else {
+      productDetails.innerHTML = '<p>Product not found.</p>';
+    }
+  };
+</script>
 </body>
 </html>
+
 
 
 
